@@ -1,0 +1,125 @@
+Register	Name(s)
+
+R0		AUTOCAL, Prescaler, Integer Feedback Division Factor
+
+R1		24-bit Main Fractional Value
+
+R2		FRAC2_LSB, MOD2_LSB
+
+R3		SD Load Reset, Phase Resync, Phase Adjustment, 24-bit Phase Value
+
+R4		MUXOUT, Reference Doubler, RDIV2, 10-bit R Counter, Double Buffer, 
+		Charge Pump Current Setting, Phase Detector Polarity, Power-Down,
+		Charge Pump Three-State, Counter Reset
+		
+R5		Reserved - must be programmed with 0x00800025 (skip during serial xmit!)
+
+R6		Bleed Polarity, Gated Bleed, Negative Bleed, RF Output B Select, Feedback Select,
+		Divider Select, Charge Pump Bleed Current, Mute Till Lock Detect, RF Output B Enable,
+		RF Output B Power, RF Output A Enable, RF Output A Power
+		
+R7		LE SEL Sync Edge, LE Sync, Fractional-N Lock Detect (LD) Cycle Count,
+		Loss of Lock (LOL) Mode, Fractional-N Lock Detect (LD) Precision,
+		Lock Detect (LD) Mode
+		
+R8		Reserved - must be programmed with 0x15596568 (skip during serial xmit!)
+		
+R9		VCO Band Division, Timeout, Automatic Level Calibration (ALC) Timeout,
+		Synthesizer Lock Timeout
+		
+R10		Reserved - [DB31:DB14] (skip during serial xmit!), ADC_CLK_DIV, ADC Conversion Enable,
+		ADC Enable
+		
+R11		Reserved - [DB31:DB25] must be 0x0, (skip during serial xmit!),
+		Reserved - [DB23:DB4] must be 0x61200 (skip during serial xmit!), VCO Band Hold
+		
+R12		Reserved - [DB11:DB4] must be 0x5F, Phase Resync Clock Value
+		
+R13		14-bit Auxiliary Fractional MSB Value (FRAC2_MSB),
+		14-bit Auxiliary Modulus MSB Value (MOD2_MSB)
+
+
+
+REGISTER INITIALIZATION SEQUENCE
+At initial power-up, after the correct application of voltages to
+the supply pins, the ADF4356 registers must be programmed in
+sequence. For f ≤ 75 MHz, use the following sequence:
+ 1. Register 13
+ 2. Register 12
+ 3. Register 11
+ 4. Register 10
+ 5. Register 9
+ 6. Register 8.
+ 7. Register 7
+ 8. Register 6
+ 9. Register 5
+10. Register 4
+11. Register 3
+12. Register 2
+13. Register 1
+14. Ensure that >16 ADC_CLK cycles have elapsed between the write of Register 10 and Register 0.
+    For example, if ADC_CLK = 99.417 kHz, wait 16/99,417 sec = 161 μs. See Reg10 section for more.
+15. Register 0
+
+
+
+
+For f PFD > 75 MHz (initially lock with halved f PFD), use the following sequence:
+
+ 1. Register 13 (for halved fPFD)
+ 2. Register 12
+ 3. Register 11
+ 4. Register 10
+ 5. Register 4 (with the R divider doubled to halve fPFD).
+ 6. Register 9.
+ 7. Register 8.
+ 8. Register 7.
+ 9. Register 6 (for the desired f PFD).
+10. Register 5.
+11. Register 4 (with the R divider doubled to halve fPFD).
+12. Register 3.
+13. Register 2 (for halved fPFD).
+14. Register 1 (for halved fPFD).
+15. Ensure that >16 ADC_CLK cycles have elapsed between the write of Register 10 and Register 0.
+    For example, if ADC_CLK = 99.417 kHz, wait 16/99,417 sec = 161 μs. See Reg10 section for more.
+16. Register 0 (for halved fPFD; autocalibration enabled).
+17. Register 13 (for the desired fPFD).
+18. Register 4 (with the R divider set for the desired fPFD).
+19. Register 2 (for the desired f PFD).
+20. Register 1 (for the desired f PFD).
+21. Register 0 (for the desired f PFD; autocalibration disabled).
+
+
+
+
+FREQUENCY UPDATE SEQUENCE
+Frequency updates require updating the auxiliary modulator (MOD2) in Register 2, the fractional
+value (FRAC1) in Register 1, and the integer value (INT) in Register 0. It is recommended to
+perform a temperature dependent VTUNE calibration by updating Register 10 first. Therefore, for
+fPFD ≤ 75 MHz, the sequence must be as follows:
+ 1. Register 13
+ 2. Register 10
+ 3. Register 2
+ 4. Register 1
+ 5. Ensure that >16 ADC_CLK cycles have elapsed between the write of Register 10 and Register 0.
+    For example, if ADC_CLK = 99.417 kHz, wait 16/99,417 sec = 161 μs. See Reg10 section for more.
+ 6. Register 0
+
+
+For fPFD > 75 MHz (initially lock with halved fPFD), the sequence must be as follows:
+ 1. Register 13 (for halved fPFD).
+ 2. Register 10.
+ 3. Register 4 (With the R divider doubled to halved f PFD).
+ 4. Register 2 (for halved f PFD).
+ 5. Register 1 (for halved f PFD).
+ 6. Ensure that >16 ADC_CLK cycles have elapsed between the write of Register 10 and Register 0.
+   For example, if ADC_CLK = 99.417 kHz, wait 16/99,417 sec = 161 μs. See Reg10 section for more.
+ 7. Register 0 (for halved f PFD; autocalibration enabled).
+ 8. Register 13 (for the desired fPFD).
+ 9. Register 4 (With the R divider set for the desired fPFD).
+10. Register 2 (for the desired fPFD).
+11. Register 1 (for the desired fPFD).
+12. Register 0 (for desired fPFD; autocalibration disabled).
+
+The frequency change occurs on the write to Register 0.
+

@@ -1,0 +1,42 @@
+Alright, at the risk of sounding like I know more than I actually do I am working on an application that uses threading to read Arduino data from a serial port without blocking the main, or gui, thread.  As my first Python project I needed an application that would allow me to control a 3 GHz spectrum analyzer through an Arduino and to plot the data in near real-time to the PC.
+
+In order to accomplish this I needed to be able to create and control the contents of the plot.  Send and receive data across the serial connection.  And to operate the program without slowing down the user experience.
+
+So I need to be concerned with three distinct but ultimately interrelated areas.
+
+SERIAL:
+Serial must be able to successfully read and write several kilobytes of data regardless of the serial speed.  If there are any problems with the serial it can't be allowed to block the GUI.  An entire record of data must be received before it is made available for plotting.
+
+
+GUI:
+The GUI *must* be responsive no matter what the rest of the program is doing.  Being locked out of the program until some long running function completes means that I can't cancel or close the program.  Imagine have to reboot your computer because you wanted to add up all the numbers to inifinity...
+
+
+PLOTTING:
+The plot needs to update as quickly as possible.  This part could really use more work.  Right now it just updates when a button is clicked but when the program is done it needs to be updating at 30 frames per second, or maybe even more.
+
+
+If you are just curious and have any questions at all I would be glad to answer them.  I found that the more questions I answer the more it improves my understanding.
+
+Testing is occuring outside the FreeBASIC program by using bash scripting.  The FreeBASIC program was written by Mike Masterson (WN2A) who is an RF Engineer.  I need to translate that into Python for use in my own functions.  The reason I wanted to test his FreeBASIC code is that it would provide something to compare my Python code to.
+
+And there's more...
+
+I use an Arduino UNO to provide the serial spi interface to the chips on the spectrum analyzer circuit board.  Did I mention that Mike and I designed and built a low-cost 3GHz Spectrum Analyzer in hardware?  As part of that I used gEDA for schematic capture and layout and had the boards produced at jlcpcb.com.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

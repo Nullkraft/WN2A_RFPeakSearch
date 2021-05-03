@@ -1,0 +1,8 @@
+.eric6project/
+.ropeproject/
+__pycache__/
+*~
+*pdf
+*jpg
+*png
+*zip

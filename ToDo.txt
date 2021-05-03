@@ -1,0 +1,32 @@
+Spectrum Analyzer TODO list:
+
+- Change serial thread to threadPool
+
+- Create the code to generate the register values from Mike's FreeBasic program.
+	
+- Limiting the Plot view to only a section of the axis:
+	p1.plotItem.vb.setLimits(xMin=a, xMax=b, yMin=c, yMax=d)
+
+- Create toolbar
+
+- Add serial port selection to toolbar
+
+- Enumerate serial ports and present to end user
+
+- Ability to send 1 frequency command of start, stop and num_steps
+
+- Manually sweep through an entire set of frequency commands
+
+- Create checkbox for plot ceiling & floor tracking each other
+
+- Use this to create all the steps between start and stop frequency.
+	https://numpy.org/doc/stable/reference/generated/numpy.arange.html
+
+	It works with floating point numbers for step size(s).
+  
+	  numpy.arange([start, ]stop, [step, ]dtype=None, *, like=None)
+		<< Returns evenly spaced values within the given interval. >>
+
+???
+??? self.assertEqual(self.s.readline(), serial.to_bytes([0x31, 0x0a]))
+???

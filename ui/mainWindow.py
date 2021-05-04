@@ -37,7 +37,6 @@ class serialWorker(QObject):
 
         # Get the Arduino command and the number of bytes it plans on delivering.
         command = self.__cmd(self.numDataPoints)
-        print('mainWindow:40 - command = ', command)
         sp.ser.write(command)             # Send the command to the Arduino
 
         array_position = 0
@@ -85,7 +84,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.initialized = False
         # Add serial ports to Serial Selection drop-down Combo Box
         ports = sp.list_all_ports()
-        self.cboxSerialPorts.addItems(ports)
+        self.cbxSerialPortSelection.addItems(ports)
+        # And make the first serial port the active one
+        sp.set_serial_port(self.cbxSerialPortSelection.currentText())
 
     @pyqtSlot()
     def on_btn_reinitialize_clicked(self):
@@ -93,15 +94,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSendRegisters_clicked(self):
-#        freq = self.floatStartMHz.value()
-#        sp.write_registers(freq, self.referenceClock, self.initialized)
-        print('mainWindow:98 - Selected serial port = ', self.cboxSerialPorts.currentIndex(), self.cboxSerialPorts.currentText())
+        freq = self.floatStartMHz.value()
+        sa.write_registers(freq, self.referenceClock, self.initialized)
 
-    @pyqtSlot()
-    def on_numDelayMilliseconds_editingFinished(self):
-        """Slot documentation goes here."""
-        # TODO: not implemented yet
-        raise NotImplementedError
+    @pyqtSlot(str)
+    def on_cbxSerialPortSelection_activated(self, user_selected_port):
+        sp.set_serial_port(user_selected_port)
 
     @pyqtSlot(int)
     def on_selectReferenceOscillator_currentIndexChanged(self, index):

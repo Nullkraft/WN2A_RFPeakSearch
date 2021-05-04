@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from ui.mainWindow import MainWindow
 from PyQt5 import QtWidgets             # requires 'pip install pyqtgraph'
 import sys

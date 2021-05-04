@@ -11,9 +11,10 @@ ser = None              # Made this global so it can be reached from anywhere
 def set_serial_port(port):
     global serial_port
     global ser
-    baud_rate = 2000000
-    ser = serial.Serial(port, baud_rate, timeout=100/baud_rate)
-    print('sp:26 - serial port = ', ser.port)
+    baud = 2000000
+    ser = serial.Serial(port, baud, timeout=100/baud)
+    print('sp:16 - serial port = ', ser.port)
+    print('sp:17 - usable BAUDRATES = ', ser.BAUDRATES[12:])
 
 def get_serial_port():
     return serial_port

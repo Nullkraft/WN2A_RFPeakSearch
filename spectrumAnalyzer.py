@@ -18,10 +18,8 @@ Fvco = 0.0000
 # integer   delay, stepNumber, Verbose, oldVerbose ', Range
 # integer   MOD1, Fracc, NewMOD1, NewFracc, numFreqs, Div, dispWidth, dispHeight
 
-# Datarow1: 'For MAX2871 Initialization
-dataRow1 = 13093080,541097977,1476465218,4160782339,1674572284,2151677957    # 374.596154 MHz with Lock Detect
-# Datarow2: 'For MAX2871 Initialization, no LockDetect on Mux Line
-dataRow2  = 13093080,541097977,1073812034,4160782339,1674572284,2151677957     # 374.596154 MHz without Lock Detect
+dataRow1 = 13093080,541097977,1476465218,4160782339,1674572284,2151677957   # 374.596154 MHz with Lock Detect
+dataRow2 = 13093080,541097977,1073812034,4160782339,1674572284,2151677957   # 374.596154 MHz no Lock Detect
 
 
 def getSettingsFromUI(frequency=23.5, delay=2, refClock=60, lockDetect=True, fractionalOpt=False, freqMode=1):

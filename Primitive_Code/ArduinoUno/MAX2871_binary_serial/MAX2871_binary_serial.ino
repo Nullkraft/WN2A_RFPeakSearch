@@ -12,15 +12,6 @@
  * 
  *************************************************/
 
-#define MAXBLOCKS 6
-#define EOS 0x255       // 0x255 is reserved for EOS (End Of Serial transmission)
-#define DATA_MAX 0x254  // Maximum allowed byte value for *ANY* data
-
-static bool start_stream = false;      // Data streaming request flag
-byte szChunk = 32;
-byte numChunks = MAXBLOCKS * 512/szChunk;
-static unsigned int chunkCount = numChunks;  // Track which chunk is being used
-
 int latchPin = A3;  // MAX2871 LE
 int dataPin = A2;   // MAX2871 DATA
 int clockPin = A1;  // MAX2871 SCLK
@@ -55,10 +46,6 @@ void setup() {
 
 
 void loop() {
-}
-
-
-void program_max2871() {
   if (Serial.available()) {
     Serial.readBytes(reg, bufLength);
   
@@ -71,30 +58,5 @@ void program_max2871() {
     digitalWrite(latchPin, HIGH);
     digitalWrite(latchPin, LOW);
     // ********************************************************
-  }
-}
-
-// Called when serial data is available for reading
-void serialEvent() {
-  char commandChar = Serial.read();
-  
-  switch(commandChar) {
-    case '\n':
-      break;
-    case 'a':
-      digitalWrite(LED, !digitalRead(LED));
-//      start_stream = true;
-      break;
-    case 'b':
-      program_max2871();
-      break;
-    case '1': case '2': case '3': case '4': case '5':  case '6':
-      byte numBlocks = commandChar - '0';       // byte numBlocks = atoi(commandChar);
-      numChunks = numBlocks * 512/szChunk;
-      chunkCount = numChunks;
-      break;
-    default:
-//      numChunks = MAXBLOCKS * 512/szChunk;
-      break;
   }
 }

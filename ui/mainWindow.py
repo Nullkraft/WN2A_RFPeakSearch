@@ -82,11 +82,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.init_chip = True
         self.referenceClock = 60
         self.initialized = False
-        # Add serial ports to Serial Selection drop-down Combo Box
+
+        # Populate the serial port selection list
         ports = sp.list_all_ports()
         self.cbxSerialPortSelection.addItems(ports)
-        # And make the first serial port the active one
+        # Make the first serial port the active one
         sp.set_serial_port(self.cbxSerialPortSelection.currentText())
+
+        # Populate the Serial Speed selection list
+        speeds = sp.get_baud_rates()
+        for x in speeds:
+            self.cbxSerialSpeedSelection.addItem(str(x), x)
+        sp.set_baud_rate(self.cbxSerialSpeedSelection.currentText())
+
+    @pyqtSlot(str)
+    def on_cbxSerialSpeedSelection_activated(self, speed_str):
+        sp.set_baud_rate(speed_str)
 
     @pyqtSlot()
     def on_btn_reinitialize_clicked(self):
@@ -130,7 +141,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.text = np.array([pg.TextItem()])        # Let's make some labels for each of the markers
 
         # Read num markers from front-panel control
-        for _k in range(self.numPeakMarkers.value()-1):
+        for _ in range(self.numPeakMarkers.value()-1):
             self.marker = np.append(self.marker, pg.ArrowItem())  # Add markers up to numPeakMarkers
             self.text = np.append(self.text, pg.TextItem())       # Add labels for each marker
 
@@ -209,7 +220,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot(bool)
     def on_btnZeroSpan_clicked(self, checked):
-#        fb.calculateRegisterValues()
+        # fb.calculateRegisterValues()
         showDialog(self, "TODO: Create Zero span function")
 
     @pyqtSlot(bool)

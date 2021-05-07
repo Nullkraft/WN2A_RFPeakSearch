@@ -23,7 +23,7 @@ def set_serial_port(port):
     else:
         rate = int(baud)
     ser = serial.Serial(port, rate, timeout=100/rate)
-    print('sp:27 - serial port = ', ser.port, ser.baudrate)
+    print(__name__, '26 :', ser.port, ser.baudrate)
 
 def list_all_ports():
     com_list = []

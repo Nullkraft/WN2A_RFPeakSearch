@@ -32,32 +32,25 @@ class serialWorker(QObject):
         self.numDataPoints = numPoints
 
     def run(self):
-        sp.ser.flushInput()   # clear out remaining serial garbage from last go-round
         self.amplDataBytes = bytearray()    # 8bit storage for bytes received from Arduino
-
         # Get the Arduino command and the number of bytes it plans on delivering.
         command = self.__cmd(self.numDataPoints)
         sp.ser.write(command)             # Send the command to the Arduino
-
         array_position = 0
         # Read raw bytes from the Arduino and fill amplDataBytes with simulated data.
         while True:
             bytesToRead = sp.ser.in_waiting
             self.amplDataBytes += sp.ser.read(bytesToRead)
-            self.progress.emit(len(self.amplDataBytes)) # Status emitted to on_btnTrigger_clicked slot
-            # Time to find the end-of-record (eor) bytes...
-            # Since the bytes are at the end of the record we first spin the data array around backwards...
+            self.progress.emit(len(self.amplDataBytes))         # See on_btnTrigger_clicked
+            # Since the end-of-record bytes are at the end we reverse amplDataBytes.
             reverse_bytes = self.amplDataBytes[::-1]
-            # After reversing the array we look for the first end-of-record byte (0xFF or 255)...
+            # Locate the first byte that is 0xFF (or 255).
             array_position = reverse_bytes.find(255)
-            # Next we check to see if there are two 0xFF values in a row.
-            # We've now found our eor position in the stream and can use that information
-            # to truncate (slice) the amplDataBytes array to the correct size.
+            # Search for two consecutive 0xFF (or 255) values and slice amplDataBytes to size.
             if list(reverse_bytes[array_position:array_position+2]) == [255, 255]:
                 self.amplDataBytes = reverse_bytes[array_position:]
                 self.amplDataBytes = self.amplDataBytes[::-1]
                 break
-
         self.finished.emit(self.amplDataBytes)          # Return the Amplitude Array
 
     # The Arduino simulates RF noise & will only return a fixed number of bytes based on the command.

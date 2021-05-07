@@ -71,26 +71,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)  # Must come before self.plot[]
         self.graphWidget.setYRange(-100, -40)
         self.dataLine = self.graphWidget.plot()
-        # Stores the register values programmed into the chip
+      # Stores the register values programmed into the chip
         self.init_chip = True
         self.referenceClock = 60
         self.initialized = False
-
-        # Populate the serial port selection list
+      # Populate the serial port selection list
         ports = sp.list_all_ports()
         self.cbxSerialPortSelection.addItems(ports)
-        # Make the first serial port the active one
-        sp.set_serial_port(self.cbxSerialPortSelection.currentText())
-
-        # Populate the Serial Speed selection list
+      # Populate the Serial Speed selection list
         speeds = sp.get_baud_rates()
         for x in speeds:
             self.cbxSerialSpeedSelection.addItem(str(x), x)
-        sp.set_baud_rate(self.cbxSerialSpeedSelection.currentText())
+
+    @pyqtSlot(str)
+    def on_cbxSerialPortSelection_activated(self, user_selected_port):
+        sp.set_serial_port(user_selected_port)
 
     @pyqtSlot(str)
     def on_cbxSerialSpeedSelection_activated(self, speed_str):
-        sp.set_baud_rate(speed_str)
+        sp.set_baudrate(speed_str)
 
     @pyqtSlot()
     def on_btn_reinitialize_clicked(self):
@@ -101,10 +100,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_btnSendRegisters_clicked(self):
         freq = self.floatStartMHz.value()
         sa.write_registers(freq, self.referenceClock, self.initialized)
-
-    @pyqtSlot(str)
-    def on_cbxSerialPortSelection_activated(self, user_selected_port):
-        sp.set_serial_port(user_selected_port)
 
     @pyqtSlot(int)
     def on_selectReferenceOscillator_currentIndexChanged(self, index):

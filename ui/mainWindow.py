@@ -94,6 +94,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btn_reinitialize_clicked(self):
+        ''' Delete Me - This is only useful for development '''
         self.initialized = False
 
     @pyqtSlot()

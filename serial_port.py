@@ -3,27 +3,30 @@
 from serial.tools import list_ports
 import serial       # requires 'pip install pyserial'
 
-ser = None              # Made this global so it can be reached from anywhere
-baud = None
+import sys
+line = lambda : sys._getframe(1).f_lineno
+name = lambda : __name__
 
-# This function is called by the gui and is used to create a drop down
-# for setting the serial speed.  It uses BAUDRATES, which is found in
-# pySerial API, and is sliced so that the lowest speed is 9600 baud.
+ser = None      # global so it can be shared across files.
+_baud = None     #
+_port = None
+
+# Provide a list of baudrates to populate the gui drop down.
+# It is sliced so that the lowest speed is at 9600 baud.
 def get_baud_rates():
-    return ser.BAUDRATES[12:]
+    return serial.Serial.BAUDRATES[12:]
 
-def set_baud_rate(speed):
-    global baud
-    baud = speed
+def set_baudrate(speed):
+    global _baud
+    _baud = speed
 
-def set_serial_port(port):
+def set_serial_port(selected_port):
     global ser
-    if baud == None:
-        rate = 2_000_000
-    else:
-        rate = int(baud)
-    ser = serial.Serial(port, rate, timeout=100/rate)
-    print(__name__, '26 :', ser.port, ser.baudrate)
+    global _port
+    if selected_port != None:
+        _port = selected_port
+        ser = _open()
+    print(name(), line(), ':', ser.port, ser.baudrate)
 
 def list_all_ports():
     com_list = []
@@ -32,7 +35,9 @@ def list_all_ports():
         com_list.append(port.device)
     return com_list
 
-
+def _open():
+    ser_port = serial.Serial(_port, _baud, timeout=100/int(_baud))
+    return ser_port
 
 
 if __name__ == '__main__':

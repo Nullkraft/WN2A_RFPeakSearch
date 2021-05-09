@@ -37,28 +37,23 @@ class serialWorker(QObject):
         self.numDataPoints = numPoints
 
     def run(self):
-        self.amplDataBytes = bytearray()    # 8bit storage for bytes received from Arduino
-        # Get the Arduino command and the number of bytes it plans on delivering.
-        command = self.__cmd(self.numDataPoints)
-        sp.ser.write(command)             # Send the command to the Arduino
-        array_position = 0
-        # Read raw bytes from the Arduino and fill amplDataBytes with simulated data.
+        self.amplDataBytes = bytearray()                    # Store 8bit data from Arduino
+        command = self.__cmd(self.numDataPoints)            # Command to send to Arduino
+        sp.ser.write(command)                               # Send command to the Arduino
+        # Read response as raw bytes from the Arduino.
         while True:
             bytesToRead = sp.ser.in_waiting
             self.amplDataBytes += sp.ser.read(bytesToRead)
-            self.progress.emit(len(self.amplDataBytes))         # See on_btnTrigger_clicked
-            # Since the end-of-record bytes are at the end we reverse amplDataBytes.
-            reverse_bytes = self.amplDataBytes[::-1]
-            # Locate the first byte that is 0xFF (or 255).
-            array_position = reverse_bytes.find(255)
-            # Search for two consecutive 0xFF (or 255) values and slice amplDataBytes to size.
-            if list(reverse_bytes[array_position:array_position+2]) == [255, 255]:
-                self.amplDataBytes = reverse_bytes[array_position:]
+            reversed_bytes = self.amplDataBytes[::-1]        # Prepare list for reverse search
+            array_position = reversed_bytes.find(255)        # Find the FIRST 0xFF (or 255)
+            # A SECOND 0xFF (or 255) means that we found the end-of-record marker.
+            if list(reversed_bytes[array_position:array_position+2]) == [255, 255]:
+                self.amplDataBytes = reversed_bytes[array_position:]
                 self.amplDataBytes = self.amplDataBytes[::-1]
                 break
-        self.finished.emit(self.amplDataBytes)          # Return the Amplitude Array
+        self.finished.emit(self.amplDataBytes)              # Return the Amplitude Array
 
-    # The Arduino simulates RF noise & will only return a fixed number of bytes based on the command.
+    # The Arduino will only simulate a fixed number of RF data points.
     def __cmd(self, numPoints):
         # The Arduino sees 1=256*16bits 2=512 3=768 4=1024 5=1280 (6 or greater)=1536
         arduinoCmds = [b'b1a', b'b2a', b'b3a', b'b4a', b'b5a', b'b6a']
@@ -87,6 +82,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         speeds = sp.get_os_baudrates()
         for x in speeds:
             self.cbxSerialSpeedSelection.addItem(str(x), x)
+
+#
+    # Threaded read from Arduino serial
+    # Simulation function: Substitute live data for production code.
+    @pyqtSlot()
+    def on_btnTrigger_clicked(self):
+        numDataPoints = self.numDataPoints.value()
+        self.thread = QThread()                                 # Create a new serial thread
+        self.worker = serialWorker(numDataPoints)               # Function for reading the serial port
+        self.worker.moveToThread(self.thread)                   # Serial reads happen inside its own thread
+        self.thread.started.connect(self.worker.run)            # Connect to signals...
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.worker.finished.connect(self.showAmplData)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.thread.start()                                     # After starting the thread...
+        self.btnTrigger.setEnabled(False)                       # disable the Trigger button until we're done
+        self.thread.finished.connect(lambda: self.btnTrigger.setEnabled(True))
 
     @pyqtSlot(str)
     def on_cbxSerialPortSelection_activated(self, selected_port):
@@ -148,8 +161,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.marker[i] = pg.ArrowItem(angle=-90, tipAngle=40, tailWidth=10, pen={'color': 'w', 'width': 1})
             frequency = self.freqRange[idx[i]]
             amplitude = self.amplitudeData[idx[i]]
-            self.marker[i].setPos(frequency, amplitude)  # frequency = x-axis, amplitude = y-axis
-
+            self.marker[i].setPos(frequency, amplitude)  # x-axis = frequency, y-axis = amplitude
             frequency_text = str('%.5f' % self.freqRange[idx[i]])
             amplitude_text = str('%.2f' % self.amplitudeData[idx[i]])
             markerLabel = frequency_text + ' MHz\n' + amplitude_text + ' dBV'
@@ -168,37 +180,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for x in self.text:
             self.graphWidget.removeItem(x)
             self.text = self.text[1:]
-
-    lastN = -1
-
-    # Monitor number of bytes, n, collected during serial read by creating your own function.
-    def progress_report(self, n):
-        if n != self.lastN:
-            # Create progress monitoring code, like print(n), in here
-            self.lastN = n
-
-    def clear_last_n(self):
-        self.lastN = -1
-
-    # Threaded read from Arduino serial
-    # Simulation function: Substitute live data for production code.
-
-    @pyqtSlot()
-    def on_btnTrigger_clicked(self):
-        numDataPoints = self.numDataPoints.value()
-        self.thread = QThread()                                 # Create a new serial thread
-        self.worker = serialWorker(numDataPoints)               # Function for reading the serial port
-        self.worker.moveToThread(self.thread)                   # Serial reads happen inside its own thread
-        self.thread.started.connect(self.worker.run)            # Connect to signals...
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.worker.finished.connect(self.showAmplData)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.worker.progress.connect(self.progress_report)
-        self.worker.finished.connect(self.clear_last_n)
-        self.thread.start()                                     # After starting the thread...
-        self.btnTrigger.setEnabled(False)                       # disable the Trigger button until we're done
-        self.thread.finished.connect(lambda: self.btnTrigger.setEnabled(True))
 
     @pyqtSlot()
     def on_minGraphWidth_editingFinished(self):

@@ -8,7 +8,7 @@ import sys
 line = lambda : sys._getframe(1).f_lineno
 name = __name__
 
-ser = None      # global so it can be shared across files.
+ser = serial.Serial()      # global so it can be shared across files.
 _baud = None     #
 _port = None
 

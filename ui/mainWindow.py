@@ -88,18 +88,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # Simulation function: Substitute live data for production code.
     @pyqtSlot()
     def on_btnTrigger_clicked(self):
-        numDataPoints = self.numDataPoints.value()
-        self.thread = QThread()                                 # Create a new serial thread
-        self.worker = serialWorker(numDataPoints)               # Function for reading the serial port
-        self.worker.moveToThread(self.thread)                   # Serial reads happen inside its own thread
-        self.thread.started.connect(self.worker.run)            # Connect to signals...
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.worker.finished.connect(self.showAmplData)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.thread.start()                                     # After starting the thread...
-        self.btnTrigger.setEnabled(False)                       # disable the Trigger button until we're done
-        self.thread.finished.connect(lambda: self.btnTrigger.setEnabled(True))
+        if sp.ser.is_open:
+            numDataPoints = self.numDataPoints.value()
+            self.thread = QThread()                                 # Create a new serial thread
+            self.worker = serialWorker(numDataPoints)               # Function for reading the serial port
+            self.worker.moveToThread(self.thread)                   # Serial reads happen inside its own thread
+            self.thread.started.connect(self.worker.run)            # Connect to signals...
+            self.worker.finished.connect(self.thread.quit)
+            self.worker.finished.connect(self.worker.deleteLater)
+            self.worker.finished.connect(self.showAmplData)
+            self.thread.finished.connect(self.thread.deleteLater)
+            self.thread.start()                                     # After starting the thread...
+            self.btnTrigger.setEnabled(False)                       # disable the Trigger button until we're done
+            self.thread.finished.connect(lambda: self.btnTrigger.setEnabled(True))
+        else:
+            print('')
+            print('     You must first open the serial port.')
+            print('     You can do so by selecting a Serial port AND speed.')
 
     @pyqtSlot(str)
     def on_cbxSerialPortSelection_activated(self, selected_port):

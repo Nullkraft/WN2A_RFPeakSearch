@@ -21,6 +21,11 @@ import spectrumAnalyzer as sa
 
 import serial_port as sp
 
+# Utility to simplify print debugging. ycecream is a lot better, though.
+line = lambda : sys._getframe(1).f_lineno
+name = __name__
+
+
 
 class serialWorker(QObject):
     # signals
@@ -76,20 +81,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.referenceClock = 60
         self.initialized = False
       # Populate the serial port selection list
-        ports = sp.list_all_ports()
+        ports = sp.list_os_ports()
         self.cbxSerialPortSelection.addItems(ports)
       # Populate the Serial Speed selection list
-        speeds = sp.get_baud_rates()
+        speeds = sp.get_os_baudrates()
         for x in speeds:
             self.cbxSerialSpeedSelection.addItem(str(x), x)
 
     @pyqtSlot(str)
-    def on_cbxSerialPortSelection_activated(self, user_selected_port):
-        sp.set_serial_port(user_selected_port)
+    def on_cbxSerialPortSelection_activated(self, selected_port):
+        sp.set_port(selected_port)
 
     @pyqtSlot(str)
     def on_cbxSerialSpeedSelection_activated(self, speed_str):
-        sp.set_baudrate(speed_str)
+        sp.set_speed(speed_str)
 
     @pyqtSlot()
     def on_btn_reinitialize_clicked(self):

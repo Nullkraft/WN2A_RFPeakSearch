@@ -44,9 +44,9 @@ class serialWorker(QObject):
         while True:
             bytesToRead = sp.ser.in_waiting
             self.amplDataBytes += sp.ser.read(bytesToRead)
-            reversed_bytes = self.amplDataBytes[::-1]        # Prepare list for reverse search
+            reversed_bytes = self.amplDataBytes[::-1]        # Reverse list before searching
             array_position = reversed_bytes.find(255)        # Find the FIRST 0xFF (or 255)
-            # A SECOND 0xFF (or 255) means that we found the end-of-record marker.
+            # A SECOND 0xFF (or 255) means that we found the end-of-record.
             if list(reversed_bytes[array_position:array_position+2]) == [255, 255]:
                 self.amplDataBytes = reversed_bytes[array_position:]
                 self.amplDataBytes = self.amplDataBytes[::-1]
@@ -83,7 +83,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for x in speeds:
             self.cbxSerialSpeedSelection.addItem(str(x), x)
 
-#
+
+    @pyqtSlot()
+    def on_btnSendRegisters_clicked(self):
+        freq = self.floatStartMHz.value()
+        sa.write_registers(freq, self.referenceClock, self.initialized)
+
     # Threaded read from Arduino serial
     # Simulation function: Substitute live data for production code.
     @pyqtSlot()
@@ -118,11 +123,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_btn_reinitialize_clicked(self):
         ''' Delete Me - This is only useful for development '''
         self.initialized = False
-
-    @pyqtSlot()
-    def on_btnSendRegisters_clicked(self):
-        freq = self.floatStartMHz.value()
-        sa.write_registers(freq, self.referenceClock, self.initialized)
 
     @pyqtSlot(int)
     def on_selectReferenceOscillator_currentIndexChanged(self, index):

@@ -51,7 +51,7 @@ def list_os_ports():
 def _open():
     ser_port = serial.Serial(_port, _baud, timeout=100/int(_baud))
     # Give the serial port a moment to open
-    time.sleep(0.5)
+    time.sleep(0.2)
     print(name, line(), ':', ser_port.port, ser_port.baudrate)
     return ser_port
 

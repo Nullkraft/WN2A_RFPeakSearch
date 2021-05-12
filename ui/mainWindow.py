@@ -46,8 +46,7 @@ class serialWorker(QObject):
             self.amplDataBytes += sp.ser.read(bytesToRead)
             reversed_bytes = self.amplDataBytes[::-1]        # Reverse list before searching
             array_position = reversed_bytes.find(255)        # Find the FIRST 0xFF (or 255)
-            # A SECOND 0xFF (or 255) means that we found the end-of-record.
-            if list(reversed_bytes[array_position:array_position+2]) == [255, 255]:
+            if list(reversed_bytes[array_position:array_position+2]) == [255, 255]:     # end-of-record found
                 self.amplDataBytes = reversed_bytes[array_position:]
                 self.amplDataBytes = self.amplDataBytes[::-1]
                 break
@@ -90,8 +89,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # Arduino and sent back to the PC for plotting and analysis.
     @pyqtSlot()
     def on_btnSendRegisters_clicked(self):
-        freq = self.floatStartMHz.value()
-        sa.write_registers(freq, self.referenceClock, self.initialized)
+        if sp.ser.is_open:
+            freq = self.floatStartMHz.value()
+            sa.write_registers(freq, self.referenceClock, self.initialized)
+            self.initialized = True
+
 
     # Threaded read from Arduino serial
     # Simulation function: Substitute live data for production code.

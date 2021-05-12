@@ -2,8 +2,13 @@
 
 import numpy as np
 import serial_port as sp
-#import time
+import sys
+import time
 #import serial       # requires 'pip install pyserial'
+
+# Utility to simplify print debugging. ycecream is a lot better, though.
+line = lambda : sys._getframe(1).f_lineno
+name = __name__
 
 
 # NOTE: This information was transported in from Mike Masterson's (WN2A) FreeBASIC code.
@@ -44,53 +49,34 @@ def getSettingsFromUI(frequency=23.5, delay=2, refClock=60, lockDetect=True, fra
             # Enter Fixed Frequency
 
 
-oldChipRegisters = [0, 0, 0, 0, 0, 0]   # Presetting allows decision making
+oldChipRegisters = [0, 0, 0, 0, 0, 0]   # Set to zero's for initialization
+# The steps required to program the chip is to start with the highest
+# register and work your way down.
 def write_registers(target_frequency, ref_clock, initialized = False):
     rfOut = target_frequency
     refClock = ref_clock
     stepNumber = 0
 
-    # Calculate and store a new set of register values used for
-    # programming the MAX2871 chip with a new output frequency.
-    registers = new_frequency_registers(rfOut, stepNumber, refClock)
-    for x, reg in enumerate(registers[::-1]):
-        # It's only necessary to write to a register if its value
-        # has changed from one frequency to the next.
-        if reg != oldChipRegisters[x]:
-            sp.ser.write(reg.to_bytes(4, 'big'))
-            oldChipRegisters[x] = reg
+    if sp.ser.is_open:
+        # Calculate and store a new set of register values used for
+        # programming the MAX2871 chip with a new output frequency.
+        registers = new_frequency_registers(rfOut, stepNumber, refClock)
 
-def hide_my_notes_for_write_registers():
-    # According to the spec-sheet the MAX2871 chip requires initialization
-    # by sending a set of registers values twice with a >20ms delay between
-    # writes. My testing shows that this is not necessary and if Maxim
-    # engineers agree then I will remove the initialization code.
-    #
-    # The normal method of programming the chip is to start with the
-    # highest register first and work your way down loading each one
-    # after the other.
-#    if not initialized:
-#        # registers values stored in reverse order for later comparison.
-#        oldChipRegisters = registers[::-1]
-#        initialized = True
-#        # Write all 6 registers to the MAX2871 chip
-#        sp.ser.write(b'b')
-#        for reg in registers[::-1]:
-#            sp.ser.write(reg.to_bytes(4, 'big'))
-#        time.sleep(0.025)                       # Minimium 20 millisec delay
-#        # Write all 6 registers to the MAX2871 chip again...
-#        for reg in registers[::-1]:
-#            sp.ser.write(reg.to_bytes(4, 'big'))
-#    else:
-#        # DelMe: Status information
-#        for x, reg in enumerate(registers[::-1]):
-#            # It's only necessary to write to a register if its value
-#            # has changed from one frequency to the next.
-#            if reg != oldChipRegisters[x]:
-#                sp.ser.write(reg.to_bytes(4, 'big'))
-#                oldChipRegisters[x] = reg
-    pass
-#
+        if initialized:
+            for x, reg in enumerate(registers[::-1]):
+                # Only write to a register if its value has changed.
+                if reg != oldChipRegisters[x]:
+                    sp.ser.write(reg.to_bytes(4, 'big'))
+                    oldChipRegisters[x] = reg
+        else:   # Initialize the MAX2871 in accordance with manufacturer.
+            for x, reg in enumerate(registers[::-1]):
+                sp.ser.write(reg.to_bytes(4, 'big'))
+            time.sleep(0.025)
+            for x, reg in enumerate(registers[::-1]):
+                sp.ser.write(reg.to_bytes(4, 'big'))
+                oldChipRegisters[x] = reg
+
+
 def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, LockDetect="y"):
     if newFreq < 23.5:
         frequency_out = 23.5

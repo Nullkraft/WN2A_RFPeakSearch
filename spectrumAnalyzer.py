@@ -58,6 +58,7 @@ def write_registers(target_frequency, ref_clock, initialized = False):
     stepNumber = 0
 
     if sp.ser.is_open:
+        arduinoCmd = b'r'
         # Calculate and store a new set of register values used for
         # programming the MAX2871 chip with a new output frequency.
         registers = new_frequency_registers(rfOut, stepNumber, refClock)
@@ -66,13 +67,16 @@ def write_registers(target_frequency, ref_clock, initialized = False):
             for x, reg in enumerate(registers[::-1]):
                 # Only write to a register if its value has changed.
                 if reg != oldChipRegisters[x]:
+                    sp.ser.write(arduinoCmd)       # Send command to the Arduino
                     sp.ser.write(reg.to_bytes(4, 'big'))
                     oldChipRegisters[x] = reg
         else:   # Initialize the MAX2871 in accordance with manufacturer.
             for x, reg in enumerate(registers[::-1]):
+                sp.ser.write(arduinoCmd)       # Send command to the Arduino
                 sp.ser.write(reg.to_bytes(4, 'big'))
             time.sleep(0.025)
             for x, reg in enumerate(registers[::-1]):
+                sp.ser.write(arduinoCmd)       # Send command to the Arduino
                 sp.ser.write(reg.to_bytes(4, 'big'))
                 oldChipRegisters[x] = reg
 

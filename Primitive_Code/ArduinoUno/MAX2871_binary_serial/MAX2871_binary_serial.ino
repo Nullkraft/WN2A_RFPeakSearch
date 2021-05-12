@@ -21,8 +21,8 @@ int RF_En = 5;      // MAX2871 RF_EN
 int LED = 13;
 
 //const unsigned int bytesInWord = 4;
-const unsigned int bufLength = 4;     // buffer is 'bufLength' bytes long
-byte reg[bufLength];
+const unsigned int numBytesInReg = 4;     // buffer is 'numBytesInReg' bytes long
+byte reg[numBytesInReg];
 
 unsigned int pulseWidth = 1;
 
@@ -47,12 +47,12 @@ void setup() {
 
 void loop() {
   if (Serial.available()) {
-    Serial.readBytes(reg, bufLength);
+    Serial.readBytes(reg, numBytesInReg);
   
     // ******* DON'T ADD ANYTHING BETWEEN THESE LINES *********
     digitalWrite (strobe, HIGH);
     digitalWrite (strobe, LOW);
-    for (int j=0; j<bufLength; j++) {
+    for (int j=0; j<numBytesInReg; j++) {
       shiftOut(dataPin, clockPin, MSBFIRST, reg[j]);
     }
     digitalWrite(latchPin, HIGH);

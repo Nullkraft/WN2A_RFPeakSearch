@@ -9,15 +9,15 @@ import serial_port as sp
 # NOTE: This information was transported in from Mike Masterson's (WN2A) FreeBASIC code.
 # Please retain for current documentation until it is incorporated into the Python source.
 #
-#float    Fvco, N, FracT
-Fvco = 0.0000
 # ulong     NI, registerNum, Reg(6,401), OldReg(6) ' Reg(6, 401) is Reg(registerNum, stepNumber). 6 registers;401 max frequency steps
 # string    Swept, freq, ComStr, portNum, portSpeed, delaystr, FracOpt, LockDetect
 # single    Fstart, Fstop
 # single    Fpfd, refClock, RFOut, FvcoEst, FracErr, Frfv(401), Initial
 # integer   delay, stepNumber, Verbose, oldVerbose ', Range
 # integer   MOD1, Fracc, NewMOD1, NewFracc, numFreqs, Div, dispWidth, dispHeight
+# float    Fvco, N, FracT
 
+Fvco = 0.0000       # Initialize as a type float
 dataRow1 = 13093080,541097977,1476465218,4160782339,1674572284,2151677957   # 374.596154 MHz with Lock Detect
 dataRow2 = 13093080,541097977,1073812034,4160782339,1674572284,2151677957   # 374.596154 MHz no Lock Detect
 
@@ -44,9 +44,6 @@ def getSettingsFromUI(frequency=23.5, delay=2, refClock=60, lockDetect=True, fra
             # Enter Fixed Frequency
 
 
-def xmit():
-    pass
-
 oldChipRegisters = [0, 0, 0, 0, 0, 0]   # Presetting allows decision making
 def write_registers(target_frequency, ref_clock, initialized = False):
     rfOut = target_frequency
@@ -63,6 +60,7 @@ def write_registers(target_frequency, ref_clock, initialized = False):
             sp.ser.write(reg.to_bytes(4, 'big'))
             oldChipRegisters[x] = reg
 
+def hide_my_notes_for_write_registers():
     # According to the spec-sheet the MAX2871 chip requires initialization
     # by sending a set of registers values twice with a >20ms delay between
     # writes. My testing shows that this is not necessary and if Maxim
@@ -91,7 +89,8 @@ def write_registers(target_frequency, ref_clock, initialized = False):
 #            if reg != oldChipRegisters[x]:
 #                sp.ser.write(reg.to_bytes(4, 'big'))
 #                oldChipRegisters[x] = reg
-
+    pass
+#
 def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, LockDetect="y"):
     if newFreq < 23.5:
         frequency_out = 23.5
@@ -120,10 +119,9 @@ def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, Lo
             MOD1 = 4095
             Fracc = int(FracT * MOD1)
 
-        # restore Datarow1 'Restore Data Pointer 1 unless...
-        if LockDetect == "y":
-            dataRow = dataRow1
-        else:
+        # If LockDetect is default=='y' then choose dataRow1 where lock detect bit set.
+        dataRow = dataRow1
+        if LockDetect != "y":
             dataRow = dataRow2
 
         Reg[stepNumber][0] = (NI * (2**15)) + (Fracc * (2**3))

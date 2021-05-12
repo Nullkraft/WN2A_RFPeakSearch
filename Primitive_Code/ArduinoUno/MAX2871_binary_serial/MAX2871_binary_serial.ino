@@ -20,11 +20,10 @@ int RF_En = 5;      // MAX2871 RF_EN
 
 int LED = 13;
 
-//const unsigned int bytesInWord = 4;
 const unsigned int numBytesInReg = 4;     // buffer is 'numBytesInReg' bytes long
 byte reg[numBytesInReg];
 
-unsigned int pulseWidth = 1;
+char commandChar;
 
 void setup() {
   Serial.begin(2000000);
@@ -47,16 +46,20 @@ void setup() {
 
 void loop() {
   if (Serial.available()) {
-    Serial.readBytes(reg, numBytesInReg);
-  
-    // ******* DON'T ADD ANYTHING BETWEEN THESE LINES *********
-    digitalWrite (strobe, HIGH);
-    digitalWrite (strobe, LOW);
-    for (int j=0; j<numBytesInReg; j++) {
-      shiftOut(dataPin, clockPin, MSBFIRST, reg[j]);
+    commandChar = Serial.read();
+    switch(commandChar) {
+      case 'r':
+        Serial.readBytes(reg, numBytesInReg);
+        // ******* DON'T ADD ANYTHING BETWEEN THESE LINES *********
+        digitalWrite (strobe, HIGH);
+        digitalWrite (strobe, LOW);
+        for (int j=0; j<numBytesInReg; j++) {
+          shiftOut(dataPin, clockPin, MSBFIRST, reg[j]);
+        }
+        digitalWrite(latchPin, HIGH);
+        digitalWrite(latchPin, LOW);
+        // ********************************************************
+        break;
     }
-    digitalWrite(latchPin, HIGH);
-    digitalWrite(latchPin, LOW);
-    // ********************************************************
   }
 }

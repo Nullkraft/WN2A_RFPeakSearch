@@ -71,8 +71,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)  # Must come before self.plot[]
         self.graphWidget.setYRange(-100, -40)
         self.dataLine = self.graphWidget.plot()
-      # Stores the register values programmed into the chip
-        self.init_chip = True
+      #
         self.referenceClock = 60
         self.initialized = False
       # Populate the serial port selection list

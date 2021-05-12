@@ -26,7 +26,7 @@ line = lambda : sys._getframe(1).f_lineno
 name = __name__
 
 
-
+# serialWorker is for receiving large amounts of data of a known size from the Arduino.
 class serialWorker(QObject):
     # signals
     finished = pyqtSignal(bytearray)
@@ -51,12 +51,13 @@ class serialWorker(QObject):
                 self.amplDataBytes = reversed_bytes[array_position:]
                 self.amplDataBytes = self.amplDataBytes[::-1]
                 break
+        print(name, line(), 'ampl data bytes =', len(self.amplDataBytes))
         self.finished.emit(self.amplDataBytes)              # Return the Amplitude Array
 
     # The Arduino will only simulate a fixed number of RF data points.
     def __cmd(self, numPoints):
         # The Arduino sees 1=256*16bits 2=512 3=768 4=1024 5=1280 (6 or greater)=1536
-        arduinoCmds = [b'b1a', b'b2a', b'b3a', b'b4a', b'b5a', b'b6a']
+        arduinoCmds = [b'1', b'2', b'3', b'4', b'5', b'6']
         selection = numPoints // 256 - 1                # selection = floor(numPoints/256)-1
         selection = 5 if selection > 5 else selection
         return arduinoCmds[selection]
@@ -83,7 +84,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for x in speeds:
             self.cbxSerialSpeedSelection.addItem(str(x), x)
 
-
+    # SendRegisters() calls the Spectrum Analyzer code to generate new
+    # register values for programming the MAX2871 to set a new frequency.
+    # The amplitude of that frequency is then digitized (A2D) by the
+    # Arduino and sent back to the PC for plotting and analysis.
     @pyqtSlot()
     def on_btnSendRegisters_clicked(self):
         freq = self.floatStartMHz.value()
@@ -245,6 +249,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.numPlotFloor.value() < self.numPlotCeiling.value():
             self.graphWidget.setYRange(self.numPlotFloor.value(), self.numPlotCeiling.value())
 
+    @pyqtSlot()
+    def on_line_edit_cmd_returnPressed(self):
+        command = self.line_edit_cmd.text()
+        _cmd = command.encode()
+        if sp.ser.is_open:
+            sp.ser.write(_cmd)
+        else:
+            print(name, line(), 'Open the port first.')
 
 # End MainWindow() class
 

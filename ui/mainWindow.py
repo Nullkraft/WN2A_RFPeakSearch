@@ -138,8 +138,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         return self.referenceClock
 
-    old_word = 0.1
     def showAmplData(self, amplBytes):
+        old_word = 0.1
         self.amplitudeData = []    # Storage for Amplitude values after conversion from bytes.
         nBytes = len(amplBytes) - 2   # Serial bytes received minus the two end-of-record bytes.
         for x in range(0, nBytes, 2):
@@ -159,6 +159,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnPeakSearch_clicked(self):
+        # If there are any existing markers remove them first.
+        self._clear_marker_text()
+        self._clear_peak_markers()
+        self._peak_search()
+
+    def _peak_search(self):
         self.marker = np.array([pg.ArrowItem()])     # First, we need to create a growable array of markers
         self.text = np.array([pg.TextItem()])        # Let's make some labels for each of the markers
 
@@ -187,14 +193,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             amplitude_pos = self.amplitudeData[idx[i]]
             self.text[i].setPos(frequency_pos, amplitude_pos)
 
+    def _clear_peak_markers(self):
+        try:
+            # Clear the marker
+            for x in self.marker:
+                self.graphWidget.removeItem(x)
+            # Prepare marker index for next PeakSearch()
+            self.marker = self.marker[0]
+        except Exception:
+            print(name, line(), ": No markers to remove.")
+
+    def _clear_marker_text(self):
+        try:
+            # Now clear the marker text
+            for x in self.text:
+                self.graphWidget.removeItem(x)
+                self.text = self.text[1:]
+        except Exception:
+            print(name, line(), ': No marker text to remove.')
+
     @pyqtSlot()
     def on_btnClearPeakSearch_clicked(self):
-        for x in self.marker:
-            self.graphWidget.removeItem(x)
-        self.marker = self.marker[0]
-        for x in self.text:
-            self.graphWidget.removeItem(x)
-            self.text = self.text[1:]
+        self._clear_marker_text()
+        self._clear_peak_markers()
 
     @pyqtSlot()
     def on_minGraphWidth_editingFinished(self):

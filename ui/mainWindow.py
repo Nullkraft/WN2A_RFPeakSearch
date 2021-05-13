@@ -18,8 +18,8 @@ from ui.util import showDialog
 # Functions specific to the operation of the WN2A Spectrum Analyzer hardware, hopefully.
 # Including setting up the serial port.
 import spectrumAnalyzer as sa
-
 import serial_port as sp
+import command_processor as cp
 
 # Utility to simplify print debugging. ycecream is a lot better, though.
 line = lambda : sys._getframe(1).f_lineno
@@ -138,6 +138,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         return self.referenceClock
 
+    old_word = 0.1
     def showAmplData(self, amplBytes):
         self.amplitudeData = []    # Storage for Amplitude values after conversion from bytes.
         nBytes = len(amplBytes) - 2   # Serial bytes received minus the two end-of-record bytes.
@@ -145,6 +146,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # Ccombine serial MSB & LSB
             ampl_word = (amplBytes[x+1] << 8) | amplBytes[x]
             # Convert RF Amplitude to dBV.
+            if ampl_word != 0:
+                old_word = ampl_word
+            if ampl_word == 0:
+                ampl_word = old_word
             amplitude = -20*math.log10(ampl_word)
             # Store converted RF Amplitude dB's
             self.amplitudeData.append(amplitude)
@@ -258,6 +263,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             sp.ser.write(_cmd)
         else:
             print(name, line(), 'Open the port first.')
+
+    @pyqtSlot(bool)
+    def on_chkEnableRFOut_toggled(self, checked):
+        if checked:
+            cp.enable_rf_out()
+        else:
+            cp.disable_rf_out()
+        response = cp.get_hw_status()
+        print(name, line(), 'RF enable status =', response)
+
+
+    @pyqtSlot(bool)
+    def on_chkArduinoLED_toggled(self, checked):
+        if checked:
+            cp.turn_Arduino_LED_on()
+        else:
+            cp.turn_Arduino_LED_off()
 
 # End MainWindow() class
 

@@ -11,8 +11,6 @@ import numpy as np
 
 from .Ui_mainWindow import Ui_MainWindow
 
-# Developer utility function(s). DO NOT SHIP THIS SOURCE CODE
-from ui.util import showDialog
 
 
 # Functions specific to the operation of the WN2A Spectrum Analyzer hardware, hopefully.
@@ -232,15 +230,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(bool)
     def on_btnZeroSpan_clicked(self, checked):
         # fb.calculateRegisterValues()
-        showDialog(self, "TODO: Create Zero span function")
+        raise NotImplementedError
 
     @pyqtSlot(bool)
     def on_btnFullSpan_clicked(self, checked):
-        showDialog(self, "TODO: Create Full span function")
+        raise NotImplementedError
 
     @pyqtSlot(bool)
     def on_btnLastSpan_clicked(self, checked):
-        showDialog(self, "TODO: Create Last span function")
+        raise NotImplementedError
 
     @pyqtSlot()
     def on_btnExit_clicked(self):
@@ -248,15 +246,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot(float)
     def on_dblCenterMHz_valueChanged(self, centerFreq):
-        showDialog(self, centerFreq)
+        raise NotImplementedError
 
     @pyqtSlot(float)
     def on_dblStepKHz_valueChanged(self, stepFreq):
-        showDialog(self, stepFreq)
+        raise NotImplementedError
 
     @pyqtSlot(float)
     def on_dblSpanMHz_valueChanged(self, deltaFreq):
-        showDialog(self, deltaFreq)
+        raise NotImplementedError
 
     @pyqtSlot(bool)
     def on_chkShowGrid_toggled(self, checked):

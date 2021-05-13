@@ -2,7 +2,7 @@
   "header": {
     "comment": "eric project file for project WN2A Spectrum Analyzer",
     "copyright": "Copyright (C) 2021 , ",
-    "saved": "2021-05-01, 19:22:11"
+    "saved": "2021-05-13, 00:16:16"
   },
   "project": {
     "AUTHOR": "",
@@ -165,7 +165,8 @@
       "spectrumAnalyzer.py",
       "ui/Ui_mainWindow.py",
       "ui/mainWindow.py",
-      "ui/util.py"
+      "ui/util.py",
+      "command_processor.py"
     ],
     "SPELLEXCLUDES": "",
     "SPELLLANGUAGE": "en_US",

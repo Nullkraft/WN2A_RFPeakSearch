@@ -2,9 +2,11 @@
 
 from serial.tools import list_ports
 import serial       # requires 'pip3 install pyserial'
-import time
 
+import time
+import errno as error
 import sys
+
 line = lambda : sys._getframe(1).f_lineno
 name = __name__
 
@@ -49,11 +51,21 @@ def list_os_ports():
     return com_list
 
 def _open():
-    ser_port = serial.Serial(_port, _baud, timeout=100/int(_baud))
-    # Give the serial port a moment to open
-    time.sleep(0.2)
-    print(name, line(), ':', ser_port.port, ser_port.baudrate)
-    return ser_port
+    ser_port = None
+    try:
+        ser_port = serial.Serial(_port, _baud, timeout=100/int(_baud))
+    except OSError as e:
+        if e.errno == error.EBUSY:
+            print(name, line(), ": Another program has already opened the port. Arduino?")
+#        print(name, line(), ": OSError e =", e.errno, e.strerror)
+    except Exception as e:
+        print(name, line(), e)
+    else:
+        # Give the serial port a moment to open
+        time.sleep(0.2)
+        print(name, line(), ':', ser_port.port, ser_port.baudrate)
+    finally:
+        return ser_port
 
 
 if __name__ == '__main__':

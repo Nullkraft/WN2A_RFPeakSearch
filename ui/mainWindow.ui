@@ -720,9 +720,12 @@
         </spacer>
        </item>
        <item>
-        <widget class="QCheckBox" name="checkBox">
+        <widget class="QCheckBox" name="chkLockDetect">
          <property name="text">
           <string>Lock Detect</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -740,7 +743,7 @@
         </spacer>
        </item>
        <item>
-        <widget class="QCheckBox" name="checkBox_2">
+        <widget class="QCheckBox" name="chkFracOpt">
          <property name="text">
           <string>Fractional Optimization</string>
          </property>

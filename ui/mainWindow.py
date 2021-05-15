@@ -299,6 +299,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             cp.turn_Arduino_LED_off()
 
+    @pyqtSlot(bool)
+    def on_chkLockDetect_clicked(self, checked):
+        sa.set_lock_detect(checked)
+
 # End MainWindow() class
 
 

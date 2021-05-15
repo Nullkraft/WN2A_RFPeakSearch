@@ -48,7 +48,6 @@ class serialWorker(QObject):
                 self.amplDataBytes = reversed_bytes[array_position:]
                 self.amplDataBytes = self.amplDataBytes[::-1]
                 break
-        print(name, line(), 'ampl data bytes =', len(self.amplDataBytes))
         self.finished.emit(self.amplDataBytes)              # Return the Amplitude Array
 
     # The Arduino will only simulate a fixed number of RF data points.
@@ -199,7 +198,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # Prepare marker index for next PeakSearch()
             self.marker = self.marker[0]
         except Exception:
-            print(name, line(), ": No markers to remove.")
+            pass
 
     def _clear_marker_text(self):
         try:
@@ -208,7 +207,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.graphWidget.removeItem(x)
                 self.text = self.text[1:]
         except Exception:
-            print(name, line(), ': No marker text to remove.')
+            pass
 
     @pyqtSlot()
     def on_btnClearPeakSearch_clicked(self):

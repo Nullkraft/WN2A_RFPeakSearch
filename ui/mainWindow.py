@@ -63,8 +63,8 @@ class serialWorker(QObject):
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
-    def __init__(self, parent=None):
-        super(MainWindow, self).__init__(parent)
+    def __init__(self):
+        super().__init__()
         pg.setConfigOptions(useOpenGL=True)
         self.setupUi(self)  # Must come before self.plot[]
         self.graphWidget.setYRange(-100, -40)

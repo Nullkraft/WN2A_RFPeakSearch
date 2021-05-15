@@ -22,6 +22,7 @@ name = __name__
 # integer   MOD1, Fracc, NewMOD1, NewFracc, numFreqs, Div, dispWidth, dispHeight
 # float    Fvco, N, FracT
 
+lock_detect = True
 Fvco = 0.0000       # Initialize as a type float
 dataRow1 = 13093080,541097977,1476465218,4160782339,1674572284,2151677957   # 374.596154 MHz with Lock Detect
 dataRow2 = 13093080,541097977,1073812034,4160782339,1674572284,2151677957   # 374.596154 MHz no Lock Detect
@@ -82,6 +83,8 @@ def write_registers(target_frequency, ref_clock, initialized = False):
 
 
 def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, LockDetect="y"):
+    global lock_detect
+
     if newFreq < 23.5:
         frequency_out = 23.5
     elif newFreq > 6000:
@@ -109,9 +112,10 @@ def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, Lo
             MOD1 = 4095
             Fracc = int(FracT * MOD1)
 
-        # If LockDetect is default=='y' then choose dataRow1 where lock detect bit set.
+        # Set lock detect bits.
+        # TODO: Move this down to the Arduino.
         dataRow = dataRow1
-        if LockDetect != "y":
+        if lock_detect == False:
             dataRow = dataRow2
 
         Reg[stepNumber][0] = (NI * (2**15)) + (Fracc * (2**3))
@@ -124,6 +128,14 @@ def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, Lo
         return Reg[stepNumber]
 
 
+def set_lock_detect(checked):
+    global lock_detect
+    if checked == True:
+        lock_detect = True
+        print(name, line(), ": checked is", checked)
+    else:
+        lock_detect = False
+        print(name, line(), ": checked is", checked)
 
 
 def Sweep():

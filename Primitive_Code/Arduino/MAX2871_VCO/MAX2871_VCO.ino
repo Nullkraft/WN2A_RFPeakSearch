@@ -30,6 +30,7 @@ byte* noiseByte = (byte *) &rfNoise;
 char commandChar;
 
 unsigned int chunk_select = 0;  // Track which chunk is being used
+byte frequencyInHz[3];
 
 
 void setup() {
@@ -62,7 +63,7 @@ void loop() {
         break;
       case 'r':
         Serial.readBytes(reg, numBytesInReg);
-        // ******* DON'T ADD ANYTHING BETWEEN THESE LINES *********
+        // ******* DO NOT add anything between these lines *********
         digitalWrite (strobe, HIGH);
         digitalWrite (strobe, LOW);
         for (int j=0; j<numBytesInReg; j++) {
@@ -70,7 +71,7 @@ void loop() {
         }
         digitalWrite(latchPin, HIGH);
         digitalWrite(latchPin, LOW);
-        // ********************************************************
+        // *********************************************************
         break;
       case 'l':
         digitalWrite(LED_BUILTIN, LOW);   // Built-in LED OFF
@@ -83,6 +84,12 @@ void loop() {
         break;
       case 'E':
         digitalWrite(RF_En, HIGH);        // RF Output ON
+        break;
+      case 'F':
+        // Get target frequency in Hz (because binary) from PC
+        // Limit floats to 6 decimal places to avoid rounding errors
+        Serial.readBytes(frequencyInHz, 3);
+        frequencyToRegisterValues(frequencyInHz);
         break;
       case 'S':
         hwState();
@@ -99,6 +106,15 @@ void loop() {
     simRF();
     sendBytes();
   }
+}
+
+
+/* Given a frequency generate the register values for the MAX2871
+ * based on the refClock, lockDetect and fracOpt settings.
+ */
+void frequencyToRegisterValues(int frequencyInHz) {
+  double target_frequency = pow(frequencyInHz, 6);
+  Serial.println(target_frequency, 6);
 }
 
 
@@ -119,7 +135,6 @@ void sendBytes() {
     Serial.write(EOS);
   }
 }
-
 
 /*
  * Simulate a series of RF test data for testing the Spectrum Analyzer 

@@ -16,8 +16,8 @@ int clockPin = A1;  // MAX2871 SCLK
 int strobe = 10;    // MAX2871 STROBE
 int RF_En = 5;      // MAX2871 RF_EN
 
-const unsigned int numBytesInReg = 4;     // buffer is 'numBytesInReg' bytes long
-byte reg[numBytesInReg];
+const unsigned int numBytesInReg = 4;
+byte buff[numBytesInReg] = {0};
 
 const int szChunk = 32;
 byte numChunks = 0;
@@ -29,7 +29,7 @@ byte* noiseByte = (byte *) &rfNoise;
 
 char commandChar;
 
-unsigned int chunk_select = 0;  // Track which chunk is being used
+unsigned int chunkIndex = 0;  // Track which chunk is being used
 byte frequencyInHz[3];
 
 
@@ -59,19 +59,12 @@ void loop() {
       case '1': case '2': case '3': case '4': case '5':  case '6':
         numBlocks = commandChar - '0';       // byte numBlocks = atoi(commandChar);
         numChunks = numBlocks * 512/szChunk;
-        chunk_select = numChunks;
+        chunkIndex = numChunks;
         break;
       case 'r':
-        Serial.readBytes(reg, numBytesInReg);
-        // ******* DO NOT add anything between these lines *********
-        digitalWrite (strobe, HIGH);
-        digitalWrite (strobe, LOW);
-        for (int j=0; j<numBytesInReg; j++) {
-          shiftOut(dataPin, clockPin, MSBFIRST, reg[j]);
-        }
-        digitalWrite(latchPin, HIGH);
-        digitalWrite(latchPin, LOW);
-        // *********************************************************
+        // register reg[] 
+        Serial.readBytes(buff, numBytesInReg);
+        writeToVCO(buff, numBytesInReg);
         break;
       case 'l':
         digitalWrite(LED_BUILTIN, LOW);   // Built-in LED OFF
@@ -99,13 +92,34 @@ void loop() {
     }
   }
 
-  /* chunk_select gets the same value as the active chunk. As long
+  /* chunkIndex gets the same index as the active chunk. As long
    * as it stays above 0 the next chunk will be created and sent.
    */
-  if (chunk_select) {
+  if (chunkIndex) {
     simRF();
-    sendBytes();
+    writeToHost();
   }
+}
+
+
+void readFromVCO() {
+  // pass
+}
+
+
+/* Time to program the MAX2871 chip to make it do what you want.
+ *  This is basically a software SPI to the max chip.
+*/
+void writeToVCO(byte *selectedRegister, unsigned int numBytesToWrite) {
+  digitalWrite (strobe, HIGH);
+  digitalWrite (strobe, LOW);
+
+  for (int j=0; j<numBytesToWrite; j++) {
+    shiftOut(dataPin, clockPin, MSBFIRST, selectedRegister[j]);
+  }
+  
+  digitalWrite(latchPin, HIGH);
+  digitalWrite(latchPin, LOW);
 }
 
 
@@ -121,7 +135,7 @@ void frequencyToRegisterValues(int frequencyInHz) {
 /*
  * You must fill the chunk array with data before calling this function.
  */
-void sendBytes() {
+void writeToHost() {
   if(Serial.availableForWrite() > 0) {
     Serial.write(chunk, szChunk);
   }
@@ -130,22 +144,24 @@ void sendBytes() {
    * a double byte of 0xFF because the A/D uses less than 16 bits. That means
    * the full-scale value of the A/D (0xFF/0xC0) is less than the EOS marker.
    */
-  if (chunk_select == 0) {
+  if (chunkIndex == 0) {
     Serial.write(EOS);
     Serial.write(EOS);
   }
 }
+
+
 
 /*
  * Simulate a series of RF test data for testing the Spectrum Analyzer 
  * plotting program written in python.
  */
 void simRF() {
-  unsigned int i = numChunks - chunk_select;
+  unsigned int i = numChunks - chunkIndex;
   unsigned int index;
   unsigned int spur = 255; //(numChunks * szChunk) / 2;
 
-  chunk_select--;
+  chunkIndex--;
   
   // Fill a buffer with szChunk number of bytes.
   for(int j=0; j<szChunk; j+=2) {
@@ -172,6 +188,7 @@ void hwState() {
   // Report back the state of RF_En.
   if(Serial.availableForWrite() > 0) {
     byte enable = digitalRead(RF_En);
+    int mux_value = analogRead(A0);
     Serial.write(enable);
   }
 }

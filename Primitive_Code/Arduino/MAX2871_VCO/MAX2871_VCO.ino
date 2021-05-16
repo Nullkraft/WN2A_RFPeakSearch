@@ -103,20 +103,83 @@ void readFromVCO() {
   // pass
 }
 
+/* Bits MUX[3:0] set the MUX pin.
+ *  MUX[3] is bit 18 in reg5 and is named MUX MSB, 
+ *  while MUX[2:0] are bits 28:26 in reg2 and are
+ *  named MUX Configuration.
+ *  
+ *  From reg2 settings:
+ *  Sets MUX pin mode (MSB bit located register 05).
+ *  0000 = Three-state output
+ *  0001 = D_VDD
+ *  0010 = D_GND
+ *  0011 = R-divider output    
+ *  0100 = N-divider output/2    
+ *  0101 = Analog lock detect    
+ *  0110 = Digital lock detect    
+ *  0111 = Sync Input    
+ *  1000 to 1011 = Reserved    
+ *  1100 = Read SPI registers 06    
+ *  1101 to 1111= Reserved
+ */
+void muxPinMode(byte mode) {
+  switch (mode) {
+    case HIGH_Z:      // Set all to zero
+      Serial.println("setting MUX to High Z ...");
+      spiBuff[3] = 0x00;
+      spiBuff[2] = 0x00;
+      spiBuff[1] = 0x00;
+      spiBuff[0] = 0x05;    // reg addr 5
+      writeToVCO( spiBuff, numBytesInReg);  // 00_00_00_05
+      spiBuff[0] = 0x02;    // reg addr 2
+      writeToVCO( spiBuff, numBytesInReg);  // 00_00_00_02
+      break;
+    case MUX_VDD:
+      Serial.println("setting MUX to VDD ...");
+      spiBuff[3] = 0x02;
+      spiBuff[2] = 0x00;
+      spiBuff[1] = 0x00;
+      spiBuff[0] = 0x02;    // reg addr 2
+      writeToVCO(spiBuff, numBytesInReg);  // 02_00_00_02
+      break;
+    case MUX_GND:
+      Serial.println("setting MUX to GND ...");
+      spiBuff[3] = 0x04;
+      spiBuff[2] = 0x00;
+      spiBuff[1] = 0x00;
+      spiBuff[0] = 0x02;    // reg addr 2
+      writeToVCO(spiBuff, numBytesInReg);  // 04_00_00_02
+      break;
+    case MUX_READ:
+      Serial.println("setting MUX to SPI read ...");
+      spiBuff[3] = 0x00;
+      spiBuff[2] = 0x02;
+      spiBuff[1] = 0x00;
+      spiBuff[0] = 0x05;    // reg addr 5
+      writeToVCO(spiBuff, numBytesInReg);  // 00_02_00_05
+      delay(20);
+      spiBuff[3] = 0x08;
+      spiBuff[2] = 0x00;
+      spiBuff[1] = 0x00;
+      spiBuff[0] = 0x02;    // reg addr 2
+      writeToVCO( spiBuff, numBytesInReg );  // 08_00_00_02
+      break;
+    default:
+      break;
+  }
+}
+
 
 /* Time to program the MAX2871 chip to make it do what you want.
  *  This is basically a software SPI to the max chip.
 */
 void writeToVCO(byte *selectedRegister, unsigned int numBytesToWrite) {
-  digitalWrite (strobe, HIGH);
-  digitalWrite (strobe, LOW);
+  digitalWrite(latchPin, LOW);
 
   for (int j=0; j<numBytesToWrite; j++) {
     shiftOut(dataPin, clockPin, MSBFIRST, selectedRegister[j]);
   }
-  
   digitalWrite(latchPin, HIGH);
-  digitalWrite(latchPin, LOW);
 }
 
 

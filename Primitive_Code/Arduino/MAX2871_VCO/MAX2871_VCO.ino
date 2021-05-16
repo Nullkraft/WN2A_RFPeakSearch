@@ -59,26 +59,25 @@ void loop() {
         numChunks = numBlocks * 512/szChunk;
         chunkIndex = numChunks;
         break;
-      case 'r':
-        // register reg[] 
-        Serial.readBytes(buff, numBytesInReg);
-        writeToVCO(buff, numBytesInReg);
+      case 'r':    // Program MAX2871 to a new output frequency
+        Serial.readBytes(spiBuff, numBytesInReg);
+        writeToVCO(spiBuff, numBytesInReg);
         break;
-      case 'l':
-        digitalWrite(LED_BUILTIN, LOW);   // Built-in LED OFF
+      case 'l':                   // Turn off built-in LED
+        digitalWrite(LED_BUILTIN, LOW);
         break;
-      case 'L':
-        digitalWrite(LED_BUILTIN, HIGH);  // Built-in LED ON
+      case 'L':                   // Turn on built-in LED
+        digitalWrite(LED_BUILTIN, HIGH);
         break;
-      case 'e':
-        digitalWrite(RF_En, LOW);         // RF Output OFF
+      case 'e':                   // Disable RF output
+        digitalWrite(RF_En, LOW);
         break;
-      case 'E':
-        digitalWrite(RF_En, HIGH);        // RF Output ON
+      case 'E':                   // Enable RF output
+        digitalWrite(RF_En, HIGH);
         break;
       case 'F':
-        // Get target frequency in Hz (because binary) from PC
-        // Limit floats to 6 decimal places to avoid rounding errors
+        // Get target frequency in Hz (because binary) from PC.
+        // IMPORTANT: 6-decimal places or get rounding errors.
         Serial.readBytes(frequencyInHz, 3);
         frequencyToRegisterValues(frequencyInHz);
         break;

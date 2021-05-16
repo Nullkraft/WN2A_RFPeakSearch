@@ -93,7 +93,7 @@ void loop() {
    * as it stays above 0 the next chunk will be created and sent.
    */
   if (chunkIndex) {
-    simRF();
+    simRF();          // Fill 
     writeToHost();
   }
 }
@@ -213,10 +213,13 @@ void writeToHost() {
 
 
 /*
- * Simulate a series of RF test data for testing the Spectrum Analyzer 
- * plotting program written in python.
+ * Simulate RF test data for testing the Spectrum Analyzer plotting program 
+ * written in python.
  */
 void simRF() {
+  unsigned int rfNoise;
+  byte* noiseByte = (byte *) &rfNoise;
+
   unsigned int i = numChunks - chunkIndex;
   unsigned int index;
   unsigned int spur = 255; //(numChunks * szChunk) / 2;

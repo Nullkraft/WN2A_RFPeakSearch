@@ -8,24 +8,24 @@
  * transfer rate.
  */
 
-#define EOS 0xFF        // 0xFF is reserved for EOS (End Of Serial transmission)
+#define EOS     0xFF  // 0xFF is reserved for End Of Serial transmission (EOS)
+#define HIGH_Z   0    // Put MUX in High Z mode
+#define MUX_VDD  1    // Put MUX in VDD mode
+#define MUX_GND  2    // Put MUX in GND mode
+#define MUX_READ 3    // Put MUX in Read mode
 
 int latchPin = A3;  // MAX2871 LE
 int dataPin = A2;   // MAX2871 DATA
 int clockPin = A1;  // MAX2871 SCLK
-int strobe = 10;    // MAX2871 STROBE
 int RF_En = 5;      // MAX2871 RF_EN
 
 const unsigned int numBytesInReg = 4;
-byte buff[numBytesInReg] = {0};
+byte spiBuff[numBytesInReg] = {0};
 
 const int szChunk = 32;
 byte numChunks = 0;
 byte numBlocks;
 byte chunk[szChunk];
-
-unsigned int rfNoise;
-byte* noiseByte = (byte *) &rfNoise;
 
 char commandChar;
 

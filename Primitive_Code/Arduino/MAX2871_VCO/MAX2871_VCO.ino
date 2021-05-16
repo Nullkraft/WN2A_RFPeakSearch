@@ -40,10 +40,8 @@ void setup() {
   pinMode(latchPin, OUTPUT);
   pinMode(dataPin, OUTPUT);
   pinMode(clockPin, OUTPUT);
-  pinMode(strobe, OUTPUT);
   digitalWrite(RF_En, HIGH);      // Turn on the MAX2871 RF Output
   digitalWrite(latchPin, LOW);    // Latch must start LOW
-  digitalWrite(strobe, LOW);      // Strobe must start LOW
 
   Serial.begin(2000000);
   Serial.setTimeout(5);

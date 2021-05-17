@@ -7,14 +7,15 @@
  * was found that a 32 byte chunk provides the greatest improvement in the data
  * transfer rate.
  */
+#include "MAX2871.h"
 
-#define EOS      0xFF    // 0xFF is reserved for End Of Serial transmission (EOS)
-#define HIGH_Z   0x00    // Put MUX pin in tri-state output mode
-#define MUX_READ 0x0C    // Put MUX pin in Read mode
+
+#define EOS             0xFF  // 0xFF is reserved for End Of Serial transmission (EOS)
 
 int latchPin = A3;  // MAX2871 LE
 int dataPin  = A2;  // MAX2871 DATA
 int clockPin = A1;  // MAX2871 SCLK
+int muxPin   = A0;  // MAX2871 MUX (Multiplexed I/O)
 int RF_En    =  5;  // MAX2871 RF_EN
 
 const unsigned int numRegisters = 6;    // Num programming registers for MAX2871
@@ -63,7 +64,7 @@ void loop() {
       case 'r':    // Program MAX2871 to a new output frequency
         Serial.readBytes(spiBuff, numBytesInReg);
         writeToVCO(spiBuff, numBytesInReg);
-        updateCurrentRegisterValue(spiBuff[0]);  // Byte 0 of each register has the address bits.
+        updateCurrentRegisterValue(spiBuff[0]);  // Sending byte[0] so we can glean the register address
         break;
       case 'l':                   // Turn off built-in LED
         digitalWrite(LED_BUILTIN, LOW);
@@ -85,6 +86,7 @@ void loop() {
         break;
       case 'S':
         hwState();
+        muxPinMode(MUX_READ);
         break;
       default:
         break;
@@ -151,28 +153,40 @@ void readFromVCO() {
       }
       digitalWrite(latchPin, LOW);
  */
-//void muxPinReadMode(bool ) {
-//  uint32_t reg5 = 0x05;   // Preload register 5 with address bits
-//  uint32_t reg2 = 0x02;   // Preload register 2 with address bits
-//
-//  switch (mode) {
-//    case HIGH_Z:  // mode 0000
-//      bitWrite(reg5, 18, 0);   // Bit 18 register 5
-//      bitWrite(spiBuff, 28, 0);
-//      bitWrite(spiBuff, 27, 0);
-//      bitWrite(spiBuff, 26, 0);
-//      break;
-//    case MUX_READ:  // mode 1100
-//      bitWrite(spiBuff, 18, 1);
-//      bitWrite(spiBuff, 28, 1);
-//      bitWrite(spiBuff, 27, 0);
-//      bitWrite(spiBuff, 26, 0);
-//      break;
-//    default:
-//      break;
-//  }
-//  writeToVCO(spiBuff, numBytesInReg);
-//}
+void muxPinMode(int mode) {
+  
+//  currentRegisterValue[numRegisters][numBytesInReg];
+
+  byte reg5[numBytesInReg];
+  byte reg2[numBytesInReg];
+
+
+  pinMode(muxPin, OUTPUT);  // Normally an output...
+  if (mode == MUX_SYNC) {   // except in sync mode
+    pinMode(muxPin, INPUT);
+  }
+
+  bitWrite(reg5[2], 2, bitRead(mode, 3));   // MUX MODE bit 3 is in byte2 of register 5
+  writeToVCO(reg5, numBytesInReg);
+
+  bitWrite(reg2[3], 4, bitRead(mode, 2));   // MUX MODE bit 2 is in byte3 of register 2
+  bitWrite(reg2[3], 3, bitRead(mode, 1));   // MUX MODE bit 1 is in byte3 of register 2
+  bitWrite(reg2[3], 2, bitRead(mode, 0));   // MUX MODE bit 0 is in byte3 of register 2
+  writeToVCO(reg2, numBytesInReg);
+
+  Serial.print("reg5 = ");
+  Serial.print  (reg5[3], BIN);
+  Serial.print  (reg5[2], BIN);
+  Serial.print  (reg5[1], BIN);
+  Serial.println(reg5[0], BIN);
+  for (int i=0; i<numBytesInReg; i++) {
+    spiBuff[i] = reg5[i];
+  }
+  Serial.print("spiBuff = ");
+  Serial.print(spiBuff[2], BIN);
+  Serial.print(spiBuff[1], BIN);
+  Serial.println(spiBuff[0], BIN);
+}
 
 
 /* Time to program the MAX2871 chip to make it do what you want.

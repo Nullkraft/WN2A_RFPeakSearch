@@ -8,19 +8,20 @@
  * transfer rate.
  */
 
-#define EOS     0xFF  // 0xFF is reserved for End Of Serial transmission (EOS)
-#define HIGH_Z   0    // Put MUX in High Z mode
-#define MUX_VDD  1    // Put MUX in VDD mode
-#define MUX_GND  2    // Put MUX in GND mode
-#define MUX_READ 3    // Put MUX in Read mode
+#define EOS      0xFF    // 0xFF is reserved for End Of Serial transmission (EOS)
+#define HIGH_Z   0x00    // Put MUX pin in tri-state output mode
+#define MUX_READ 0x0C    // Put MUX pin in Read mode
 
 int latchPin = A3;  // MAX2871 LE
-int dataPin = A2;   // MAX2871 DATA
+int dataPin  = A2;  // MAX2871 DATA
 int clockPin = A1;  // MAX2871 SCLK
-int RF_En = 5;      // MAX2871 RF_EN
+int RF_En    =  5;  // MAX2871 RF_EN
 
-const unsigned int numBytesInReg = 4;
-byte spiBuff[numBytesInReg] = {0};
+const unsigned int numRegisters = 6;    // Num programming registers for MAX2871
+const unsigned int numBytesInReg = 4;   // 32 bits in each register
+byte spiBuff[numBytesInReg];
+byte currentRegisterValue[numRegisters][numBytesInReg];
+
 
 const int szChunk = 32;
 byte numChunks = 0;
@@ -62,6 +63,7 @@ void loop() {
       case 'r':    // Program MAX2871 to a new output frequency
         Serial.readBytes(spiBuff, numBytesInReg);
         writeToVCO(spiBuff, numBytesInReg);
+        updateCurrentRegisterValue(spiBuff[0]);  // Byte 0 of each register has the address bits.
         break;
       case 'l':                   // Turn off built-in LED
         digitalWrite(LED_BUILTIN, LOW);
@@ -98,6 +100,19 @@ void loop() {
   }
 }
 
+/* Several features of the MAX chip can be accessed by manipulating select bits in the 
+ * registers. But only the registers that change have to be sent again. That means if 
+ * we want to turn a feature on, then off, we can change one (or several) bits in our 
+ * register and just update that one. But each register holds other configuration 
+ * options besides the ones we want. This lets us retain those other bits each time we 
+ * change ours.
+ */
+void updateCurrentRegisterValue(byte addr) {
+  addr &= 0x07;                                 // least 3 bits contain the register address
+  for (int i=0; i<numBytesInReg; i++) {
+    currentRegisterValue[addr][i] = spiBuff[i];  // Remember the currently programmed values
+  }
+}
 
 void readFromVCO() {
   // pass
@@ -119,55 +134,45 @@ void readFromVCO() {
  *  0110 = Digital lock detect    
  *  0111 = Sync Input    
  *  1000 to 1011 = Reserved    
- *  1100 = Read SPI registers 06    
+ *  1100 = Read SPI registers 06
  *  1101 to 1111= Reserved
+ *  
+ *  To be able to read register 6 (aka. mode 1100):
+ *  1) Set the MUX MODE by setting reg5 mux msb and reg2 MUX Configuration to 1100. 
+ *  2) writeToVCO(spiBuffReg5, numBytesInReg);   // Reg 5 takes 32 clocks
+ *  3) writeToVCO(spiBuffReg2, numBytesInReg);   // Reg 2 takes 32 clocks
+ *  4) Set LE low
+ *  5) writeToVCO(0x00_00_00_06, numBytesInReg); // Reg 6 takes 32 clocks
+ *  6) Set LE High  // Reg 6 gets programmed
+      digitalWrite(latchPin, HIGH);
+    
+      for (int j=0; j<numBytesToWrite; j++) {
+        inputRegister[j] = shiftIn(dataPin, clockPin, MSBFIRST);  // clock must be low b4 first call
+      }
+      digitalWrite(latchPin, LOW);
  */
-void muxPinMode(byte mode) {
-  switch (mode) {
-    case HIGH_Z:      // Set all to zero
-      Serial.println("setting MUX to High Z ...");
-      spiBuff[3] = 0x00;
-      spiBuff[2] = 0x00;
-      spiBuff[1] = 0x00;
-      spiBuff[0] = 0x05;    // reg addr 5
-      writeToVCO( spiBuff, numBytesInReg);  // 00_00_00_05
-      spiBuff[0] = 0x02;    // reg addr 2
-      writeToVCO( spiBuff, numBytesInReg);  // 00_00_00_02
-      break;
-    case MUX_VDD:
-      Serial.println("setting MUX to VDD ...");
-      spiBuff[3] = 0x02;
-      spiBuff[2] = 0x00;
-      spiBuff[1] = 0x00;
-      spiBuff[0] = 0x02;    // reg addr 2
-      writeToVCO(spiBuff, numBytesInReg);  // 02_00_00_02
-      break;
-    case MUX_GND:
-      Serial.println("setting MUX to GND ...");
-      spiBuff[3] = 0x04;
-      spiBuff[2] = 0x00;
-      spiBuff[1] = 0x00;
-      spiBuff[0] = 0x02;    // reg addr 2
-      writeToVCO(spiBuff, numBytesInReg);  // 04_00_00_02
-      break;
-    case MUX_READ:
-      Serial.println("setting MUX to SPI read ...");
-      spiBuff[3] = 0x00;
-      spiBuff[2] = 0x02;
-      spiBuff[1] = 0x00;
-      spiBuff[0] = 0x05;    // reg addr 5
-      writeToVCO(spiBuff, numBytesInReg);  // 00_02_00_05
-      delay(20);
-      spiBuff[3] = 0x08;
-      spiBuff[2] = 0x00;
-      spiBuff[1] = 0x00;
-      spiBuff[0] = 0x02;    // reg addr 2
-      writeToVCO( spiBuff, numBytesInReg );  // 08_00_00_02
-      break;
-    default:
-      break;
-  }
-}
+//void muxPinReadMode(bool ) {
+//  uint32_t reg5 = 0x05;   // Preload register 5 with address bits
+//  uint32_t reg2 = 0x02;   // Preload register 2 with address bits
+//
+//  switch (mode) {
+//    case HIGH_Z:  // mode 0000
+//      bitWrite(reg5, 18, 0);   // Bit 18 register 5
+//      bitWrite(spiBuff, 28, 0);
+//      bitWrite(spiBuff, 27, 0);
+//      bitWrite(spiBuff, 26, 0);
+//      break;
+//    case MUX_READ:  // mode 1100
+//      bitWrite(spiBuff, 18, 1);
+//      bitWrite(spiBuff, 28, 1);
+//      bitWrite(spiBuff, 27, 0);
+//      bitWrite(spiBuff, 26, 0);
+//      break;
+//    default:
+//      break;
+//  }
+//  writeToVCO(spiBuff, numBytesInReg);
+//}
 
 
 /* Time to program the MAX2871 chip to make it do what you want.

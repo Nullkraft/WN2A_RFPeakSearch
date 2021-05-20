@@ -24,8 +24,12 @@ name = __name__
 
 lock_detect = True
 Fvco = 0.0000       # Initialize as a type float
-dataRow1 = 13093080,541097977,1476465218,4160782339,1674572284,2151677957   # 374.596154 MHz with Lock Detect
-dataRow2 = 13093080,541097977,1073812034,4160782339,1674572284,2151677957   # 374.596154 MHz no Lock Detect
+lockDetectOn  = 13093080,541097977,1476465218,4160782339,1674572284,2151677957   # 374.596154 MHz with Lock Detect
+lockDetectOff = 13093080,541097977,1073812034,4160782339,1674572284,2151677957   # 374.596154 MHz no Lock Detect
+readReg6      = 13093080,541097977,1342247490,4160782339,1674572284,2151940101   # Read register 6
+
+dataRow = lockDetectOn      # default
+
 
 
 def getSettingsFromUI(frequency=23.5, delay=2, refClock=60, lockDetect=True, fractionalOpt=False, freqMode=1):
@@ -84,13 +88,7 @@ def write_registers(target_frequency, ref_clock, initialized = False):
 
 def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, LockDetect="y"):
     global lock_detect
-
-    if newFreq < 23.5:
-        frequency_out = 23.5
-    elif newFreq > 6000:
-        frequency_out = 6000
-    else:
-        frequency_out = newFreq
+    global dataRow
 
     refClockDivider = 4
     Fpfd = (refClock * (1e6)) / refClockDivider    # Default Fpfd = 15 MHz
@@ -98,12 +96,12 @@ def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, Lo
     Div = 1
     Reg = list(range(6)), list(range(402))
 
-    while (frequency_out*Div) < 3000:
+    while (newFreq*Div) < 3000:
         rangeNum += 1           # Divider Range still not found.
         Div = 2**rangeNum       # Next Divider Range
     else:
         Range = rangeNum
-        Fvco = frequency_out * Div
+        Fvco = newFreq * Div
         N = 1e6 * (Fvco/(Fpfd))
         NI = int(N)
         FracT = N - NI
@@ -111,12 +109,6 @@ def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, Lo
         if FracOpt != "f":      # Only run these lines if the user selected Fractional Optimization
             MOD1 = 4095
             Fracc = int(FracT * MOD1)
-
-        # Set lock detect bits.
-        # TODO: Move this down to the Arduino.
-        dataRow = dataRow1
-        if lock_detect == False:
-            dataRow = dataRow2
 
         Reg[stepNumber][0] = (NI * (2**15)) + (Fracc * (2**3))
         Reg[stepNumber][1] = (2**29) + (2**15) + (MOD1*(2**3)) + 1
@@ -130,12 +122,11 @@ def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, Lo
 
 def set_lock_detect(checked):
     global lock_detect
+    global dataRow
     if checked == True:
-        lock_detect = True
-        print(name, line(), ": checked is", checked)
+        dataRow = lockDetectOn
     else:
-        lock_detect = False
-        print(name, line(), ": checked is", checked)
+        dataRow = lockDetectOff
 
 
 def Sweep():

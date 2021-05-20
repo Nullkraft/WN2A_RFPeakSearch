@@ -28,3 +28,29 @@
 
 
 #endif
+
+
+
+class MAX2871_VCO {
+public:
+
+	MAX2871();
+	MAX2871(float initial_frequency);
+
+	char* begin();
+  void  begin(float initial_frequency);
+  void  setFrequency(float target_frequency);
+  void  enableRFout(int pinNumber);
+  void  disableRFout(int pinNumber);
+  void  turnOnLED(int pinNumber);
+  void  turnOffLED(int pinNumber);
+  char* getHWStatus(int pinNumber);
+
+private:
+
+  //void setFrequency(float freq);
+};
+
+
+
+

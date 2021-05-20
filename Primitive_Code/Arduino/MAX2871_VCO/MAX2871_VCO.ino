@@ -12,6 +12,7 @@
 
 #define EOS             0xFF  // 0xFF is reserved for End Of Serial transmission (EOS)
 
+// Arduino pin selections
 int latchPin = A3;  // MAX2871 LE
 int dataPin  = A2;  // MAX2871 DATA
 int clockPin = A1;  // MAX2871 SCLK
@@ -20,8 +21,29 @@ int RF_En    =  5;  // MAX2871 RF_EN
 
 const unsigned int numRegisters = 6;    // Num programming registers for MAX2871
 const unsigned int numBytesInReg = 4;   // 32 bits in each register
-byte spiBuff[numBytesInReg];
-byte currentRegisterValue[numRegisters][numBytesInReg];
+
+/* Why are there 2 names for accessing the same 4 bytes?
+* When comparing the source code to the 'Register and Bit Descriptions' in the 
+* spec-sheet it is easier to compare a 32-bit mask with the associated tables. 
+* It is also easier to apply that 32-bit mask to the 32-bit register value.
+* 
+* The Problem: 
+*   Serial.read() and shiftOut() only transfer individual bytes so I would need 
+* 2 separate for-loops and would be constantly switching between the 32-bit word 
+* and the 4-byte representation of that same word.
+* 
+* The Solution: 
+*   By creating a byte-pointer to the 32-bit data I can treat the 32-bit word as 
+* an array of 4-bytes.
+* 
+* The Drawback:
+*   With two different variables accessing the same data I (always?) need to take 
+* care to identify the relationship of the two variables in the source code.
+*/
+uint32_t spiBuff;                           // 32 bit access to buffered serial data.
+byte* bytePtrSpiBuff = (byte *) &spiBuff;   // Buffered serial data to write to SPI bus.
+
+uint32_t currentRegisters[numRegisters];    // Current copies of programmed registers.
 
 
 const int szChunk = 32;
@@ -53,6 +75,7 @@ void setup() {
 
 
 void loop() {
+  int addr;
   if (Serial.available() > 0) {
     commandChar = Serial.read();
     switch(commandChar) {
@@ -62,9 +85,10 @@ void loop() {
         chunkIndex = numChunks;
         break;
       case 'r':    // Program MAX2871 to a new output frequency
-        Serial.readBytes(spiBuff, numBytesInReg);
-        writeToVCO(spiBuff, numBytesInReg);
-        updateCurrentRegisterValue(spiBuff[0]);  // Sending byte[0] so we can glean the register address
+        Serial.readBytes(bytePtrSpiBuff, numBytesInReg); // Get and buffer 4 bytes from the PC.
+        spiWrite(bytePtrSpiBuff, numBytesInReg);       // Write 4 bytes to a register in the MAX2871.
+        addr = spiBuff & 0x7;              // Return the register address from the 32 bit word.
+        currentRegisters[addr] = spiBuff;  // Always remember the state of the chip's registers.
         break;
       case 'l':                   // Turn off built-in LED
         digitalWrite(LED_BUILTIN, LOW);
@@ -79,7 +103,7 @@ void loop() {
         digitalWrite(RF_En, HIGH);
         break;
       case 'F':
-        // Get target frequency in Hz (because binary) from PC.
+        // Get target frequency in Hz because it makes conversion to binary much easier.
         // IMPORTANT: 6-decimal places or get rounding errors.
         Serial.readBytes(frequencyInHz, 3);
         frequencyToRegisterValues(frequencyInHz);
@@ -97,28 +121,11 @@ void loop() {
    * as it stays above 0 the next chunk will be created and sent.
    */
   if (chunkIndex) {
-    simRF();          // Fill 
-    writeToHost();
+    simRF();          // Create some simulated RF noise and signals
+    writeToHost();    // Send the simulated data to the PC for plotting
   }
 }
 
-/* Several features of the MAX chip can be accessed by manipulating select bits in the 
- * registers. But only the registers that change have to be sent again. That means if 
- * we want to turn a feature on, then off, we can change one (or several) bits in our 
- * register and just update that one. But each register holds other configuration 
- * options besides the ones we want. This lets us retain those other bits each time we 
- * change ours.
- */
-void updateCurrentRegisterValue(byte addr) {
-  addr &= 0x07;                                 // least 3 bits contain the register address
-  for (int i=0; i<numBytesInReg; i++) {
-    currentRegisterValue[addr][i] = spiBuff[i];  // Remember the currently programmed values
-  }
-}
-
-void readFromVCO() {
-  // pass
-}
 
 /* Bits MUX[3:0] set the MUX pin.
  *  MUX[3] is bit 18 in reg5 and is named MUX MSB, 
@@ -141,10 +148,10 @@ void readFromVCO() {
  *  
  *  To be able to read register 6 (aka. mode 1100):
  *  1) Set the MUX MODE by setting reg5 mux msb and reg2 MUX Configuration to 1100. 
- *  2) writeToVCO(spiBuffReg5, numBytesInReg);   // Reg 5 takes 32 clocks
- *  3) writeToVCO(spiBuffReg2, numBytesInReg);   // Reg 2 takes 32 clocks
+ *  2) spiWrite(bytePtrSpiBuffReg5, numBytesInReg);   // Reg 5 takes 32 clocks
+ *  3) spiWrite(bytePtrSpiBuffReg2, numBytesInReg);   // Reg 2 takes 32 clocks
  *  4) Set LE low
- *  5) writeToVCO(0x00_00_00_06, numBytesInReg); // Reg 6 takes 32 clocks
+ *  5) spiWrite(0x00_00_00_06, numBytesInReg); // Reg 6 takes 32 clocks
  *  6) Set LE High  // Reg 6 gets programmed
       digitalWrite(latchPin, HIGH);
     
@@ -155,8 +162,6 @@ void readFromVCO() {
  */
 void muxPinMode(int mode) {
   
-//  currentRegisterValue[numRegisters][numBytesInReg];
-
   byte reg5[numBytesInReg];
   byte reg2[numBytesInReg];
 
@@ -167,12 +172,12 @@ void muxPinMode(int mode) {
   }
 
   bitWrite(reg5[2], 2, bitRead(mode, 3));   // MUX MODE bit 3 is in byte2 of register 5
-  writeToVCO(reg5, numBytesInReg);
+  spiWrite(reg5, numBytesInReg);
 
   bitWrite(reg2[3], 4, bitRead(mode, 2));   // MUX MODE bit 2 is in byte3 of register 2
   bitWrite(reg2[3], 3, bitRead(mode, 1));   // MUX MODE bit 1 is in byte3 of register 2
   bitWrite(reg2[3], 2, bitRead(mode, 0));   // MUX MODE bit 0 is in byte3 of register 2
-  writeToVCO(reg2, numBytesInReg);
+  spiWrite(reg2, numBytesInReg);
 
   Serial.print("reg5 = ");
   Serial.print  (reg5[3], BIN);
@@ -180,21 +185,22 @@ void muxPinMode(int mode) {
   Serial.print  (reg5[1], BIN);
   Serial.println(reg5[0], BIN);
   for (int i=0; i<numBytesInReg; i++) {
-    spiBuff[i] = reg5[i];
+    bytePtrSpiBuff[i] = reg5[i];
   }
-  Serial.print("spiBuff = ");
-  Serial.print(spiBuff[2], BIN);
-  Serial.print(spiBuff[1], BIN);
-  Serial.println(spiBuff[0], BIN);
+  Serial.print("bytePtrSpiBuff = ");
+  Serial.print(bytePtrSpiBuff[2], BIN);
+  Serial.print(bytePtrSpiBuff[1], BIN);
+  Serial.println(bytePtrSpiBuff[0], BIN);
 }
 
 
 /* Time to program the MAX2871 chip to make it do what you want.
  *  This is basically a software SPI to the max chip.
 */
-void writeToVCO(byte *selectedRegister, unsigned int numBytesToWrite) {
+void spiWrite(byte *selectedRegister, unsigned int numBytesToWrite) {
   digitalWrite(latchPin, LOW);
 
+  // Write buffered serial data to SPI bus (MAX2871 registers)
   for (int j=0; j<numBytesToWrite; j++) {
     shiftOut(dataPin, clockPin, MSBFIRST, selectedRegister[j]);
   }
@@ -218,7 +224,6 @@ void writeToHost() {
   if(Serial.availableForWrite() > 0) {
     Serial.write(chunk, szChunk);
   }
-
   /* Send the End-Of-Stream marker 0xFF/0xFF after all the other chunks. It's
    * a double byte of 0xFF because the A/D uses less than 16 bits. That means
    * the full-scale value of the A/D (0xFF/0xC0) is less than the EOS marker.

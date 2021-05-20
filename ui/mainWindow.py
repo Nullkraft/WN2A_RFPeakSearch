@@ -5,7 +5,7 @@ from PyQt5.QtCore import pyqtSlot, QObject, QThread, pyqtSignal  #  , QObject
 from PyQt5.QtWidgets import QMainWindow
 import sys
 import math
-#import time
+import time
 import pyqtgraph as pg
 import numpy as np
 
@@ -87,6 +87,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_btnSendRegisters_clicked(self):
         if sp.ser.is_open:
             freq = self.floatStartMHz.value()
+            if freq < 23.5:
+                freq = 23.5
+            elif freq > 6000:
+                freq = 6000
             sa.write_registers(freq, self.referenceClock, self.initialized)
             self.initialized = True
 
@@ -275,10 +279,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_line_edit_cmd_returnPressed(self):
-        command = self.line_edit_cmd.text()
+        command = self.line_edit_cmd.text()     # letter 'z' for read register 6
         _cmd = command.encode()
         if sp.ser.is_open:
+            reg6 = bytearray()                  # create an empty byte array
             sp.ser.write(_cmd)
+            time.sleep(0.1)                     # give the Arduino some time to send the data
+            bytesToRead = sp.ser.in_waiting
+            reg6 += sp.ser.read(bytesToRead)    # collect 4 bytes of data from the Arduino
+            print(name, line(), ": register 6 =", list(reg6))
         else:
             print(name, line(), 'Open the port first.')
 

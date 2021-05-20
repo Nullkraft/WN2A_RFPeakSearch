@@ -112,6 +112,15 @@ void loop() {
         hwState();
         muxPinMode(MUX_READ);
         break;
+      case 'z':
+        byte reg6cmd[] = {0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xE};
+        spiWrite(reg6cmd, 4);       // Write 4 bytes to register 6. Now we can read reg6 back.
+        byte reg6data[4];
+        spiRead(reg6data);
+        if(Serial.availableForWrite() > 0) {
+          Serial.write(reg6data, 4);
+        }
+        break;
       default:
         break;
     }
@@ -206,6 +215,19 @@ void spiWrite(byte *selectedRegister, unsigned int numBytesToWrite) {
   }
   digitalWrite(latchPin, HIGH);
 }
+
+
+void spiRead(byte* reg6byte) {
+  byte reg6cmd[] = {0xFF, 0xFF, 0xFF, 0xFE};  // register 6 'read me' command
+  spiWrite(reg6cmd, 4);
+  // Now one extra clock as per spec-sheet
+  digitalWrite(clockPin, HIGH);
+  digitalWrite(clockPin, LOW);
+  for (int i=0; i<4; i++) {
+    reg6byte[i] = shiftIn(muxPin, clockPin, MSBFIRST);
+  }
+}
+
 
 
 /* Given a frequency generate the register values for the MAX2871

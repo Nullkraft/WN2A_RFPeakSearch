@@ -125,7 +125,7 @@ class Ui_MainWindow(object):
         self.numPlotFloor = QtWidgets.QSpinBox(self.groupBox_3)
         self.numPlotFloor.setMinimum(-200)
         self.numPlotFloor.setMaximum(30)
-        self.numPlotFloor.setProperty("value", -100)
+        self.numPlotFloor.setProperty("value", -90)
         self.numPlotFloor.setObjectName("numPlotFloor")
         self.gridLayout_2.addWidget(self.numPlotFloor, 7, 0, 1, 1)
         self.chkEnableRFOut = QtWidgets.QCheckBox(self.groupBox_3)

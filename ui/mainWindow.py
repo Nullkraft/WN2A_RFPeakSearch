@@ -66,7 +66,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super().__init__()
         pg.setConfigOptions(useOpenGL=True)
         self.setupUi(self)  # Must come before self.plot[]
-        self.graphWidget.setYRange(-100, -40)
+        self.graphWidget.setYRange(-90, -40)
         self.dataLine = self.graphWidget.plot()
       #
         self.referenceClock = 60

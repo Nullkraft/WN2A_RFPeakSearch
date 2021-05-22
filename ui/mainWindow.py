@@ -114,8 +114,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.thread.finished.connect(lambda: self.btnTrigger.setEnabled(True))
         else:
             print('')
-            print('     You must first open the serial port.')
-            print('     You can do so by selecting a Serial port AND speed.')
+            print('     You have to open the serial port.')
+            print('     You must select both a Serial port AND speed.')
 
     @pyqtSlot(str)
     def on_cbxSerialPortSelection_activated(self, selected_port):
@@ -139,18 +139,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         return self.referenceClock
 
+    # The amplitudeData was collected as a bunch of linear 16-bit A/D values which we want
+    # to convert to decibels.
     def showAmplData(self, amplBytes):
-        old_word = 0.1
-        self.amplitudeData = []    # Storage for Amplitude values after conversion from bytes.
-        nBytes = len(amplBytes) - 2   # Serial bytes received minus the two end-of-record bytes.
+        self.amplitudeData = []       # Declare amplitude storage that will allow appending
+        nBytes = len(amplBytes) - 2   # Don't want to convert the two end-of-record bytes!
+        # Combine 2-bytes into a single 16-bit value because serial
+        # reads deliver each data point as as two 8-bit values.
         for x in range(0, nBytes, 2):
-            # Ccombine serial MSB & LSB
             ampl_word = (amplBytes[x+1] << 8) | amplBytes[x]
-            # Convert RF Amplitude to dBV.
-            if ampl_word != 0:
-                old_word = ampl_word
             if ampl_word == 0:
-                ampl_word = old_word
+                ampl_word = 1
             amplitude = -20*math.log10(ampl_word)
             # Store converted RF Amplitude dB's
             self.amplitudeData.append(amplitude)
@@ -279,7 +278,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_line_edit_cmd_returnPressed(self):
-        command = self.line_edit_cmd.text()     # letter 'z' for read register 6
+        command = self.line_edit_cmd.text()     # Try letter 'z' for read register 6
         _cmd = command.encode()
         if sp.ser.is_open:
             reg6 = bytearray()                  # create an empty byte array
@@ -287,7 +286,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             time.sleep(0.1)                     # give the Arduino some time to send the data
             bytesToRead = sp.ser.in_waiting
             reg6 += sp.ser.read(bytesToRead)    # collect 4 bytes of data from the Arduino
-            print(name, line(), ": register 6 =", list(reg6))
         else:
             print(name, line(), 'Open the port first.')
 

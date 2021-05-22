@@ -80,7 +80,7 @@ void loop() {
     commandChar = Serial.read();
     switch(commandChar) {
       case '1': case '2': case '3': case '4': case '5':  case '6':
-        numBlocks = commandChar - '0';       // byte numBlocks = atoi(commandChar);
+        numBlocks = commandChar - '0';       // Same as: atoi(commandChar);
         numChunks = numBlocks * 512/szChunk;
         chunkIndex = numChunks;
         break;
@@ -131,7 +131,7 @@ void loop() {
    */
   if (chunkIndex) {
     simRF();          // Create some simulated RF noise and signals
-    writeToHost();    // Send the simulated data to the PC for plotting
+    hostWrite();      // Send the simulated data to the PC for plotting
   }
 }
 
@@ -239,17 +239,16 @@ void frequencyToRegisterValues(int frequencyInHz) {
 }
 
 
-/*
- * You must fill the chunk array with data before calling this function.
+/* You must fill the chunk array with data before calling this function.
+ *
+ * Send the End-Of-Stream marker 0xFF/0xFF after all the other chunks. It's
+ * a double byte of 0xFF because the A/D uses less than 16 bits. That means
+ * the full-scale value of the A/D (0xFF/0xC0) is less than the EOS marker.
  */
-void writeToHost() {
+void hostWrite() {
   if(Serial.availableForWrite() > 0) {
     Serial.write(chunk, szChunk);
   }
-  /* Send the End-Of-Stream marker 0xFF/0xFF after all the other chunks. It's
-   * a double byte of 0xFF because the A/D uses less than 16 bits. That means
-   * the full-scale value of the A/D (0xFF/0xC0) is less than the EOS marker.
-   */
   if (chunkIndex == 0) {
     Serial.write(EOS);
     Serial.write(EOS);
@@ -268,24 +267,22 @@ void simRF() {
 
   unsigned int i = numChunks - chunkIndex;
   unsigned int index;
-  unsigned int spur = 255; //(numChunks * szChunk) / 2;
+  unsigned int spur = (numChunks * szChunk) / 2;
 
   chunkIndex--;
   
   // Fill a buffer with szChunk number of bytes.
   for(int j=0; j<szChunk; j+=2) {
-    rfNoise = random(analogRead(A0));
-    rfNoise = rfNoise<<4;             // Use top 12 bits of RF amplitude value
+    rfNoise = random(15000, 25000);     // Return values that sort of look like a noise-floor
     
-    index = (i*szChunk+j)>>1;         // Convert 8bit index into a 16bit index
+    index = (i*szChunk+j)>>1;           // Accessing every 2-bytes as a single 16-bits
 
-    if(index == random(spur)) {       // Create a random spur
-      rfNoise = random(250, 3000);    // Randomly select an amplitude for this spur
-      rfNoise = rfNoise<<4;
+    if(index == random(spur)) {         // Create a random spur
+      rfNoise = random(2500, 10000);    // Randomly select an amplitude for this spur
     }
 
-    if(index==100) { rfNoise = 250; }      // Create the fundamental
-    if(index==200) { rfNoise = 250<<4; }   // Create the harmonic
+    if(index==100) { rfNoise = random(150, 250); }    // Create the fundamental
+    if(index==200) { rfNoise = random(1250, 1750); }  // Create the harmonic
 
     chunk[j] = noiseByte[0];      // Buffer HIGH Byte for rfNoise
     chunk[j+1] = noiseByte[1];    // Buffer LOW Byte for rfNoise
@@ -297,7 +294,7 @@ void hwState() {
   // Report back the state of RF_En.
   if(Serial.availableForWrite() > 0) {
     byte enable = digitalRead(RF_En);
-    int mux_value = analogRead(A0);
+    int mux_value = analogRead(muxPin);
     Serial.write(enable);
   }
 }

@@ -136,15 +136,13 @@ def Sweep():
 
 
 
-# Sort the amplitudeData array 'indexes' from highest to lowest amplitude.
+# Find the highest signal amplitudes in a spectrum plot.
 def peakSearch(amplitudeData, numPeaks):
-    amp = np.asarray(amplitudeData)         #
-    idx = amp.argsort()[::-1][:numPeaks]    # New amplitude index array sorted by descending amplitude
-    idx = np.resize(idx, (numPeaks, 1))     # Truncate array to number of desired peak markers
-    idx = list(map(int, idx))               # pyqtgraph.marker(s) requires a list of integers
-    return(idx)                             # Return list of descending amplitude indexes
-
-# End function peakSearch
+    # Convert amplitudeData to a numpy.array so we can use argsort.
+    amp = np.asarray(amplitudeData)
+    # >>> amp(idx[0]) <<< returns highest value in amp and so on in descending order.
+    idx = amp.argsort()[::-1][:numPeaks]
+    return(idx)
 
 
 

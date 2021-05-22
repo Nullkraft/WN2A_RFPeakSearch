@@ -126,7 +126,8 @@ def set_lock_detect(checked):
     if checked == True:
         dataRow = lockDetectOn
     else:
-        dataRow = lockDetectOff
+#        dataRow = lockDetectOff
+        dataRow = readReg6
 
 
 def Sweep():
@@ -135,8 +136,7 @@ def Sweep():
 
 
 
-# By ordering just the amplitudeData array indexes the results can be used
-# to position as many markers as you would like from highest to lowest peaks.
+# Sort the amplitudeData array 'indexes' from highest to lowest amplitude.
 def peakSearch(amplitudeData, numPeaks):
     amp = np.asarray(amplitudeData)         #
     idx = amp.argsort()[::-1][:numPeaks]    # New amplitude index array sorted by descending amplitude

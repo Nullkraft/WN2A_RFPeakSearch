@@ -19,9 +19,10 @@ import spectrumAnalyzer as sa
 import serial_port as sp
 import command_processor as cp
 
-# Utility to simplify print debugging. ycecream is a lot better, though.
+# Utility to simplify print debugging.
 line = lambda : sys._getframe(1).f_lineno
 name = __name__
+
 
 
 # serialWorker is for receiving large amounts of data of a known size from the Arduino.

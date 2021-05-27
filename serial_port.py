@@ -39,10 +39,6 @@ def get_speed():
 def get_port():
     return _port
 
-def set_serial_port(selected_port):
-    global ser
-    global _port
-
 def list_os_ports():
     com_list = []
     ports = list_ports.comports()

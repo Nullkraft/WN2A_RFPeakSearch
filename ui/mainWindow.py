@@ -17,7 +17,7 @@ from .Ui_mainWindow import Ui_MainWindow
 # Including setting up the serial port.
 import spectrumAnalyzer as sa
 import serial_port as sp
-import command_processor as cp
+import command_processor as cmd_proc
 
 # Utility to simplify print debugging.
 line = lambda : sys._getframe(1).f_lineno
@@ -293,19 +293,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(bool)
     def on_chkEnableRFOut_toggled(self, checked):
         if checked:
-            cp.enable_rf_out()
+            cmd_proc.enable_rf_out()
         else:
-            cp.disable_rf_out()
-        response = cp.get_hw_status()
-        print(name, line(), 'RF enable status =', response)
+            cmd_proc.disable_rf_out()
+        print(name, line(), 'RF enable status =', cmd_proc.get_hw_status())
 
 
     @pyqtSlot(bool)
     def on_chkArduinoLED_toggled(self, checked):
         if checked:
-            cp.turn_Arduino_LED_on()
+            cmd_proc.turn_Arduino_LED_on()
         else:
-            cp.turn_Arduino_LED_off()
+            cmd_proc.turn_Arduino_LED_off()
 
     @pyqtSlot(bool)
     def on_chkLockDetect_clicked(self, checked):

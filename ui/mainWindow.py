@@ -121,10 +121,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(str)
     def on_cbxSerialPortSelection_activated(self, selected_port):
         sp.set_port(selected_port)
-        ser_conf_file = '/home/mark/.wn2a/serial.conf'
-        serial_config = open(ser_conf_file, 'r')
-        serial_settings = serial_config.read()
-        print(name, line(), ": serial settings", serial_settings)
 
     @pyqtSlot(str)
     def on_cbxSerialSpeedSelection_activated(self, speed_str):
@@ -156,12 +152,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if ampl_word == 0:
                 ampl_word = 1
             amplitude = -20*math.log10(ampl_word)
-            # Converted RF Amplitude dB's
+            # Store converted RF Amplitude dB's
             self.amplitudeData.append(amplitude)
         stepSize = (self.floatStopMHz.value() - self.floatStartMHz.value()) / len(self.amplitudeData)
-        # freq_range
-        self.freq_range = np.arange(self.floatStartMHz.value(), self.floatStopMHz.value(), stepSize)
-        self.dataLine.setData(self.freq_range, self.amplitudeData, pen=(155,155,255))
+        self.freqRange = np.arange(self.floatStartMHz.value(), self.floatStopMHz.value(), stepSize)
+        self.dataLine.setData(self.freqRange, self.amplitudeData, pen=(155,155,255))
 
     @pyqtSlot()
     def on_btnPeakSearch_clicked(self):
@@ -186,16 +181,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Create and add Peak Markers to the graph
         for i in range(self.numPeakMarkers.value()):
             self.marker[i] = pg.ArrowItem(angle=-90, tipAngle=40, tailWidth=10, pen={'color': 'w', 'width': 1})
-            frequency = self.freq_range[idx[i]]
+            frequency = self.freqRange[idx[i]]
             amplitude = self.amplitudeData[idx[i]]
             self.marker[i].setPos(frequency, amplitude)  # x-axis = frequency, y-axis = amplitude
-            frequency_text = str('%.5f' % self.freq_range[idx[i]])
+            frequency_text = str('%.5f' % self.freqRange[idx[i]])
             amplitude_text = str('%.2f' % self.amplitudeData[idx[i]])
             markerLabel = frequency_text + ' MHz\n' + amplitude_text + ' dBV'
             self.text[i] = pg.TextItem(markerLabel, anchor = (0.5, 1.5), border = 'w', fill = (0, 0, 255, 100))
             self.graphWidget.addItem(self.marker[i])
             self.graphWidget.addItem(self.text[i])
-            frequency_pos = self.freq_range[idx[i]]
+            frequency_pos = self.freqRange[idx[i]]
             amplitude_pos = self.amplitudeData[idx[i]]
             self.text[i].setPos(frequency_pos, amplitude_pos)
 
@@ -301,6 +296,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             cp.enable_rf_out()
         else:
             cp.disable_rf_out()
+        response = cp.get_hw_status()
+        print(name, line(), 'RF enable status =', response)
 
 
     @pyqtSlot(bool)

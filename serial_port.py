@@ -15,9 +15,8 @@ _baud = None     #
 _port = None
 
 # Provide a list of baudrates to populate the gui drop down.
-# It is sliced so that the lowest speed is at 9600 baud.
 def get_os_baudrates():
-    return serial.Serial.BAUDRATES[12:]
+    return serial.Serial.BAUDRATES[12:] # Slice off anything slower than 9600
 
 def set_speed(speed):
     global ser

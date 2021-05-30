@@ -79,7 +79,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         speeds = sp.get_os_baudrates()
         for x in speeds:
             self.cbxSerialSpeedSelection.addItem(str(x), x)
-        sp.port_open()  # Open the serial port with saved settings.
+        sp.port_open()  # Open the serial port using the last settings we had.
 
     # SendRegisters() calls the Spectrum Analyzer code to generate new
     # register values for programming the MAX2871 to set a new frequency.
@@ -123,13 +123,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_cbxSerialPortSelection_activated(self, selected_port):
         sp.set_port(selected_port)
 
+    @pyqtSlot()
+    def on_btnRefreshPortsList_clicked(self):
+        for x in range(10):
+            self.cbxSerialPortSelection.removeItem(0)
+        ports = sp.list_os_ports()
+        self.cbxSerialPortSelection.addItems(ports)
+
     @pyqtSlot(str)
     def on_cbxSerialSpeedSelection_activated(self, speed_str):
         sp.set_speed(speed_str)
 
     @pyqtSlot()
     def on_btn_reinitialize_clicked(self):
-        ''' Delete Me - This is only useful for development '''
+        ''' Delete Me - This is only useful for development & testing '''
         self.initialized = False
 
     @pyqtSlot(int)

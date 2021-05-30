@@ -68,7 +68,6 @@ def port_open():
     port_config = read_serial_config()  # Get the port we want from the config file.
     active_ports = list_os_ports()      # List all the serial ports on this system.
     if port_config[0] in active_ports:  # Find out if the port we want is actually alive.
-        print(name, line(), f': {_port} was found in the list {active_ports}')
         try:
             ser_port = serial.Serial(_port, _baud, timeout=100/int(_baud))
         except OSError as e:

@@ -26,7 +26,7 @@ def set_speed(speed):
     read_serial_config()    # Preset _baud and _port from config file
     _baud = speed           # Set a new _baud rate
     write_serial_config(_baud, _port)
-    _open()
+    port_open()
 
 def set_port(selected_port):
     global ser
@@ -34,7 +34,7 @@ def set_port(selected_port):
     read_serial_config()    # Preset _baud and _port from config file
     _port = selected_port   # Set a new _port
     write_serial_config(_baud, _port)
-    _open()
+    port_open()
 
 def get_speed():
     return _baud
@@ -49,7 +49,7 @@ def list_os_ports():
         com_list.append(port.device)
     return com_list
 
-def _open():
+def port_open():
     global ser
     ser_port = None
     read_serial_config()

@@ -79,6 +79,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         speeds = sp.get_os_baudrates()
         for x in speeds:
             self.cbxSerialSpeedSelection.addItem(str(x), x)
+        sp._open()  # Open the serial port with saved settings.
 
     # SendRegisters() calls the Spectrum Analyzer code to generate new
     # register values for programming the MAX2871 to set a new frequency.

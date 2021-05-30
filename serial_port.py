@@ -16,31 +16,38 @@ ser = serial.Serial()      # Object that can be shared across source files.
 _baud = None     #
 _port = None
 
+
 # Provide a list of baudrates to populate the gui drop down.
 def get_os_baudrates():
     return serial.Serial.BAUDRATES[12:] # Slice off anything slower than 9600
 
+
 def set_speed(speed):
-    global ser
     global _baud
     read_serial_config()    # Preset _baud and _port from config file
     _baud = speed           # Set a new _baud rate
-    write_serial_config(_baud, _port)
-    port_open()
+    _update_port()
+
 
 def set_port(selected_port):
-    global ser
     global _port
     read_serial_config()    # Preset _baud and _port from config file
     _port = selected_port   # Set a new _port
+    _update_port()
+
+
+def _update_port():
     write_serial_config(_baud, _port)
-    port_open()
+    port_open()     # fkn dependency! port_open() *must* come after write_serial_config()
+
 
 def get_speed():
     return _baud
 
+
 def get_port():
     return _port
+
 
 def list_os_ports():
     com_list = []
@@ -49,62 +56,70 @@ def list_os_ports():
         com_list.append(port.device)
     return com_list
 
+
 def port_open():
     global ser
+    global _baud
+    global _port
     ser_port = None
-    read_serial_config()
-    try:
-        ser_port = serial.Serial(_port, _baud, timeout=100/int(_baud))
-    except OSError as e:
-        if e.errno == error.EBUSY:
-            print(name, line(), ": Another program has already opened the port. Arduino?")
-#        print(name, line(), ": OSError e =", e.errno, e.strerror)
-    except Exception as e:
-        print(name, line(), e)
-    else:
-        # Give the serial port a moment to open
-        time.sleep(0.2)
-        print(name, line(), f': {ser_port.port}, {ser_port.baudrate}')
-    finally:
-        ser = ser_port
+    file_name = 'serial.conf'
+    if not os.path.isfile(file_name):
+        write_serial_config()           # If needed create a default serial.conf
+    port_config = read_serial_config()  # Get the port we want from the config file.
+    active_ports = list_os_ports()      # List all the serial ports on this system.
+    if port_config[0] in active_ports:  # Find out if the port we want is actually alive.
+        print(name, line(), f': {_port} was found in the list {active_ports}')
+        try:
+            ser_port = serial.Serial(_port, _baud, timeout=100/int(_baud))
+        except OSError as e:
+            if e.errno == error.EBUSY:
+                print(name, line(), ": Another program has already opened the port. Arduino?")
+    #        print(name, line(), ": OSError e =", e.errno, e.strerror)
+        except TypeError:
+            print(name, line(), f': Missing or invalid key-value pair in {file_name}.')
+            write_serial_config()   # Someone messed up our serial.conf keys so create a default copy.
+        else:
+            time.sleep(0.2)        # The serial port needs a moment before calling ser_port.port, etc.
+            print(name, line(), f': {ser_port.port} opened at {ser_port.baudrate} baud.')
+        finally:
+            ser = ser_port
 
 
-def write_serial_config(speed=None, port=None):
+def write_serial_config(speed=9600, port='/dev/ttyUSB0'):
     config = configparser.ConfigParser()
-    config['DEFAULT'] = {'baud_rate': '9600', 'serial_port': '/dev/ttyUSB0'}
+    # Build the config file heirarchy and include some preset values
+    config['DEFAULT'] = {'port_speed': '9600', 'serial_port': '/dev/ttyUSB0'}
     config['Last.opened'] = {}
-
-    # Prepare the baud_rate and serial_port settings to be written to the config file.
-    if speed != None:
-        config['Last.opened']['baud_rate'] = str(speed)
-    if port != None:
-        config['Last.opened']['serial_port'] = port
+    config['Last.opened']['port_speed'] = str(speed)
+    config['Last.opened']['serial_port'] = port
 
     try:
         with open('serial.conf', 'w') as config_file:
             config.write(config_file)
     except PermissionError as err:
         print(name, line(), f': Can\'t write to the file, {err.filename}')
+    except AttributeError as err:
+        print(name, line(), f': Unable to open one of the keys in {err.filename}')
 
 
 def read_serial_config():
     global _port
     global _baud
     file_name = 'serial.conf'
-    config = configparser.ConfigParser()
-    config.read(file_name)
-
-    # Load port and speed from the serial.conf file.
-    try:
-        _port = config['Last.opened']['serial_port']
-        _baud = config['Last.opened'].getint('baud_rate')
-    except KeyError as err:
-        if os.path.isfile(file_name):
-            print(name, line(), f': The key {err} was not assigned a value.')
+    if os.path.isfile(file_name):
+        config = configparser.ConfigParser()
+        config.read(file_name)
+        # Load port and speed from the serial.conf file.
+        try:
+            _port = config['Last.opened']['serial_port']
+            _baud = config['Last.opened'].getint('port_speed')
+        except KeyError as err:
+            print(name, line(), f': Missing key {err} from {file_name}.')
         else:
-            print(name, line(), f': The file {file_name} is missing.')
+            return [_port, _baud]
+
     else:
-        return [_port, _baud]
+        print(name, line(), f': Unable to read {file_name}, file not found.')
 
 
 

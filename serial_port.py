@@ -6,11 +6,13 @@ import serial       # requires 'pip3 install pyserial'
 import time
 import errno as error
 import sys
+import configparser
+import os
 
 line = lambda : sys._getframe(1).f_lineno
 name = __name__
 
-ser = serial.Serial()      # global so it can be shared across files.
+ser = serial.Serial()      # Object that can be shared across source files.
 _baud = None     #
 _port = None
 
@@ -21,16 +23,18 @@ def get_os_baudrates():
 def set_speed(speed):
     global ser
     global _baud
-    _baud = speed
-    if get_port() != None:
-        ser = _open()
+    read_serial_config()    # Preset _baud and _port from config file
+    _baud = speed           # Set a new _baud rate
+    write_serial_config(_baud, _port)
+    _open()
 
 def set_port(selected_port):
     global ser
     global _port
-    _port = selected_port
-    if get_speed() != None:
-        ser = _open()
+    read_serial_config()    # Preset _baud and _port from config file
+    _port = selected_port   # Set a new _port
+    write_serial_config(_baud, _port)
+    _open()
 
 def get_speed():
     return _baud
@@ -46,7 +50,9 @@ def list_os_ports():
     return com_list
 
 def _open():
+    global ser
     ser_port = None
+    read_serial_config()
     try:
         ser_port = serial.Serial(_port, _baud, timeout=100/int(_baud))
     except OSError as e:
@@ -58,13 +64,55 @@ def _open():
     else:
         # Give the serial port a moment to open
         time.sleep(0.2)
-        print(name, line(), ':', ser_port.port, ser_port.baudrate)
+        print(name, line(), f': {ser_port.port}, {ser_port.baudrate}')
     finally:
-        return ser_port
+        ser = ser_port
+
+
+def write_serial_config(speed=None, port=None):
+    config = configparser.ConfigParser()
+    config['DEFAULT'] = {'baud_rate': '9600', 'serial_port': '/dev/ttyUSB0'}
+    config['Last.opened'] = {}
+
+    # Prepare the baud_rate and serial_port settings to be written to the config file.
+    if speed != None:
+        config['Last.opened']['baud_rate'] = str(speed)
+    if port != None:
+        config['Last.opened']['serial_port'] = port
+
+    try:
+        with open('serial.conf', 'w') as config_file:
+            config.write(config_file)
+    except PermissionError as err:
+        print(name, line(), f': Can\'t write to the file, {err.filename}')
+
+
+def read_serial_config():
+    global _port
+    global _baud
+    file_name = 'serial.conf'
+    config = configparser.ConfigParser()
+    config.read(file_name)
+
+    # Load port and speed from the serial.conf file.
+    try:
+        _port = config['Last.opened']['serial_port']
+        _baud = config['Last.opened'].getint('baud_rate')
+    except KeyError as err:
+        if os.path.isfile(file_name):
+            print(name, line(), f': The key {err} was not assigned a value.')
+        else:
+            print(name, line(), f': The file {file_name} is missing.')
+    else:
+        return [_port, _baud]
+
+
 
 
 if __name__ == '__main__':
     print(list_os_ports())
+
+
 
 
 

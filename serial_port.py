@@ -12,6 +12,7 @@ import os
 line = lambda : sys._getframe(1).f_lineno
 name = __name__
 
+file_name = 'serial.conf'
 ser = serial.Serial()      # Object that can be shared across source files.
 _baud = None     #
 _port = None
@@ -61,8 +62,8 @@ def port_open():
     global ser
     global _baud
     global _port
+    global file_name
     ser_port = None
-    file_name = 'serial.conf'
     if not os.path.isfile(file_name):
         write_serial_config()           # If needed create a default serial.conf
     port_config = read_serial_config()  # Get the port we want from the config file.
@@ -104,7 +105,7 @@ def write_serial_config(speed=9600, port='/dev/ttyUSB0'):
 def read_serial_config():
     global _port
     global _baud
-    file_name = 'serial.conf'
+    global file_name
     if os.path.isfile(file_name):
         config = configparser.ConfigParser()
         config.read(file_name)

@@ -38,13 +38,11 @@ def turn_Arduino_LED_off():
 
 
 def _send_command(command):
-    msg = None
-    if sp.ser.is_open:
-        sp.ser.write(command)
-        msg = '1'   # Command sent
-    else:
-        msg = '0'   # Sending failed
-    return msg
+    try:
+        if sp.ser.is_open:
+            sp.ser.write(command)
+    except:
+        print(name, line(), f': The serial port was not opened before sending the Arduino command {command}.')
 
 
 

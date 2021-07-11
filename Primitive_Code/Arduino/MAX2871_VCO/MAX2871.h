@@ -3,8 +3,8 @@
  * by Maxim Integrated.
  */
 
-#ifndef __MAX2871.H__
-#define __MAX2871.H__
+#ifndef __MAX2871_H__
+#define __MAX2871_H__
 
 /*
  * MUX Configuration bits for setting the MUX MODE.
@@ -34,8 +34,8 @@
 class MAX2871_VCO {
 public:
 
-	MAX2871();
-	MAX2871(float initial_frequency);
+	void MAX2871();
+	void MAX2871(float initial_frequency);
 
 	char* begin();
   void  begin(float initial_frequency);

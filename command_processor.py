@@ -13,11 +13,17 @@ Arduino_LED_off = b'l'
 status_request = b'S'
 
 
+# *********  FIX ME!  ***************
+# * Output does not reflect the hardware status and in fact
+# * it is reading the reg5 string from some random memory
+# * address.
+# ***********************************
 # Currently will only work with RF_En pin status.
 # Add the Arduino LED pin status to improve usefulness
 def get_hw_status():
     _send_command(status_request)
-    rf_out_status = sp.ser.read(1)
+#    rf_out_status = sp.ser.read(1)
+    rf_out_status = sp.ser.read(4)      # This
     return rf_out_status
 
 

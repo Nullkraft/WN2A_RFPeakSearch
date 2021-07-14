@@ -4,7 +4,6 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot, QObject, QThread, pyqtSignal  #  , QObject
 from PyQt5.QtWidgets import QMainWindow
 import sys
-import math
 import time
 import pyqtgraph as pg
 import numpy as np
@@ -71,7 +70,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.dataLine = self.graphWidget.plot()
       #
         self.referenceClock = 60
-        self.initialized = False
+        self.initialized = False        # MAX2871 chip will need to be initialized
       # Populate the serial port selection list
         ports = sp.list_os_ports()
         self.cbxSerialPortSelection.addItems(ports)
@@ -91,7 +90,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             freq = self.floatStartMHz.value()
             if freq < 23.5:
                 freq = 23.5
-            elif freq > 6000:
+            if freq > 6000:
                 freq = 6000
             sa.write_registers(freq, self.referenceClock, self.initialized)
             self.initialized = True
@@ -148,19 +147,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         return self.referenceClock
 
-    # The amplitudeData was collected as a bunch of linear 16-bit A/D values which we want
+    # amplitudeData was collected as a bunch of linear 16-bit A/D values which we want
     # to convert to decibels.
     def showAmplData(self, amplBytes):
         self.amplitudeData = []       # Declare amplitude storage that will allow appending
-        nBytes = len(amplBytes) - 2   # Don't want to convert the two end-of-record bytes!
+#        nBytes = len(amplBytes) - 2   # Don't want to convert the two end-of-record bytes!
+        nBytes = len(amplBytes)
         # Combine 2-bytes into a single 16-bit value because serial
         # reads deliver each data point as as two 8-bit values.
         for x in range(0, nBytes, 2):
-            ampl_word = (amplBytes[x+1] << 8) | amplBytes[x]
-            if ampl_word == 0:
-                ampl_word = 1
-            amplitude = -20*math.log10(ampl_word)
-            # Store converted RF Amplitude dB's
+            amplitude = (amplBytes[x] << 8) | amplBytes[x+1]
             self.amplitudeData.append(amplitude)
         stepSize = (self.floatStopMHz.value() - self.floatStartMHz.value()) / len(self.amplitudeData)
         self.freqRange = np.arange(self.floatStartMHz.value(), self.floatStopMHz.value(), stepSize)
@@ -260,10 +256,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         raise NotImplementedError
 
     @pyqtSlot(float)
-    def on_dblStepKHz_valueChanged(self, stepFreq):
-        raise NotImplementedError
-
-    @pyqtSlot(float)
     def on_dblSpanMHz_valueChanged(self, deltaFreq):
         raise NotImplementedError
 
@@ -317,6 +309,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(bool)
     def on_chkLockDetect_clicked(self, checked):
         sa.set_lock_detect(checked)
+
+    @pyqtSlot()
+    def on_btnSweep_clicked(self):
+        ampl_data_bytes = bytearray()
+        command = self.line_edit_cmd.text()     # Try letter 'z' for read register 6
+        _cmd = command.encode()
+        start = int(self.floatStartMHz.value() * 1e6)
+        stop = int(self.floatStopMHz.value() * 1e6)
+        step = int(self.dblStepKHz.value() * 1e3)
+        steps = list(range(start, stop, step))
+        print(name, line(), f'number of data points = {len(steps)}')
+        for i, freq in enumerate(steps):
+            freqMHz = freq / 1e6
+            sa.write_registers(freqMHz, self.referenceClock, True)
+            time.sleep(0.005)        # Wait for the Arduino to program the MAX2871 registers
+            sp.ser.write(_cmd)
+            bytes_to_read = sp.ser.in_waiting
+            ampl_data_bytes += sp.ser.read(bytes_to_read)
+
+        self.showAmplData(ampl_data_bytes)
 
 # End MainWindow() class
 

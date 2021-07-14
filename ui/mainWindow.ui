@@ -507,6 +507,12 @@
          <property name="decimals">
           <number>6</number>
          </property>
+         <property name="maximum">
+          <double>9999.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>10.000000000000000</double>
+         </property>
         </widget>
        </item>
        <item row="4" column="2">
@@ -926,6 +932,13 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnSweep">
+         <property name="text">
+          <string>Sweep</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QPushButton" name="btnSendRegisters">

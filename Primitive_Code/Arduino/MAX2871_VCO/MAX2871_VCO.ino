@@ -13,11 +13,13 @@
 #define EOS             0xFF  // 0xFF is reserved for End Of Serial transmission (EOS)
 
 // Arduino pin selections
-int latchPin = A3;  // MAX2871 LE
-int dataPin  = A2;  // MAX2871 DATA
-int clockPin = A1;  // MAX2871 SCLK
-int muxPin   = A0;  // MAX2871 MUX (Multiplexed I/O)
-int RF_En    =  5;  // MAX2871 RF_EN
+int latchPin    =  A3;  // MAX2871 LE
+int dataPin     =  A2;  // MAX2871 DATA
+int clockPin    =  A1;  // MAX2871 SCLK
+int muxPin      =  A0;  // MAX2871 MUX (Multiplexed I/O)
+int RF_En       =   5;  // MAX2871 RF_EN
+int FILTER_315  = A12;  // LogAmp from ADC
+int FILTER_45   = A15;  // LogAmp from ADC
 
 const unsigned int numRegisters = 6;    // Num programming registers for MAX2871
 const unsigned int numBytesInReg = 4;   // 32 bits in each register
@@ -66,8 +68,6 @@ byte frequencyInHz[3];
 #define DISABLE_RF_OUT      101
 #define ENABLE_RF_OUT        69
 #define GET_MAX2871_STATE    83
-#define FILTER_315          A12
-#define FILTER_45           A15
 
 
 void setup() {
@@ -88,7 +88,9 @@ void setup() {
 
 unsigned int analogValue;
 int i;
-const int avg = 5;
+const int avg = 1;
+int numDataPointsBuff;
+
 void loop() {
   int regAddr;
   if (Serial.available() > 0) {
@@ -122,14 +124,13 @@ void loop() {
         muxPinMode(MUX_READ);
         break;
       case 'z':
-        analogValue = 0;
-        for (i=0; i<avg; i++) {
-          analogValue += analogRead(FILTER_315);
-          delay(10);
-        }
-        analogValue = analogValue / avg;
-        Serial.print("analogValue = ");
-        Serial.println(analogValue);
+//        Serial.read(&numDataPointsBuff);
+//        analogValue = analogRead(FILTER_45);
+        analogValue = analogRead(FILTER_315);
+        Serial.write(analogValue >> 8);
+        Serial.write(analogValue);
+//        Serial.print("analogValue = ");
+//        Serial.println(analogValue);
 ////        byte reg6cmd[] = {0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xE};
 //        byte reg6cmd[] = {0xFF, 0xFF, 0xFF, 0xFE};
 ////        spiWrite(reg6cmd, 4);       // Write 4 bytes to register 6. Now we can read reg6 back.

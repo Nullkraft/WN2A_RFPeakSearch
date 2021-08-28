@@ -102,7 +102,7 @@ void loop() {
         chunkIndex = numChunks;
         break;
       case SET_FREQ:    // Program MAX2871 to a new output frequency
-        Serial.readBytes(bytePtrSpiBuff, numBytesInReg); // Get and buffer 4 bytes from the PC.
+        Serial.readBytes(bytePtrSpiBuff, numBytesInReg); // Buffer 4 bytes from the PC.
         spiWrite(bytePtrSpiBuff, numBytesInReg);       // Write 4 bytes to a register in the MAX2871.
         regAddr = spiBuff & 0x7;              // Return the register address from the 32 bit word.
         currentRegisters[regAddr] = spiBuff;  // Always remember the state of the chip's registers.
@@ -125,13 +125,10 @@ void loop() {
         break;
       case 'z':
 //        Serial.read(&numDataPointsBuff);
-//        analogValue = analogRead(FILTER_45);
-        analogValue = analogRead(FILTER_315);
+        analogValue = analogRead(FILTER_45);
+//        analogValue = analogRead(FILTER_315);
         Serial.write(analogValue >> 8);
         Serial.write(analogValue);
-//        Serial.print("analogValue = ");
-//        Serial.println(analogValue);
-////        byte reg6cmd[] = {0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xE};
 //        byte reg6cmd[] = {0xFF, 0xFF, 0xFF, 0xFE};
 ////        spiWrite(reg6cmd, 4);       // Write 4 bytes to register 6. Now we can read reg6 back.
 //        byte reg6data[4];

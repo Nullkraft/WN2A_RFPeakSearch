@@ -155,10 +155,10 @@ class serialWorker(QObject):
         while True:
             bytesToRead = ser.in_waiting
             self.amplDataBytes += ser.read(bytesToRead)
-            reversed_bytes = self.amplDataBytes[::-1]        # Reverse list before searching
-            array_position = reversed_bytes.find(255)        # Find the FIRST 0xFF (or 255)
-            if list(reversed_bytes[array_position:array_position+2]) == [255, 255]:     # end-of-record found
-                self.amplDataBytes = reversed_bytes[array_position:]
+            reversed_data = self.amplDataBytes[::-1]        # Reverse list before searching
+            array_position = reversed_data.find(255)        # Find the FIRST 0xFF (or 255)
+            if list(reversed_data[array_position:array_position+2]) == [255, 255]:     # end-of-record found
+                self.amplDataBytes = reversed_data[array_position:]
                 self.amplDataBytes = self.amplDataBytes[::-1]
                 break
         self.finished.emit(self.amplDataBytes)              # Return the Amplitude Array

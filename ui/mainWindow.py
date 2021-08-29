@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from PyQt5 import QtCore
-from PyQt5.QtCore import pyqtSlot, QObject, QThread, pyqtSignal  #  , QObject
+from PyQt5.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
 from PyQt5.QtWidgets import QMainWindow
 import sys
 import time
@@ -22,43 +22,6 @@ import command_processor as cmd_proc
 line = lambda : sys._getframe(1).f_lineno
 name = __name__
 
-
-
-# serialWorker is for receiving large amounts of data of a known size from the Arduino.
-class serialWorker(QObject):
-    # signals
-    finished = pyqtSignal(bytearray)
-    progress = pyqtSignal(int)
-
-    def __init__(self, numPoints, parent=None):
-        QObject.__init__(self, parent)
-        self.numDataPoints = numPoints
-
-    def run(self):
-        self.amplDataBytes = bytearray()                    # Store 8bit data from Arduino
-        command = self.__cmd(self.numDataPoints)            # Command to send to Arduino
-        sp.ser.write(command)                               # Send command to the Arduino
-        # Read response as raw bytes from the Arduino.
-        while True:
-            bytesToRead = sp.ser.in_waiting
-            self.amplDataBytes += sp.ser.read(bytesToRead)
-            reversed_bytes = self.amplDataBytes[::-1]        # Reverse list before searching
-            array_position = reversed_bytes.find(255)        # Find the FIRST 0xFF (or 255)
-            if list(reversed_bytes[array_position:array_position+2]) == [255, 255]:     # end-of-record found
-                self.amplDataBytes = reversed_bytes[array_position:]
-                self.amplDataBytes = self.amplDataBytes[::-1]
-                break
-        self.finished.emit(self.amplDataBytes)              # Return the Amplitude Array
-
-    # The Arduino will only simulate a fixed number of RF data points.
-    def __cmd(self, numPoints):
-        # The Arduino sees 1=256*16bits 2=512 3=768 4=1024 5=1280 (6 or greater)=1536
-        arduinoCmds = [b'1', b'2', b'3', b'4', b'5', b'6']
-        selection = numPoints // 256 - 1                # selection = floor(numPoints/256)-1
-        selection = 5 if selection > 5 else selection
-        return arduinoCmds[selection]
-
-# End serialWorker() class
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -103,7 +66,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if sp.ser.is_open:
             numDataPoints = self.numDataPoints.value()
             self.thread = QThread()                                 # Create a new serial thread
-            self.worker = serialWorker(numDataPoints)               # Function for reading the serial port
+            self.worker = sp.serialWorker(numDataPoints)            # Function for reading the serial port
             self.worker.moveToThread(self.thread)                   # Serial reads happen inside its own thread
             self.thread.started.connect(self.worker.run)            # Connect to signals...
             self.worker.finished.connect(self.thread.quit)

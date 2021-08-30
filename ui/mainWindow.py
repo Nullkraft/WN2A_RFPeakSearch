@@ -59,16 +59,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.initialized = True
 
 
-    # Threaded read from Arduino serial
-    # Simulation function: Substitute live data for production code.
+    # Using a separate thread to read from the Arduino serial
     @pyqtSlot()
     def on_btnTrigger_clicked(self):
         if sp.ser.is_open:
             numDataPoints = self.numDataPoints.value()
             self.thread = QThread()                                 # Create a new serial thread
-            self.worker = sp.serialWorker(numDataPoints)            # Function for reading the serial port
+            self.worker = sp.serialWorker(numDataPoints)            # Function for reading from the serial port
             self.worker.moveToThread(self.thread)                   # Serial reads happen inside its own thread
-            self.thread.started.connect(self.worker.run)            # Connect to signals...
+            self.thread.started.connect(self.worker.read_serial)    # Connect to signals...
             self.worker.finished.connect(self.thread.quit)
             self.worker.finished.connect(self.worker.deleteLater)
             self.worker.finished.connect(self.showAmplData)
@@ -225,10 +224,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(bool)
     def on_chkShowGrid_toggled(self, checked):
         self.graphWidget.showGrid(x=checked, y=checked)
-
-    @pyqtSlot()
-    def on_numDataPoints_editingFinished(self):
-        pass
 
     @pyqtSlot()
     def on_numPlotFloor_editingFinished(self):

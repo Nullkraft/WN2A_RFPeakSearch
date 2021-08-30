@@ -143,31 +143,29 @@ class serialWorker(QObject):
     finished = pyqtSignal(bytearray)
     progress = pyqtSignal(int)
 
-    def __init__(self, numPoints, parent=None):
+    def __init__(self, num_points, parent=None):
         QObject.__init__(self, parent)
-        self.numDataPoints = numPoints
+        self.end_of_record = bytearray([255, 255])        # Arduino sends 0xffff which is unused by the A2D
+        self.num_data_points = num_points
+        self.ampl_data_bytes = bytearray()                # Store 8bit data from Arduino
 
-    def run(self):
-        self.amplDataBytes = bytearray()                    # Store 8bit data from Arduino
-        command = self.__cmd(self.numDataPoints)            # Command to send to Arduino
-        ser.write(command)                               # Send command to the Arduino
-        # Read response as raw bytes from the Arduino.
+    def read_serial(self):
+        arduino_command = self.__cmd(self.num_data_points)
+        ser.write(arduino_command)
+        # Read in data points until we receive end_of_record
         while True:
-            bytesToRead = ser.in_waiting
-            self.amplDataBytes += ser.read(bytesToRead)
-            reversed_data = self.amplDataBytes[::-1]        # Reverse list before searching
-            array_position = reversed_data.find(255)        # Find the FIRST 0xFF (or 255)
-            if list(reversed_data[array_position:array_position+2]) == [255, 255]:     # end-of-record found
-                self.amplDataBytes = reversed_data[array_position:]
-                self.amplDataBytes = self.amplDataBytes[::-1]
+            self.ampl_data_bytes += ser.read(ser.in_waiting)                    # Accumulate the data points
+            array_position = self.ampl_data_bytes.find(self.end_of_record)
+            if array_position > 0:                                              # end-of-record found
+                self.ampl_data_bytes = self.ampl_data_bytes[:array_position]    # Delete extraneous data
                 break
-        self.finished.emit(self.amplDataBytes)              # Return the Amplitude Array
+        self.finished.emit(self.ampl_data_bytes)
 
     # The Arduino will only simulate a fixed number of RF data points.
-    def __cmd(self, numPoints):
+    def __cmd(self, num_points):
         # The Arduino sees 1=256*16bits 2=512 3=768 4=1024 5=1280 (6 or greater)=1536
         arduinoCmds = [b'1', b'2', b'3', b'4', b'5', b'6']
-        selection = numPoints // 256 - 1                # selection = floor(numPoints/256)-1
+        selection = num_points // 256 - 1                # selection = floor(num_points/256)-1
         selection = 5 if selection > 5 else selection
         return arduinoCmds[selection]
 

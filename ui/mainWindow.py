@@ -63,14 +63,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def on_btnTrigger_clicked(self):
         if sp.ser.is_open:
+            self.thread = QThread()                                 # Create a separate thread for serial reads
             numDataPoints = self.numDataPoints.value()
-            self.thread = QThread()                                 # Create a new serial thread
             self.worker = sp.serialWorker(numDataPoints)            # Function for reading from the serial port
             self.worker.moveToThread(self.thread)                   # Serial reads happen inside its own thread
             self.thread.started.connect(self.worker.read_serial)    # Connect to signals...
             self.worker.finished.connect(self.thread.quit)
             self.worker.finished.connect(self.worker.deleteLater)
-            self.worker.finished.connect(self.showAmplData)
+            self.worker.finished.connect(self.show_ampl_data)
             self.thread.finished.connect(self.thread.deleteLater)
             self.thread.start()                                     # After starting the thread...
             self.btnTrigger.setEnabled(False)                       # disable the Trigger button until we're done
@@ -98,7 +98,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def on_btn_reinitialize_clicked(self):
         ''' Delete Me - This is only useful for development & testing '''
-        self.initialized = False
+        command = self.line_edit_cmd.text()
+        print(name, line(), f' : You typed {command}')
 
     @pyqtSlot(int)
     def on_selectReferenceOscillator_currentIndexChanged(self, index):
@@ -111,7 +112,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     # amplitudeData was collected as a bunch of linear 16-bit A/D values which we want
     # to convert to decibels.
-    def showAmplData(self, amplBytes):
+    def show_ampl_data(self, amplBytes):
         self.amplitudeData = []       # Declare amplitude storage that will allow appending
 #        nBytes = len(amplBytes) - 2   # Don't want to convert the two end-of-record bytes!
         nBytes = len(amplBytes)
@@ -196,30 +197,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         szHeight = self.minGraphHeight.value()
         self.setMinimumSize(QtCore.QSize(szWidth, szHeight))
 
-    @pyqtSlot(bool)
-    def on_btnZeroSpan_clicked(self, checked):
-        # fb.calculateRegisterValues()
-        raise NotImplementedError
-
-    @pyqtSlot(bool)
-    def on_btnFullSpan_clicked(self, checked):
-        raise NotImplementedError
-
-    @pyqtSlot(bool)
-    def on_btnLastSpan_clicked(self, checked):
-        raise NotImplementedError
-
     @pyqtSlot()
     def on_btnExit_clicked(self):
         sys.exit()
-
-    @pyqtSlot(float)
-    def on_dblCenterMHz_valueChanged(self, centerFreq):
-        raise NotImplementedError
-
-    @pyqtSlot(float)
-    def on_dblSpanMHz_valueChanged(self, deltaFreq):
-        raise NotImplementedError
 
     @pyqtSlot(bool)
     def on_chkShowGrid_toggled(self, checked):
@@ -268,8 +248,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_chkLockDetect_clicked(self, checked):
         sa.set_lock_detect(checked)
 
+#    turn_led_off = b'\x80'  # dec 128
+#    turn_led_on = b'\xC0'   # dec 192
     @pyqtSlot()
     def on_btnSweep_clicked(self):
+#        sp.ser.write(self.turn_led_off)
+#        time.sleep(1)
+#        sp.ser.write(self.turn_led_on)
         ampl_data_bytes = bytearray()
         command = self.line_edit_cmd.text()     # Try letter 'z' for read register 6
         _cmd = command.encode()
@@ -286,7 +271,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             bytes_to_read = sp.ser.in_waiting
             ampl_data_bytes += sp.ser.read(bytes_to_read)
 
-        self.showAmplData(ampl_data_bytes)
+        self.show_ampl_data(ampl_data_bytes)
 
 # End MainWindow() class
 

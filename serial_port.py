@@ -145,7 +145,7 @@ class serialWorker(QObject):
 
     def __init__(self, num_points, parent=None):
         QObject.__init__(self, parent)
-        self.end_of_record = bytearray([255, 255])        # Arduino sends 0xffff which is unused by the A2D
+        self.end_of_record = bytearray([255, 255])        # Arduino A2D is 10 bits so we can use 0xffff
         self.num_data_points = num_points
         self.ampl_data_bytes = bytearray()                # Store 8bit data from Arduino
 

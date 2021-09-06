@@ -59,13 +59,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.initialized = True
 
 
+    def __cmd(self, num_points):
+        """
+        The Arduino will only simulate a fixed number of RF data points and
+        only sees 1=256*16bits 2=512 3=768 4=1024 5=1280 (6 or greater)=1536
+        """
+        arduinoCmds = [b'1', b'2', b'3', b'4', b'5', b'6']
+        selection = num_points // 256 - 1                # selection = floor(num_points/256)-1
+        selection = 5 if selection > 5 else selection
+        return arduinoCmds[selection]
+
+
     # Using a separate thread to read from the Arduino serial
     @pyqtSlot()
     def on_btnTrigger_clicked(self):
+        # Send a new command to the Arduino
+        num_data_points = self.numDataPoints.value()
+        arduino_command = self.__cmd(num_data_points)
         if sp.ser.is_open:
+            sp.ser.write(arduino_command)
             self.thread = QThread()                                 # Create a separate thread for serial reads
-            numDataPoints = self.numDataPoints.value()
-            self.worker = sp.serialWorker(numDataPoints)            # Function for reading from the serial port
+            self.worker = sp.serialWorker()                         # Function for reading from the serial port
             self.worker.moveToThread(self.thread)                   # Serial reads happen inside its own thread
             self.thread.started.connect(self.worker.read_serial)    # Connect to signals...
             self.worker.finished.connect(self.thread.quit)

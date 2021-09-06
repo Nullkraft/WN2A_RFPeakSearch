@@ -132,27 +132,23 @@ def read_config():
         print(name, line(), f': Unable to read {config_fname}, file not found.')
 
 
-
-
-
-
-
-# serialWorker is for receiving large amounts of data of a known size from the Arduino.
 class serialWorker(QObject):
-    # signals
+    """
+    serialWorker will receive large amounts of data of a known size from the Arduino.
+    """
+
     finished = pyqtSignal(bytearray)
     progress = pyqtSignal(int)
 
-    def __init__(self, num_points, parent=None):
+    def __init__(self, parent=None):
         QObject.__init__(self, parent)
         self.end_of_record = bytearray([255, 255])        # Arduino A2D is 10 bits so we can use 0xffff
-        self.num_data_points = num_points
         self.ampl_data_bytes = bytearray()                # Store 8bit data from Arduino
 
     def read_serial(self):
-        arduino_command = self.__cmd(self.num_data_points)
-        ser.write(arduino_command)
-        # Read in data points until we receive end_of_record
+        """
+        Read in data points until end_of_record is received
+        """
         while True:
             self.ampl_data_bytes += ser.read(ser.in_waiting)                    # Accumulate the data points
             array_position = self.ampl_data_bytes.find(self.end_of_record)
@@ -161,18 +157,7 @@ class serialWorker(QObject):
                 break
         self.finished.emit(self.ampl_data_bytes)
 
-    # The Arduino will only simulate a fixed number of RF data points.
-    def __cmd(self, num_points):
-        # The Arduino sees 1=256*16bits 2=512 3=768 4=1024 5=1280 (6 or greater)=1536
-        arduinoCmds = [b'1', b'2', b'3', b'4', b'5', b'6']
-        selection = num_points // 256 - 1                # selection = floor(num_points/256)-1
-        selection = 5 if selection > 5 else selection
-        return arduinoCmds[selection]
-
 # End serialWorker() class
-
-
-
 
 
 

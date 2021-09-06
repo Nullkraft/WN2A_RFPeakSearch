@@ -70,14 +70,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return arduinoCmds[selection]
 
 
-    # Using a separate thread to read from the Arduino serial
     @pyqtSlot()
     def on_btnTrigger_clicked(self):
-        # Send a new command to the Arduino
+        """
+        Tell the Arduino how many data points we want to read from the A2D
+        then read them back in a separate thread so we don't block the gui.
+        """
         num_data_points = self.numDataPoints.value()
         arduino_command = self.__cmd(num_data_points)
         if sp.ser.is_open:
-            sp.ser.write(arduino_command)
+            sp.ser.write(arduino_command)                           # Send a new command to the Arduino
             self.thread = QThread()                                 # Create a separate thread for serial reads
             self.worker = sp.serialWorker()                         # Function for reading from the serial port
             self.worker.moveToThread(self.thread)                   # Serial reads happen inside its own thread
@@ -93,6 +95,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print('')
             print('     You have to open the serial port.')
             print('     You must select both a Serial port AND speed.')
+
 
     @pyqtSlot(str)
     def on_cbxSerialPortSelection_activated(self, selected_port):
@@ -128,7 +131,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # to convert to decibels.
     def show_ampl_data(self, amplBytes):
         self.amplitudeData = []       # Declare amplitude storage that will allow appending
-#        nBytes = len(amplBytes) - 2   # Don't want to convert the two end-of-record bytes!
         nBytes = len(amplBytes)
         # Combine 2-bytes into a single 16-bit value because serial
         # reads deliver each data point as as two 8-bit values.

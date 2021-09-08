@@ -26,7 +26,6 @@ class simple_serial(QObject):
     """
 
     default_serial_speed = '9600'
-#    default_serial_port = None
     # Set the default serial port name based on the user's platform.
     if sys.platform == "linux" or sys.platform == "linux2":
         default_serial_port = '/dev/ttyUSB0'

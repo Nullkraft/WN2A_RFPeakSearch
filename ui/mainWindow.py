@@ -10,13 +10,13 @@ import numpy as np
 
 from .Ui_mainWindow import Ui_MainWindow
 
-
-
 # Functions specific to the operation of the WN2A Spectrum Analyzer hardware, hopefully.
 # Including setting up the serial port.
 import spectrumAnalyzer as sa
 import serial_port as sp
 import command_processor as cmd_proc
+
+ss = sp.simple_serial()
 
 # Utility to simplify print debugging.
 line = lambda : sys._getframe(1).f_lineno
@@ -35,13 +35,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.referenceClock = 60
         self.initialized = False        # MAX2871 chip will need to be initialized
       # Populate the serial port selection list
-        ports = sp.list_os_ports()
+        ports = ss.get_os_ports()
         self.cbxSerialPortSelection.addItems(ports)
       # Populate the Serial Speed selection list
-        speeds = sp.get_os_baudrates()
+#        speeds = ss.get_os_baudrates()
+        speeds = ss.get_os_baudrates()
         for x in speeds:
             self.cbxSerialSpeedSelection.addItem(str(x), x)
-        sp.port_open()  # Open the serial port using the last settings we had.
+        ss.port_open()  # Checks to see if it can reopen the last port that was used.
 
     # SendRegisters() calls the Spectrum Analyzer code to generate new
     # register values for programming the MAX2871 to set a new frequency.
@@ -81,7 +82,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if sp.ser.is_open:
             sp.ser.write(arduino_command)                           # Send a new command to the Arduino
             self.thread = QThread()                                 # Create a separate thread for serial reads
-            self.worker = sp.serialWorker()                         # Function for reading from the serial port
+            self.worker = sp.simple_serial()                        # Function for reading from the serial port
             self.worker.moveToThread(self.thread)                   # Serial reads happen inside its own thread
             self.thread.started.connect(self.worker.read_serial)    # Connect to signals...
             self.worker.finished.connect(self.thread.quit)
@@ -99,18 +100,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot(str)
     def on_cbxSerialPortSelection_activated(self, selected_port):
-        sp.set_port(selected_port)
+        ss.set_port(selected_port)
+
+    @pyqtSlot(str)
+    def on_cbxSerialSpeedSelection_activated(self, speed_str):
+        ss.set_speed(speed_str)
 
     @pyqtSlot()
     def on_btnRefreshPortsList_clicked(self):
         for x in range(10):
             self.cbxSerialPortSelection.removeItem(0)
-        ports = sp.list_os_ports()
+        ports = ss.get_os_ports()
         self.cbxSerialPortSelection.addItems(ports)
-
-    @pyqtSlot(str)
-    def on_cbxSerialSpeedSelection_activated(self, speed_str):
-        sp.set_speed(speed_str)
 
     @pyqtSlot()
     def on_btn_reinitialize_clicked(self):
@@ -264,30 +265,36 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_chkLockDetect_clicked(self, checked):
         sa.set_lock_detect(checked)
 
-#    turn_led_off = b'\x80'  # dec 128
-#    turn_led_on = b'\xC0'   # dec 192
+
     @pyqtSlot()
     def on_btnSweep_clicked(self):
-#        sp.ser.write(self.turn_led_off)
-#        time.sleep(1)
-#        sp.ser.write(self.turn_led_on)
-        ampl_data_bytes = bytearray()
-        command = self.line_edit_cmd.text()     # Try letter 'z' for read register 6
-        _cmd = command.encode()
-        start = int(self.floatStartMHz.value() * 1e6)
-        stop = int(self.floatStopMHz.value() * 1e6)
-        step = int(self.dblStepKHz.value() * 1e3)
-        steps = list(range(start, stop, step))
-        print(name, line(), f'number of data points = {len(steps)}')
-        for i, freq in enumerate(steps):
-            freqMHz = freq / 1e6
-            sa.write_registers(freqMHz, self.referenceClock, True)
-            time.sleep(0.005)        # Wait for the Arduino to program the MAX2871 registers
-            sp.ser.write(_cmd)
-            bytes_to_read = sp.ser.in_waiting
-            ampl_data_bytes += sp.ser.read(bytes_to_read)
+        turn_led_off = b'\x80'  # dec 128
+        turn_led_on = b'\xC0'   # dec 192
 
-        self.show_ampl_data(ampl_data_bytes)
+        sp.ser.write(turn_led_off)
+        time.sleep(1)
+        sp.ser.write(turn_led_on)
+
+
+#    @pyqtSlot()
+#    def on_btnSweep_clicked(self):
+#        ampl_data_bytes = bytearray()
+#        command = self.line_edit_cmd.text()     # Try letter 'z' for read register 6
+#        _cmd = command.encode()
+#        start = int(self.floatStartMHz.value() * 1e6)
+#        stop = int(self.floatStopMHz.value() * 1e6)
+#        step = int(self.dblStepKHz.value() * 1e3)
+#        steps = list(range(start, stop, step))
+#        print(name, line(), f'number of data points = {len(steps)}')
+#        for i, freq in enumerate(steps):
+#            freqMHz = freq / 1e6
+#            sa.write_registers(freqMHz, self.referenceClock, True)
+#            time.sleep(0.005)        # Wait for the Arduino to program the MAX2871 registers
+#            sp.ser.write(_cmd)
+#            bytes_to_read = sp.ser.in_waiting
+#            ampl_data_bytes += sp.ser.read(bytes_to_read)
+#
+#        self.show_ampl_data(ampl_data_bytes)
 
 # End MainWindow() class
 

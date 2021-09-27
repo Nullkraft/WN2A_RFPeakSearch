@@ -69,21 +69,21 @@ def write_registers(target_frequency, ref_clock, initialized = False):
         registers = new_frequency_registers(rfOut, stepNumber, refClock)
 
         if initialized:
-            for x, reg in enumerate(registers[::-1]):
+            for x, newChipRegister in enumerate(registers[::-1]):
                 # Only write to a register if its value has changed.
-                if reg != oldChipRegisters[x]:
+                if newChipRegister != oldChipRegisters[x]:
                     sp.ser.write(arduinoCmd)       # Send command to the Arduino
-                    sp.ser.write(reg.to_bytes(4, 'big'))
-                    oldChipRegisters[x] = reg
+                    sp.ser.write(newChipRegister.to_bytes(4, 'big'))
+                    oldChipRegisters[x] = newChipRegister
         else:   # Initialize the MAX2871 in accordance with manufacturer.
-            for x, reg in enumerate(registers[::-1]):
+            for x, newChipRegister in enumerate(registers[::-1]):
                 sp.ser.write(arduinoCmd)       # Send command to the Arduino
-                sp.ser.write(reg.to_bytes(4, 'big'))
+                sp.ser.write(newChipRegister.to_bytes(4, 'big'))
             time.sleep(0.025)
-            for x, reg in enumerate(registers[::-1]):
+            for x, newChipRegister in enumerate(registers[::-1]):
                 sp.ser.write(arduinoCmd)       # Send command to the Arduino
-                sp.ser.write(reg.to_bytes(4, 'big'))
-                oldChipRegisters[x] = reg
+                sp.ser.write(newChipRegister.to_bytes(4, 'big'))
+                oldChipRegisters[x] = newChipRegister
 
 
 def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, LockDetect="y"):

@@ -72,6 +72,7 @@ def write_registers(target_frequency, ref_clock, initialized = False):
             for x, newChipRegister in enumerate(registers[::-1]):
                 # Only write to a register if its value has changed.
                 if newChipRegister != oldChipRegisters[x]:
+                    print(name, line(), f'Changed reg[{newChipRegister & 7}] = {newChipRegister}')
                     sp.ser.write(arduinoCmd)       # Send command to the Arduino
                     sp.ser.write(newChipRegister.to_bytes(4, 'big'))
                     oldChipRegisters[x] = newChipRegister
@@ -102,6 +103,7 @@ def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, Lo
     else:
         Range = rangeNum
         Fvco = newFreq * Div
+        print(name, line(), f'Fvco = newFreq * Div : {Fvco} = {newFreq} * {Div}')
         N = 1e6 * (Fvco/(Fpfd))
         NI = int(N)
         FracT = N - NI
@@ -110,12 +112,18 @@ def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, Lo
             MOD1 = 4095
             Fracc = int(FracT * MOD1)
 
-        Reg[stepNumber][0] = (NI * (2**15)) + (Fracc * (2**3))
-        Reg[stepNumber][1] = (2**29) + (2**15) + (MOD1*(2**3)) + 1
+        Reg[stepNumber][0] = (NI << 15) + (Fracc << 3)
+        Reg[stepNumber][1] = 2**29 + 2**15 + (MOD1 << 3) + 1
         Reg[stepNumber][2] = dataRow[2]
         Reg[stepNumber][3] = dataRow[3]
-        Reg[stepNumber][4] = 1670377980 + ((2**20) * Range)
+        Reg[stepNumber][4] = 1670377980 + (Range << 20)
         Reg[stepNumber][5] = dataRow[5]
+
+        for i, x in enumerate(Reg[0]):
+            print(name, line(), f'reg[{i}] = {x}')
+            if i == 4:
+                print(name, line(), f'Range = {Range}')
+
 
         return Reg[stepNumber]
 

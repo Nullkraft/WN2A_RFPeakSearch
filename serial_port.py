@@ -44,7 +44,6 @@ class simple_serial(QObject):
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
         self.end_of_record = bytearray([255, 255])  # Arduino A2D is only 10 bits so we can safely use 0xffff
-        self.ampl_data_bytes = bytearray()          # Store 8bit data from Arduino
 
 
     def set_speed(self, selected_speed):
@@ -149,15 +148,16 @@ class simple_serial(QObject):
 
     def read_serial(self):
         """
-        Read in data points until end_of_record is received
+        Worker thread for streaming incoming serial data
         """
+        serial_bytes = bytearray()       # Incoming serial buffer
         while True:
-            self.ampl_data_bytes += ser.read(ser.in_waiting)                    # Accumulate the data points
-            array_position = self.ampl_data_bytes.find(self.end_of_record)
-            if array_position > 0:                                              # end-of-record found
-                self.ampl_data_bytes = self.ampl_data_bytes[:array_position]    # Delete extraneous data
+            serial_bytes += ser.read(ser.in_waiting)                    # Accumulate the data bytes
+            end_of_data_bytes = serial_bytes.find(self.end_of_record)
+            if end_of_data_bytes > 0:                                   # end-of-stream found
+                self.finished.emit(serial_bytes[:end_of_data_bytes])    # slice off excess data bytes
                 break
-        self.finished.emit(self.ampl_data_bytes)
+
 
 # End simple_serial() class
 

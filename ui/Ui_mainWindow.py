@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/mark/projects/python/WN2A_Spectrum_Analyzer/ui/mainWindow.ui'
+# Form implementation generated from reading ui file '/home/mark/projects/python/WN2A_RFPeakSearch/ui/mainWindow.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.1
 #
@@ -348,7 +348,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "WN2A Spectrum Analyzer Display"))
         self.label_9.setText(_translate("MainWindow", "Sweep Start"))
         self.label_11.setText(_translate("MainWindow", "Sweep Stop"))
         self.btnZeroSpan.setText(_translate("MainWindow", "Zero Span"))

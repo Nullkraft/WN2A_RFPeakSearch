@@ -1,38 +1,32 @@
 import serial_port as sp
 import sys
+import time
 
 # Utility to simplify print debugging.
 line = lambda : sys._getframe(1).f_lineno
 name = __name__
 
 # Arduino and MAX2871 Commands
-RF_Enable = b'E'
-RF_Disable = b'e'
-Arduino_LED_on = b'L'
-Arduino_LED_off = b'l'
-status_request = b'S'
+LO2_RF_Disable = 0x00000AFF
+LO3_RF_Disable = 0x00000BFF
+Arduino_LED_on = 0x00000FFF
+Arduino_LED_off = 0x000007FF
+Arduino_message = 0x000017FF
 
 
-# *********  FIX ME!  ***************
-# * Output does not reflect the hardware status and in fact
-# * it is reading the reg5 string from some random memory
-# * address.
-# ***********************************
-# Currently will only work with RF_En pin status.
-# Add the Arduino LED pin status to improve usefulness
-def get_hw_status():
-    _send_command(status_request)
-#    rf_out_status = sp.ser.read(1)
-    rf_out_status = sp.ser.read(4)      # This
+def get_message():
+    _send_command(Arduino_message)
+    rf_out_status = sp.ser.read(64)
+    time.sleep(0.5)
     return rf_out_status
 
 
-def enable_rf_out():
-    _send_command(RF_Enable)
+def disable_LO2_RFout():
+    _send_command(LO2_RF_Disable)
 
 
-def disable_rf_out():
-    _send_command(RF_Disable)
+def disable_LO3_RFout():
+    _send_command(LO3_RF_Disable)
 
 
 def turn_Arduino_LED_on():
@@ -46,7 +40,8 @@ def turn_Arduino_LED_off():
 def _send_command(command):
     try:
         if sp.ser.is_open:
-            sp.ser.write(command)
+            cmd_bytes = command.to_bytes(4, 'little')
+            sp.ser.write(cmd_bytes)
     except:
         print(name, line(), f': The serial port was not opened before sending the Arduino command {command}.')
 

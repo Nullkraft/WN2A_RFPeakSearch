@@ -66,7 +66,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         only sees 1=256*16bits 2=512 3=768 4=1024 5=1280 (6 or greater)=1536
         """
         arduinoCmds = [b'1', b'2', b'3', b'4', b'5', b'6']
-        selection = num_points // 256 - 1                # selection = floor(num_points/256)-1
+        selection = (num_points // 256) - 1                # selection = floor(num_points/256)-1
         selection = 5 if selection > 5 else selection
         return arduinoCmds[selection]
 
@@ -234,25 +234,31 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_line_edit_cmd_returnPressed(self):
-        command = self.line_edit_cmd.text()     # Try letter 'z' for read register 6
-        _cmd = command.encode()
-        if sp.ser.is_open:
-            reg6 = bytearray()                  # create an empty byte array
-            sp.ser.write(_cmd)
-            time.sleep(0.1)                     # give the Arduino some time to send the data
-            bytesToRead = sp.ser.in_waiting
-            reg6 += sp.ser.read(bytesToRead)    # collect 4 bytes of data from the Arduino
+        """ Sending 32 bit control words to the Arduino for the API Standard Interface V2 """
+        command_hex_str = self.line_edit_cmd.text()
+        cmd_bytes = bytes.fromhex(command_hex_str)
+        if command_hex_str == "00":
+            for x in range(0xCAFE0001, 0xCAFE0009):
+                cmd_bytes = x.to_bytes(4, 'little')
+                while sp.ser.in_waiting > 0:
+                    print(name, line(), f'in waiting = {sp.ser.in_waiting}')
+                sp.ser.write(cmd_bytes)
         else:
-            print(name, line(), 'Open the port first.')
+            sp.ser.write(cmd_bytes[::-1])
 
-    @pyqtSlot(bool)
-    def on_chkEnableRFOut_toggled(self, checked):
-        if checked:
-            cmd_proc.enable_rf_out()
-        else:
-            cmd_proc.disable_rf_out()
-        print(name, line(), 'RF enable status =', cmd_proc.get_hw_status())
+    @pyqtSlot()
+    def on_btn_disable_LO2_RFout_clicked(self):
+        """
+        Disable the RF output of the MAX2871 chip designated as LO2
+        """
+        cmd_proc.disable_LO2_RFout()
 
+    @pyqtSlot()
+    def on_btn_disable_LO3_RFout_clicked(self):
+        """
+        Disable the RF output of the MAX2871 chip designated as LO3
+        """
+        cmd_proc.disable_LO3_RFout()
 
     @pyqtSlot(bool)
     def on_chkArduinoLED_toggled(self, checked):
@@ -261,6 +267,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             cmd_proc.turn_Arduino_LED_off()
 
+    @pyqtSlot()
+    def on_btn_get_arduino_msg_clicked(self):
+        """
+        Request the Arduino message containing version number and date
+        """
+        print(name, line(), f'Arduino Message = {cmd_proc.get_message()}')
+
     @pyqtSlot(bool)
     def on_chkLockDetect_clicked(self, checked):
         sa.set_lock_detect(checked)
@@ -268,6 +281,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
+        """ Learning how to send byte commands to the Arduino """
         turn_led_off = b'\x80'  # dec 128
         turn_led_on = b'\xC0'   # dec 192
 
@@ -297,12 +311,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #        self.show_ampl_data(ampl_data_bytes)
 
 # End MainWindow() class
-
-
-
-
-
-
 
 
 

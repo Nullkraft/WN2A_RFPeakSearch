@@ -74,13 +74,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def on_btnTrigger_clicked(self):
         """
-        Tell the Arduino how many data points we want to read from the A2D
-        then read them back in a separate thread so we don't block the gui.
+        Tell the Arduino how many data points we want to read from the A2D.
         """
         num_data_points = self.numDataPoints.value()
         arduino_command = self.__cmd(num_data_points)
+        sp.ser.write(arduino_command)   # Send a new command to the Arduino
+        self.request_data()
+
+    def request_data(self):
+        """
+        Read back data points in a separate thread so we don't block the gui.
+        """
         if sp.ser.is_open:
-            sp.ser.write(arduino_command)                           # Send a new command to the Arduino
             self.thread = QThread()                                 # Create a separate thread for serial reads
             self.worker = sp.simple_serial()                        # Function for reading from the serial port
             self.worker.moveToThread(self.thread)                   # Serial reads happen inside its own thread
@@ -96,7 +101,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print('')
             print('     You have to open the serial port.')
             print('     You must select both a Serial port AND speed.')
-
 
     @pyqtSlot(str)
     def on_cbxSerialPortSelection_activated(self, selected_port):
@@ -162,7 +166,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # in the amplitudeData array and idx[1] points to the second highest, etc.
         idx = sa.peakSearch(self.amplitudeData, self.numPeakMarkers.value())
 
-        # Create and add Peak Markers to the graph
+        # Create and add Peak Markers to the graph. Number of peak markers is chosen by the user.
         for i in range(self.numPeakMarkers.value()):
             self.marker[i] = pg.ArrowItem(angle=-90, tipAngle=40, tailWidth=10, pen={'color': 'w', 'width': 1})
             frequency = self.freqRange[idx[i]]
@@ -234,17 +238,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_line_edit_cmd_returnPressed(self):
-        """ Sending 32 bit control words to the Arduino for the API Standard Interface V2 """
-        command_hex_str = self.line_edit_cmd.text()
-        cmd_bytes = bytes.fromhex(command_hex_str)
-        if command_hex_str == "00":
-            for x in range(0xCAFE0001, 0xCAFE0009):
-                cmd_bytes = x.to_bytes(4, 'little')
-                while sp.ser.in_waiting > 0:
-                    print(name, line(), f'in waiting = {sp.ser.in_waiting}')
-                sp.ser.write(cmd_bytes)
-        else:
-            sp.ser.write(cmd_bytes[::-1])
+        pass
 
     @pyqtSlot()
     def on_btn_disable_LO2_RFout_clicked(self):
@@ -281,13 +275,54 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
-        """ Learning how to send byte commands to the Arduino """
-        turn_led_off = b'\x80'  # dec 128
-        turn_led_on = b'\xC0'   # dec 192
+        tmp_bytes = 0x000007FF.to_bytes(4, byteorder='little')  # Turn off the Arduino LED
+        sp.ser.write(tmp_bytes)
+        tmp_bytes = 0x00000cff.to_bytes(4, byteorder='little')  # Select 60 MHz reference clock
+        sp.ser.write(tmp_bytes)
+        tmp_bytes = 0x000f21ff.to_bytes(4, byteorder='little')  # Set LO1 to +2 dBm and frequency 15 (0x0F)
+        sp.ser.write(tmp_bytes)
+        tmp_bytes = 0x001323ff.to_bytes(4, byteorder='little')  # Set LO2 to +2 dBm followed by 19 freqs
+        sp.ser.write(tmp_bytes)
 
-        sp.ser.write(turn_led_off)
-        time.sleep(1)
-        sp.ser.write(turn_led_on)
+        # Generate a set of test data that can be replaced with user
+        # selected start, stop and step values.
+        start_freq = 3000.0
+        stop_freq = 6000.0
+        num_freqs = 300001
+        freq_data = np.linspace(start_freq, stop_freq, num_freqs)
+#        print(name, line(), f'Frequencies = {freq_data}')
+
+        num_points = len(freq_data)
+        count = 0
+        step = 8
+#        nPoints = len(freq_data)
+#        for i in range(nPoints):
+#        out_file = open('fmn_data.csv', 'a')
+        start = time.perf_counter()
+        while (num_points):
+            for freq in freq_data[count: count + step]:
+                FMN = sa.fmn(freq, self.referenceClock)
+#                out_file.write(f'{FMN}\n')
+                tmp_bytes = FMN.to_bytes(4, byteorder='little')
+#                sp.ser.write(tmp_bytes)
+                num_points -= 1;
+            count += step           # Move to the next 8 data points in freq_data
+            if num_points < 8:      # If there are fewer than 8 remaining data points...
+                step = num_points
+        print(name, line, f'Perf time = {time.perf_counter() - start}')
+#        out_file.close()
+#        print(name, line(), f'Finished sending {len(freq_data)} data points to Arduino')
+
+
+#    @pyqtSlot()
+#    def on_btnSweep_clicked(self):
+#        """ Learning how to send byte commands to the Arduino """
+#        turn_led_off = b'\x80'  # dec 128
+#        turn_led_on = b'\xC0'   # dec 192
+#
+#        sp.ser.write(turn_led_off)
+#        time.sleep(1)
+#        sp.ser.write(turn_led_on)
 
 
 #    @pyqtSlot()

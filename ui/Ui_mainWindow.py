@@ -251,6 +251,7 @@ class Ui_MainWindow(object):
         self.label_8.setObjectName("label_8")
         self.horizontalLayout_2.addWidget(self.label_8)
         self.selectReferenceOscillator = QtWidgets.QComboBox(self.groupBox_4)
+        self.selectReferenceOscillator.setMinimumSize(QtCore.QSize(0, 30))
         self.selectReferenceOscillator.setObjectName("selectReferenceOscillator")
         self.selectReferenceOscillator.addItem("")
         self.selectReferenceOscillator.addItem("")

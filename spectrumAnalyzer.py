@@ -31,7 +31,6 @@ readReg6      = 13093080,541097977,1342247490,4160782339,1674572284,2151940101  
 dataRow = lockDetectOn      # default
 
 
-
 def getSettingsFromUI(frequency=23.5, delay=2, refClock=60, lockDetect=True, fractionalOpt=False, freqMode=1):
     print(delay)           # milliseconds delay between one serial xmission and the next
     print(refClock)
@@ -153,8 +152,57 @@ def peakSearch(amplitudeData, numPeaks):
     return(idx)
 
 
+def fmn(Fvco, ref_clock):
+    """
+    Function    Calculate the F, M and N register values for programming a MAX2871 chip
+
+    @param Fvco         Fvco == (3000MHz <= frequency <= 6000MHz)
+    @type TYPE          float
+    @param ref_clock    Reference clock frequency in MHz
+    @type               int
+    """
+    best_F = 0
+    best_M = 0
+    R = 2
+    Fpfd = ref_clock / R
+    N = int(Fvco / Fpfd)
+    fractional_part = (Fvco / Fpfd) - N
+    best_error = 2**24
+
+    for M in range(2, 4096):
+        F = round_to_even(M * fractional_part)
+        error = abs(Fvco - (Fpfd * (N + F / M)))
+        if error < best_error:
+            best_error = error
+            best_F = F
+            best_M = M
+
+#    if best_F == best_M:
+#        best_F = 0
+#        best_M = 4095
+#        N += 1
+
+    data_word = (best_F << 20) | (best_M << 8) | N
+    return data_word
 
 
+def round_to_even(n):
+    x = int(n)
+    return (x + (0x1 & x))
 
+
+def fast_compare(a, b):
+    x = ("%.8f" % a)
+    y = ("%.8f" % b)
+    if x < y:
+        return True
+    return False
+
+
+if __name__ == '__main__':
+    x = 42
+    out_file = open('eat_me.txt', 'w')
+    out_file.write(f'The value of x is {x}\nEat me\n')
+    out_file.close()
 
 

@@ -9,3 +9,7 @@ __pycache__/
 *txt
 Notes*
 ycecream.json
+*csv
+bin
+lib*
+pyvenv.cfg

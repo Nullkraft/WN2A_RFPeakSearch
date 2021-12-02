@@ -275,11 +275,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
-        tmp_bytes = 0x000007FF.to_bytes(4, byteorder='little')  # Turn off the Arduino LED
-        sp.ser.write(tmp_bytes)
+        """
+        TODO:   Write adf4356_n() for programming LO1
+                Cleanup max2871_fmn()
+                Make serial flow bidirectional with Arduino
+                Do a git commit & push
+        """
+        # Required Spectrum Analyzer hardware setup
+        cmd_proc.turn_Arduino_LED_off()
         tmp_bytes = 0x00000cff.to_bytes(4, byteorder='little')  # Select 60 MHz reference clock
         sp.ser.write(tmp_bytes)
-        tmp_bytes = 0x000f21ff.to_bytes(4, byteorder='little')  # Set LO1 to +2 dBm and frequency 15 (0x0F)
+        tmp_bytes = 0x000f21ff.to_bytes(4, byteorder='little')  # Set LO1 to +2 dBm and freq #15 (0x0F)
         sp.ser.write(tmp_bytes)
         tmp_bytes = 0x001323ff.to_bytes(4, byteorder='little')  # Set LO2 to +2 dBm followed by 19 freqs
         sp.ser.write(tmp_bytes)
@@ -287,31 +293,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Generate a set of test data that can be replaced with user
         # selected start, stop and step values.
         start_freq = 3000.0
-        stop_freq = 6000.0
-        num_freqs = 300001
+        stop_freq =  6000.0
+        num_freqs = 15385
         freq_data = np.linspace(start_freq, stop_freq, num_freqs)
-#        print(name, line(), f'Frequencies = {freq_data}')
-
         num_points = len(freq_data)
         count = 0
         step = 8
-#        nPoints = len(freq_data)
-#        for i in range(nPoints):
-#        out_file = open('fmn_data.csv', 'a')
         start = time.perf_counter()
         while (num_points):
             for freq in freq_data[count: count + step]:
-                FMN = sa.fmn(freq, self.referenceClock)
-#                out_file.write(f'{FMN}\n')
+                FMN = sa.max2871_fmn(freq, self.referenceClock)
                 tmp_bytes = FMN.to_bytes(4, byteorder='little')
 #                sp.ser.write(tmp_bytes)
                 num_points -= 1;
             count += step           # Move to the next 8 data points in freq_data
             if num_points < 8:      # If there are fewer than 8 remaining data points...
                 step = num_points
-        print(name, line, f'Perf time = {time.perf_counter() - start}')
-#        out_file.close()
-#        print(name, line(), f'Finished sending {len(freq_data)} data points to Arduino')
+        print(name, line(), f'Sent {len(freq_data)} data points in {time.perf_counter() - start} seconds.')
+        print(name, line(), f'Finished sending {len(freq_data)} data points to Arduino')
 
 
 #    @pyqtSlot()

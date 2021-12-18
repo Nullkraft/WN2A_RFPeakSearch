@@ -604,7 +604,7 @@
           <number>6</number>
          </property>
          <property name="minimum">
-          <double>23.500000000000000</double>
+          <double>0.100000000000000</double>
          </property>
          <property name="maximum">
           <double>3200.000000000000000</double>
@@ -613,7 +613,7 @@
           <double>0.500000000000000</double>
          </property>
          <property name="value">
-          <double>23.500000000000000</double>
+          <double>0.100000000000000</double>
          </property>
         </widget>
        </item>
@@ -711,14 +711,22 @@
            <height>30</height>
           </size>
          </property>
+         <property name="currentIndex">
+          <number>1</number>
+         </property>
          <item>
           <property name="text">
-           <string>60 MHz</string>
+           <string extracomment="Disable all Reference clocks">No Ref Clock</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>100 MHz</string>
+           <string extracomment="Select 60 MHz Reference clock">60 MHz</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string extracomment="Select 100 MHz Reference clock">100 MHz</string>
           </property>
          </item>
         </widget>

@@ -1,8 +1,8 @@
 {
   "header": {
-    "comment": "eric project file for project WN2A Spectrum Analyzer",
+    "comment": "eric project file for project WN2A_RFPeakSearch",
     "copyright": "Copyright (C) 2021 , ",
-    "saved": "2021-08-28, 15:17:38"
+    "saved": "2021-12-17, 16:39:27"
   },
   "project": {
     "AUTHOR": "",
@@ -165,7 +165,8 @@
       "spectrumAnalyzer.py",
       "ui/Ui_mainWindow.py",
       "ui/mainWindow.py",
-      "command_processor.py"
+      "command_processor.py",
+      "z_scratch.py"
     ],
     "SPELLEXCLUDES": "",
     "SPELLLANGUAGE": "en_US",

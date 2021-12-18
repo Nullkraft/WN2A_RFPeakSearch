@@ -8,6 +8,8 @@ import time
 import pyqtgraph as pg
 import numpy as np
 
+import concurrent.futures
+
 from .Ui_mainWindow import Ui_MainWindow
 
 # Functions specific to the operation of the WN2A Spectrum Analyzer hardware, hopefully.
@@ -56,7 +58,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 freq = 23.5
             if freq > 6000:
                 freq = 6000
-            sa.write_registers(freq, self.referenceClock, self.initialized)
+            sa.max2871_write_registers(freq, self.referenceClock, self.initialized)
             self.initialized = True
 
 
@@ -126,10 +128,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(int)
     def on_selectReferenceOscillator_currentIndexChanged(self, index):
         if index == 0:
-            self.referenceClock = 60
+            self.referenceClock = None
+            cmd_proc.disable_all_ref_clocks()
         if index == 1:
+            self.referenceClock = 60
+            cmd_proc.enable_60MHz_ref_clock()
+        if index == 2:
             self.referenceClock = 100
-
+            cmd_proc.enable_100MHz_ref_clock()
         return self.referenceClock
 
     # amplitudeData was collected as a bunch of linear 16-bit A/D values which we want
@@ -273,83 +279,72 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sa.set_lock_detect(checked)
 
 
+#    @pyqtSlot()
+#    def on_btnSweep_clicked(self):
+#        """
+#        TODO:   Write adf4356_n() for programming LO1
+#                Cleanup max2871_fmn()
+#                Make serial flow bidirectional with Arduino
+#                Do a git commit & push
+#        """
+#        # Required Spectrum Analyzer hardware setup
+#        cmd_proc.turn_Arduino_LED_off()
+#        tmp_bytes = 0x00000cff.to_bytes(4, byteorder='little')  # Select 60 MHz reference clock
+#        sp.ser.write(tmp_bytes)
+#        tmp_bytes = 0x000f21ff.to_bytes(4, byteorder='little')  # Set LO1 to +2 dBm and freq #15 (0x0F)
+#        sp.ser.write(tmp_bytes)
+#        tmp_bytes = 0x001323ff.to_bytes(4, byteorder='little')  # Set LO2 to +2 dBm followed by 19 freqs
+#        sp.ser.write(tmp_bytes)
+#
+#        # Generate a set of test data that can be replaced with user
+#        # selected start, stop and step values.
+#        start_freq = 3000.0
+#        stop_freq =  6000.0
+#        num_freqs = 15385
+#        freq_data = np.linspace(start_freq, stop_freq, num_freqs)
+#        num_points = len(freq_data)
+#        count = 0
+#        step = 8
+#        start = time.perf_counter()
+#        while (num_points):
+#            for freq in freq_data[count: count + step]:
+#                FMN = sa.max2871_fmn(freq, self.referenceClock)
+#                tmp_bytes = FMN.to_bytes(4, byteorder='little')
+##                sp.ser.write(tmp_bytes)
+#                num_points -= 1;
+#            count += step           # Move to the next 8 data points in freq_data
+#            if num_points < 8:      # If there are fewer than 8 remaining data points...
+#                step = num_points
+#        print(name, line(), f'Sent {len(freq_data)} data points in {time.perf_counter() - start} seconds.')
+#        print(name, line(), f'Finished sending {len(freq_data)} data points to Arduino')
+
+
     @pyqtSlot()
     def on_btnSweep_clicked(self):
-        """
-        TODO:   Write adf4356_n() for programming LO1
-                Cleanup max2871_fmn()
-                Make serial flow bidirectional with Arduino
-                Do a git commit & push
-        """
-        # Required Spectrum Analyzer hardware setup
-        cmd_proc.turn_Arduino_LED_off()
-        tmp_bytes = 0x00000cff.to_bytes(4, byteorder='little')  # Select 60 MHz reference clock
-        sp.ser.write(tmp_bytes)
-        tmp_bytes = 0x000f21ff.to_bytes(4, byteorder='little')  # Set LO1 to +2 dBm and freq #15 (0x0F)
-        sp.ser.write(tmp_bytes)
-        tmp_bytes = 0x001323ff.to_bytes(4, byteorder='little')  # Set LO2 to +2 dBm followed by 19 freqs
-        sp.ser.write(tmp_bytes)
-
-        # Generate a set of test data that can be replaced with user
-        # selected start, stop and step values.
-        start_freq = 3000.0
-        stop_freq =  6000.0
-        num_freqs = 15385
-        freq_data = np.linspace(start_freq, stop_freq, num_freqs)
-        num_points = len(freq_data)
-        count = 0
-        step = 8
+        """ Learning how to send byte commands to the Arduino """
+        program_LO1 = 0xDEAD21FF
+        LO1 = program_LO1.to_bytes(4, byteorder='little')
+        sp.ser.write(LO1)
         start = time.perf_counter()
-        while (num_points):
-            for freq in freq_data[count: count + step]:
-                FMN = sa.max2871_fmn(freq, self.referenceClock)
-                tmp_bytes = FMN.to_bytes(4, byteorder='little')
-#                sp.ser.write(tmp_bytes)
-                num_points -= 1;
-            count += step           # Move to the next 8 data points in freq_data
-            if num_points < 8:      # If there are fewer than 8 remaining data points...
-                step = num_points
-        print(name, line(), f'Sent {len(freq_data)} data points in {time.perf_counter() - start} seconds.')
-        print(name, line(), f'Finished sending {len(freq_data)} data points to Arduino')
+        self.sweep(100, 1000.0, num_steps=5000)
+        print(name, line(), f'Delta = {time.perf_counter()-start}')
 
 
-#    @pyqtSlot()
-#    def on_btnSweep_clicked(self):
-#        """ Learning how to send byte commands to the Arduino """
-#        turn_led_off = b'\x80'  # dec 128
-#        turn_led_on = b'\xC0'   # dec 192
-#
-#        sp.ser.write(turn_led_off)
-#        time.sleep(1)
-#        sp.ser.write(turn_led_on)
+    def sweep(self, start_freq: float, stop_freq: float, step_size: float = None, num_steps: int = 5, ref_clock: float = 60):
+        start_freq = float(start_freq)
+        stop_freq = float(stop_freq)
+        ref_clock = float(ref_clock)
 
+        LO1_freqs = np.linspace(3600, 6600, 101)
+        LO2_freqs = np.linspace(3900, 3930, 601)
+        print(LO1_freqs)
 
-#    @pyqtSlot()
-#    def on_btnSweep_clicked(self):
-#        ampl_data_bytes = bytearray()
-#        command = self.line_edit_cmd.text()     # Try letter 'z' for read register 6
-#        _cmd = command.encode()
-#        start = int(self.floatStartMHz.value() * 1e6)
-#        stop = int(self.floatStopMHz.value() * 1e6)
-#        step = int(self.dblStepKHz.value() * 1e3)
-#        steps = list(range(start, stop, step))
-#        print(name, line(), f'number of data points = {len(steps)}')
-#        for i, freq in enumerate(steps):
-#            freqMHz = freq / 1e6
-#            sa.write_registers(freqMHz, self.referenceClock, True)
-#            time.sleep(0.005)        # Wait for the Arduino to program the MAX2871 registers
-#            sp.ser.write(_cmd)
-#            bytes_to_read = sp.ser.in_waiting
-#            ampl_data_bytes += sp.ser.read(bytes_to_read)
-#
-#        self.show_ampl_data(ampl_data_bytes)
+        LO1_map = map(sa.adf4356_n, LO1_freqs)
+        LO2_map = map(sa.max2871_fmn, LO2_freqs)
+#        for n_word in LO2_map:
+#            print(n_word)
+#            print(name, line(), f'LO2 value = {n_word}')
+#            sa.adf4356_write_registers(0, n_word)
 
 # End MainWindow() class
-
-
-
-
-
-
-
 

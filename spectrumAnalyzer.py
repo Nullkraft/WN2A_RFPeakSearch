@@ -12,12 +12,13 @@ name = __name__
 
 lock_detect = True
 Fvco = 0.0000       # Initialize as a type float
-lockDetectOn  = 13093080,541097977,1476465218,4160782339,1674572284,2151677957   # 374.596154 MHz with Lock Detect
-lockDetectOff = 13093080,541097977,1073812034,4160782339,1674572284,2151677957   # 374.596154 MHz no Lock Detect
+lockDetectOn  = 13093080,541097977,1476465218,4160782339,1674572284,  20971525   # 374.596154 MHz with Lock Detect
+lockDetectOff = 13093080,541097977,1073812034,4160782339,1674572284,  20971525   # 374.596154 MHz no Lock Detect
 readReg6      = 13093080,541097977,1342247490,4160782339,1674572284,2151940101   # Read register 6
 
 dataRow = lockDetectOn      # default
 
+M_list = []
 
 def getSettingsFromUI(frequency=23.5, delay=2, refClock=60, lockDetect=True, fractionalOpt=False, freqMode=1):
     print(delay)           # milliseconds delay between one serial xmission and the next
@@ -41,10 +42,14 @@ def getSettingsFromUI(frequency=23.5, delay=2, refClock=60, lockDetect=True, fra
             # Enter Fixed Frequency
 
 
+def adf4356_write_registers(reg_num, reg_value):
+    pass
+
+
 oldChipRegisters = [0, 0, 0, 0, 0, 0]   # Set to zero's for initialization
 # The steps required to program the chip is to start with the highest
 # register and work your way down.
-def write_registers(target_frequency, ref_clock, initialized = False):
+def max2871_write_registers(target_frequency, ref_clock, initialized = False):
     rfOut = target_frequency
     refClock = ref_clock
     stepNumber = 0
@@ -53,7 +58,7 @@ def write_registers(target_frequency, ref_clock, initialized = False):
         arduinoCmd = b'r'
         # Calculate and store a new set of register values used for
         # programming the MAX2871 chip with a new output frequency.
-        registers = new_frequency_registers(rfOut, stepNumber, refClock)
+        registers = max2871_registers(rfOut, stepNumber, refClock)
 
         if initialized:
             for x, newChipRegister in enumerate(registers[::-1]):
@@ -74,7 +79,7 @@ def write_registers(target_frequency, ref_clock, initialized = False):
                 oldChipRegisters[x] = newChipRegister
 
 
-def new_frequency_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, LockDetect="y"):
+def max2871_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, LockDetect="y"):
     global lock_detect
     global dataRow
 
@@ -124,8 +129,28 @@ def set_lock_detect(checked):
         dataRow = readReg6
 
 
-def Sweep():
-    pass
+# THIS IS NOT FOR SWEEPING!!!
+# If you have a frequency you want to focus on then this is the function for you.
+def RF_to_LO1(freq_list, target_freq=1345):
+    remainders = []
+    for LO_freq in freq_list:
+        # The lowest remainder will be at the index of the closest freq to the target freq
+        remainders.append(np.abs(LO_freq - (target_freq + 3600)))
+    lst = np.asarray(remainders)
+    return lst.argmin()     # Returns the index of the lowest value in the array
+
+
+def sweep():
+    LO1_num_steps = int((6600 - 3600) / 30) + 1      # 3000MHz/30MHz = 100 steps
+    LO2_num_steps = int((3930 - 3900) / 0.150) + 1   #  30MHz/150kHz = 200 steps
+
+    LO1_freqs = np.linspace(3600, 6600, LO1_num_steps)    # List of LO1 freqs every 30 MHz
+    LO2_freqs = np.linspace(3900, 3930, LO2_num_steps)    # List of LO2 freqs every 150 kHz
+
+    for LO1_freq in LO1_freqs:
+        int_n = adf4356_n(LO1_freq, 60, 2)
+        for LO2_freq in LO2_freqs:
+            fmn_data = max2871_fmn(target_freq=LO2_freq, ref_clock=60)
 
 
 # Find the highest signal amplitudes in a spectrum plot.
@@ -140,38 +165,61 @@ def peakSearch(amplitudeData, numPeaks):
 def max2871_fmn(target_freq=3000.0, ref_clock=60):
     """ Form a 32 bit word containing F, M and N.
 
-    Given a target frequency the M.csv file contains
-    a list of M-values for finding the three register
-    values that are needed to set the chip to a new
-    frequency. This list is much shorter than looping
-    through 4093 possible values for M.
+    R, F, M and N are taken directly from the MAX2871 specsheet.
+    The specsheet offers no better names for them.
+
+    Given a target frequency the M.csv file contains a list of values for
+    calculating the three register values that are needed to set the chip
+    to a new frequency. This curated list of M-values provides sufficient
+    frequency accuracy and is much shorter than looping through all 4093
+    possible values of M.
     """
+    err_list = []   # Find the best error and use the same index for the best F.
+    F_list = []
+
+    if len(M_list) == 0:
+        with open('M.csv', 'r') as M_file:
+            for M in M_file.readlines():
+                M_list.append(int(M))
     R = 2
     Fpfd = ref_clock / R
     best_F = 0
     best_M = 0
-    best_error = 2**24
     N = int(target_freq / Fpfd)
-    fractional_part = (target_freq / Fpfd) - N
-    with open('M.csv') as M_file:
-        for M_string in M_file:
-            M = int(M_string)
-            F = round(M * fractional_part)
-            error = abs(target_freq - (Fpfd * (N + F / M)))
-            if error < best_error:
-                best_error = error
-                best_F = F
-                best_M = M
-    # form the data_word to match the Arduino controller requirements
-    data_word = (best_F << 20) | (best_M << 8) | N
-    return data_word
+    fraction = (target_freq / Fpfd) - N
+
+    F_list = [round(x * fraction) for x in M_list]
+    for i, M in enumerate(M_list):
+        err_list.append(abs(target_freq - (Fpfd * (N + F_list[i] / M))))
+    idx = min(range(len(err_list)), key=err_list.__getitem__)
+
+    best_F = F_list[idx]
+    best_M = M_list[idx]
+
+    # Create a 32 bit frequency_word from F, M and N to match the Arduino controller requirements
+    frequency_word = (best_F << 20) | (best_M << 8) | N
+    return frequency_word
+
+
+def adf4356_n(Fvco: float = 3000.0, Fref: float = 60, R: int = 2) -> int:
+    """ Returns the integer portion of N which is used to program
+        the integer step register of the ADF4356 chip.
+    """
+    # TODO: Create the full register word. This is just a placeholder and is incorrect.
+    INT_N = int(Fvco * R / Fref)
+    return INT_N
 
 
 if __name__ == '__main__':
-    print(f'spectrumAnalyzer.py : {line()} : Called as {__name__}')
-#    max2871_fmn(3510.004, 60)
-#    fract = np.linspace(0, 3.13, 10)
-#    fract = (0.347, 0.5, 0.695, 1.00, 1.043, 1.5, 1.738, 2.00, 2.37, 2.5, 2.731, 3.0, 3.123, 3.5)
-    for f in range(1, 8):
-        f = f * 0.4999999999999997
-        print(f, round(f))
+    start = time.perf_counter()
+    sweep()
+    stop = time.perf_counter()
+    print(f'Time to sweep = {round((stop-start), 2)}')
+
+
+
+
+
+
+
+

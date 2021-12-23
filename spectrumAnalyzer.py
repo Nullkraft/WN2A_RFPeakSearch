@@ -162,60 +162,48 @@ def peakSearch(amplitudeData, numPeaks):
     return(idx)
 
 
-def max2871_fmn(target_freq=3000.0, ref_clock=60):
+def read_M_file(file_name='M.csv'):
+    print(name, line(), 'Reading M-file')
+    with open(file_name, 'r') as M_file:
+        for M in M_file.readlines():
+            M_list.append(int(M))
+
+
+def max2871_fmn(target_freq=3915, ref_clock=60, R=2):
     """ Form a 32 bit word containing F, M and N.
 
-    R, F, M and N are taken directly from the MAX2871 specsheet.
-    The specsheet offers no better names for them.
+    NOTE: M_list must contain at least one item for this function to work.
 
-    Given a target frequency the M.csv file contains a list of values for
-    calculating the three register values that are needed to set the chip
-    to a new frequency. This curated list of M-values provides sufficient
-    frequency accuracy and is much shorter than looping through all 4093
-    possible values of M.
+    The M.csv file contains a list of values for calculating the three
+    register values that are needed to set the chip to a new frequency.
+    This curated list of M-values provides adequate frequency accuracy.
     """
-    err_list = []   # Find the best error and use the same index for the best F.
+    err_list = []   # Find the index of the best error and use it for the best F.
     F_list = []
-
-    if len(M_list) == 0:
-        with open('M.csv', 'r') as M_file:
-            for M in M_file.readlines():
-                M_list.append(int(M))
-    R = 2
     Fpfd = ref_clock / R
-    best_F = 0
-    best_M = 0
+
     N = int(target_freq / Fpfd)
     fraction = (target_freq / Fpfd) - N
-
-    F_list = [round(x * fraction) for x in M_list]
-    for i, M in enumerate(M_list):
-        err_list.append(abs(target_freq - (Fpfd * (N + F_list[i] / M))))
-    idx = min(range(len(err_list)), key=err_list.__getitem__)
-
-    best_F = F_list[idx]
-    best_M = M_list[idx]
-
-    # Create a 32 bit frequency_word from F, M and N to match the Arduino controller requirements
-    frequency_word = (best_F << 20) | (best_M << 8) | N
+    F_list = [round(M * fraction) for M in M_list]
+    err_list = [abs(target_freq - (Fpfd * (N + F_list[i] / M))) for i, M in enumerate(M_list)]
+    idx = min(range(len(err_list)), key = err_list.__getitem__)     # Get the index of the minimum error value
+    frequency_word = (F_list[idx] << 20) | (M_list[idx] << 8) | N             # frequency word to be sent to the Arduino
     return frequency_word
 
 
-def adf4356_n(Fvco: float = 3000.0, Fref: float = 60, R: int = 2) -> int:
+def adf4356_n(Fvco: float = 3600, Fref: float = 60, R: int = 2) -> int:
     """ Returns the integer portion of N which is used to program
         the integer step register of the ADF4356 chip.
     """
-    # TODO: Create the full register word. This is just a placeholder and is incorrect.
-    INT_N = int(Fvco * R / Fref)
-    return INT_N
+    int_N = int(Fvco * R / Fref)
+    return (int_N << 16)
 
 
 if __name__ == '__main__':
+    read_M_file('M.csv')
     start = time.perf_counter()
     sweep()
-    stop = time.perf_counter()
-    print(f'Time to sweep = {round((stop-start), 2)}')
-
+    print(f'Time to sweep = {round((time.perf_counter()-start), 2)}')
 
 
 

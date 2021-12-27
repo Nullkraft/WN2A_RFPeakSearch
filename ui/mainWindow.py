@@ -119,12 +119,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ports = ss.get_os_ports()
         self.cbxSerialPortSelection.addItems(ports)
 
-    @pyqtSlot()
-    def on_btn_reinitialize_clicked(self):
-        ''' Delete Me - This is only useful for development & testing '''
-        command = self.line_edit_cmd.text()
-        print(name, line(), f' : You typed {command}')
-
     @pyqtSlot(int)
     def on_selectReferenceOscillator_currentIndexChanged(self, index):
         if index == 0:
@@ -242,9 +236,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.numPlotFloor.value() < self.numPlotCeiling.value():
             self.graphWidget.setYRange(self.numPlotFloor.value(), self.numPlotCeiling.value())
 
+
+
+
+
+
     @pyqtSlot()
     def on_line_edit_cmd_returnPressed(self):
         pass
+
+
+
+
+
 
     @pyqtSlot()
     def on_btn_disable_LO2_RFout_clicked(self):
@@ -289,34 +293,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         # Required Spectrum Analyzer hardware setup
         cmd_proc.turn_Arduino_LED_off()
-        tmp_bytes = 0x00000cff.to_bytes(4, byteorder='little')  # Select 60 MHz reference clock
+        tmp_bytes = 0x000007ff.to_bytes(4, byteorder='little')  # Select 60 MHz reference clock
         sp.ser.write(tmp_bytes)
-        tmp_bytes = 0x000f21ff.to_bytes(4, byteorder='little')  # Set LO1 to +2 dBm and freq #15 (0x0F)
-        sp.ser.write(tmp_bytes)
-        tmp_bytes = 0x001323ff.to_bytes(4, byteorder='little')  # Set LO2 to +2 dBm followed by 19 freqs
-        sp.ser.write(tmp_bytes)
+#        tmp_bytes = 0x000f21ff.to_bytes(4, byteorder='little')  # Set LO1 to +2 dBm and freq #15 (0x0F)
+#        sp.ser.write(tmp_bytes)
+#        tmp_bytes = 0x001323ff.to_bytes(4, byteorder='little')  # Set LO2 to +2 dBm followed by 19 freqs
+#        sp.ser.write(tmp_bytes)
 
         # Generate a set of test data that can be replaced with user
         # selected start, stop and step values.
-        start_freq = 3000.0
-        stop_freq =  6000.0
-        num_freqs = 15385
-        freq_data = np.linspace(start_freq, stop_freq, num_freqs)
-        num_points = len(freq_data)
-        count = 0
-        step = 8
-        start = time.perf_counter()
-        while (num_points):
-            for freq in freq_data[count: count + step]:
-                FMN = sa.max2871_fmn(freq, self.referenceClock)
-                tmp_bytes = FMN.to_bytes(4, byteorder='little')
-#                sp.ser.write(tmp_bytes)
-                num_points -= 1;
-            count += step           # Move to the next 8 data points in freq_data
-            if num_points < 8:      # If there are fewer than 8 remaining data points...
-                step = num_points
-        print(name, line(), f'Sent {len(freq_data)} data points in {time.perf_counter() - start} seconds.')
-        print(name, line(), f'Finished sending {len(freq_data)} data points to Arduino')
+#        start_freq = 3000.0
+#        stop_freq =  6000.0
+#        num_freqs = 15385
+#        freq_data = np.linspace(start_freq, stop_freq, num_freqs)
+#        num_points = len(freq_data)
+#        count = 0
+#        step = 8
+#        start = time.perf_counter()
+#        while (num_points):
+#            for freq in freq_data[count: count + step]:
+#                FMN = sa.max2871_fmn(freq, self.referenceClock)
+#                tmp_bytes = FMN.to_bytes(4, byteorder='little')
+# #               sp.ser.write(tmp_bytes)
+#                num_points -= 1;
+#            count += step           # Move to the next 8 data points in freq_data
+#            if num_points < 8:      # If there are fewer than 8 remaining data points...
+#                step = num_points
+#        print(name, line(), f'Sent {len(freq_data)} data points in {time.perf_counter() - start} seconds.')
+#        print(name, line(), f'Finished sending {len(freq_data)} data points to Arduino')
 
 
     def sweep(self, start_freq: float, stop_freq: float, step_size: float = None, num_steps: int = 5, ref_clock: float = 60):
@@ -334,6 +338,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #            print(n_word)
 #            print(name, line(), f'LO2 value = {n_word}')
 #            sa.adf4356_write_registers(0, n_word)
+
+
+    @pyqtSlot()
+    def on_dbl_attenuator_dB_editingFinished(self):
+        """
+        Reduce the RF input signal using the onboard Digital Attenuator
+
+        @param 0 to 31.75 dB
+        @type double
+        """
+        attenuator_dB = float(self.dbl_attenuator_dB.value())
+        atten_byte = int(attenuator_dB * 2**18)
+        atten_byte += 255
+        tmp_bytes = atten_byte.to_bytes(4, byteorder='little')
+        sp.ser.write(tmp_bytes)
+
+
+
+
 
 # End MainWindow() class
 

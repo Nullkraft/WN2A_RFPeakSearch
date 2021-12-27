@@ -12,9 +12,9 @@ target_freq(3) = 4373.37
 target_freq(4) = 5351.37
 
 
-' Input parameters are the RFout, or rather Fvco, and the reference frequency, Fref
-' The return is the integer portion of rounded result of (Fvco * 2 / Fref)
-declare function INT_N (ByVal RF_out as double, ByVal F_ref as double) as integer
+' Input parameters are RFout (or rather Fvco), 'Fref' the reference frequency and 'R' the RF Divider
+' The return is the integer portion of the rounded result of (Fvco * R / Fref)
+declare function INT_N (ByVal RF_out as double, ByVal F_ref as double = 60, ByVal R as double = 2) as integer
 
 
 
@@ -73,15 +73,13 @@ Transmit:
 
 next j
 
-' Testing the values given in the Interface Standard 3 document page 4.
-' Example 1  Fvco = 3600 and Fref = 60
-print INT_N(3600, 60)
-' Example 2  Fvco = 5400 and Fref = 60
-print INT_N(5400, 60)
-' Example 3  Fvco = 4700 and Fref = 100
-print INT_N(4700, 100)
 
-INT_N(3600, 60)
+' Testing the values given in the Interface Standard 3 document page 4.
+print INT_N(3600, 60, )     ' Example 1:  Fvco = 3600 and Fref = 60 and R = default 2
+
+print INT_N(5400, , )       ' Example 2:  Fvco = 5400 and Fref = default 60 and R = default 2
+
+print INT_N(4700, 100, )    ' Example 3:  Fvco = 4700 and Fref = 100 and R = default 2
 
 close #1
 end
@@ -95,8 +93,9 @@ reg6_data:
 data  "350120F6","352120F6","354120F6","356120F6","358120F6","35A120F6","35C120F6" 'R6
 
 
-
-function INT_N(RF_out as double, F_ref as double = 60) as integer
-    return cint(RF_out * 2 / F_ref)     ' CInt() rounds the result before returning
+' From the ADF4356 specsheet, page 12 (pdf 13) N is the desired value of the feedback counter.
+' I named it INT_N to indicate that we are doing integer steps only.
+function INT_N (ByVal RF_out as double, ByVal F_ref as double = 60, ByVal R as double = 2) as integer
+    return cint(RF_out * R / F_ref)     ' CInt() rounds the result before returning
 end function
 

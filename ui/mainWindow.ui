@@ -385,7 +385,7 @@
           <string>ArduinoLED</string>
          </property>
          <property name="checked">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -646,7 +646,7 @@
           <number>5</number>
          </property>
          <property name="maximum">
-          <double>3200.000000000000000</double>
+          <double>6000.000000000000000</double>
          </property>
          <property name="singleStep">
           <double>0.001000000000000</double>
@@ -985,7 +985,7 @@
        <item>
         <widget class="QPushButton" name="btnSendRegisters">
          <property name="text">
-          <string>Transmit</string>
+          <string>Send Registers</string>
          </property>
         </widget>
        </item>

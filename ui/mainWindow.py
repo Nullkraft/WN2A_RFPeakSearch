@@ -53,13 +53,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def on_btnSendRegisters_clicked(self):
         if sp.ser.is_open:
-            freq = self.floatStartMHz.value()
-            if freq < 23.5:
-                freq = 23.5
-            if freq > 6000:
-                freq = 6000
-            sa.max2871_write_registers(freq, self.referenceClock, self.initialized)
-            self.initialized = True
+            freq = self.floatStopMHz.value()
+            if 23.5 < freq < 6000:
+                tmp_bytes = 0x000A2AFF.to_bytes(4, byteorder='little')
+                sp.ser.write(tmp_bytes)
+                for _ in range(10):
+                    self.max2871_set_freq(freq)
+
+    def max2871_set_freq(self, Fvco):
+        FMN = sa.max2871_fmn(Fvco)
+        tmp_bytes = FMN.to_bytes(4, byteorder='little')
+        print(name, line(), f'FMN = {FMN} for Freq = {Fvco} : tmp_bytes = {FMN}')
+        sp.ser.write(tmp_bytes)
+
 
 
     def __cmd(self, num_points):
@@ -292,11 +298,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 Do a git commit & push
         """
         # Required Spectrum Analyzer hardware setup
-        cmd_proc.turn_Arduino_LED_off()
-        tmp_bytes = 0x000007ff.to_bytes(4, byteorder='little')  # Select 60 MHz reference clock
-        sp.ser.write(tmp_bytes)
-#        tmp_bytes = 0x000f21ff.to_bytes(4, byteorder='little')  # Set LO1 to +2 dBm and freq #15 (0x0F)
+#        cmd_proc.turn_Arduino_LED_off()
+#        tmp_bytes = 0x000007ff.to_bytes(4, byteorder='little')  # Select 60 MHz reference clock
 #        sp.ser.write(tmp_bytes)
+        Fvco = 90
+        N = sa.adf4356_n(Fvco)
+        N |= 0x11FF
+        print(name, line(), f'For VCO = {Fvco} MHz, N = {N}')
+        tmp_bytes = N.to_bytes(4, byteorder='little')
+#        tmp_bytes = 0x000011ff.to_bytes(4, byteorder='little')  # Set LO1 to -4 dBm and freq #15 (0x0F)
+        sp.ser.write(tmp_bytes)
 #        tmp_bytes = 0x001323ff.to_bytes(4, byteorder='little')  # Set LO2 to +2 dBm followed by 19 freqs
 #        sp.ser.write(tmp_bytes)
 

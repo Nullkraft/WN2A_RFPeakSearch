@@ -112,8 +112,6 @@ def max2871_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, LockDete
 
         for i, x in enumerate(Reg[0]):
             print(name, line(), f'reg[{i}] = {x}')
-            if i == 4:
-                print(name, line(), f'Range = {Range}')
 
 
         return Reg[stepNumber]
@@ -163,7 +161,6 @@ def peakSearch(amplitudeData, numPeaks):
 
 
 def read_M_file(file_name='M.csv'):
-    print(name, line(), 'Reading M-file')
     with open(file_name, 'r') as M_file:
         for M in M_file.readlines():
             M_list.append(int(M))
@@ -180,14 +177,14 @@ def max2871_fmn(target_freq=3915, ref_clock=60, R=2):
     """
     err_list = []   # Find the index of the best error and use it for the best F.
     F_list = []
+    read_M_file()           # Load the list, M_list, from the M.csv file
     Fpfd = ref_clock / R
-
     N = int(target_freq / Fpfd)
     fraction = (target_freq / Fpfd) - N
     F_list = [round(M * fraction) for M in M_list]
     err_list = [abs(target_freq - (Fpfd * (N + F_list[i] / M))) for i, M in enumerate(M_list)]
     idx = min(range(len(err_list)), key = err_list.__getitem__)     # Get the index of the minimum error value
-    frequency_word = (F_list[idx] << 20) | (M_list[idx] << 8) | N             # frequency word to be sent to the Arduino
+    frequency_word = (F_list[idx] << 20) | (M_list[idx] << 8) | N   # frequency word to be sent to the Arduino
     return frequency_word
 
 
@@ -195,16 +192,28 @@ def adf4356_n(Fvco: float = 3600, Fref: float = 60, R: int = 2) -> int:
     """ Returns the integer portion of N which is used to program
         the integer step register of the ADF4356 chip.
     """
-    int_N = int(Fvco * R / Fref)
+    int_N = int(Fvco * R / Fref)    # OR Fvco/Fpfd == Fvco/30
     return (int_N << 16)
 
 
 if __name__ == '__main__':
-    read_M_file('M.csv')
-    start = time.perf_counter()
-    sweep()
-    print(f'Time to sweep = {round((time.perf_counter()-start), 2)}')
+    LO1_freq = 3720      # 3720 : 3776.52 :
+    LO1_cmd = 4607
+    LO2_freq = 3935         # 3935 : 3915 :
+    LO3_cmd = 4607
+    LO3_freq = 270
+    read_M_file()
 
+    N = adf4356_n(LO1_freq) + LO1_cmd
+    print(f'LO1 N = {N}\n')
+
+    FMN = max2871_fmn(LO2_freq)
+    print('  LO2 Cmd = 78591')
+    print(f'  LO2 FMN = {FMN}\n')
+
+    FMN = max2871_fmn(LO3_freq)
+    print('  LO3 Cmd = 78847')
+    print(f'  LO3 FMN = {FMN}')
 
 
 

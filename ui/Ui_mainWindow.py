@@ -136,7 +136,7 @@ class Ui_MainWindow(object):
         self.gridLayout_2.addItem(spacerItem7, 3, 0, 1, 1)
         self.chkArduinoLED = QtWidgets.QCheckBox(self.groupBox_3)
         self.chkArduinoLED.setMinimumSize(QtCore.QSize(110, 0))
-        self.chkArduinoLED.setChecked(True)
+        self.chkArduinoLED.setChecked(False)
         self.chkArduinoLED.setObjectName("chkArduinoLED")
         self.gridLayout_2.addWidget(self.chkArduinoLED, 16, 0, 1, 1)
         self.cbxSerialSpeedSelection = QtWidgets.QComboBox(self.groupBox_3)
@@ -232,7 +232,7 @@ class Ui_MainWindow(object):
         self.gridLayout_3.addWidget(self.floatStartMHz, 3, 0, 1, 1)
         self.floatStopMHz = QtWidgets.QDoubleSpinBox(self.groupBox_2)
         self.floatStopMHz.setDecimals(5)
-        self.floatStopMHz.setMaximum(3200.0)
+        self.floatStopMHz.setMaximum(6000.0)
         self.floatStopMHz.setSingleStep(0.001)
         self.floatStopMHz.setProperty("value", 3200.0)
         self.floatStopMHz.setObjectName("floatStopMHz")
@@ -404,7 +404,7 @@ class Ui_MainWindow(object):
         self.btnExit.setText(_translate("MainWindow", "Exit"))
         self.btn_get_arduino_msg.setText(_translate("MainWindow", "Arduino Message"))
         self.btnSweep.setText(_translate("MainWindow", "Sweep"))
-        self.btnSendRegisters.setText(_translate("MainWindow", "Transmit"))
+        self.btnSendRegisters.setText(_translate("MainWindow", "Send Registers"))
 from pyqtgraph import PlotWidget
 
 

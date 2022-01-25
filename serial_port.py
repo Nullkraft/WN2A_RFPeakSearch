@@ -44,16 +44,17 @@ class simple_serial(QObject):
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
         self.end_of_record = bytearray([255, 255])  # Arduino A2D is only 10 bits so we can safely use 0xffff
+        self._read_config()          # Preset _baud and _port from config file
 
 
     def set_speed(self, selected_speed):
-        self._read_config()           # Preset _baud and _port from config file
+#        self._read_config()          # Preset _baud and _port from config file
         self._baud = selected_speed  # Set a new _baud rate
         self._update_port()          # Open the port at the new speed and save it to the config
 
 
     def set_port(self, selected_port):
-        self._read_config()           # Preset _baud and _port from config file
+#        self._read_config()          # Preset _baud and _port from config file
         self._port = selected_port   # Set a new _port
         self._update_port()          # Open the new port and save it to the config
 

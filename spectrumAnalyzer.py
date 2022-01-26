@@ -4,83 +4,119 @@ import numpy as np
 import serial_port as sp
 import sys
 import time
-#import serial       # requires 'pip install pyserial'
 
 # Utilities provided for print debugging.
 line = lambda : sys._getframe(1).f_lineno
 name = __name__
 
-lock_detect = True
 Fvco = 0.0000       # Initialize as a type float
-lockDetectOn  = 13093080,541097977,1476465218,4160782339,1674572284,  20971525   # 374.596154 MHz with Lock Detect
-lockDetectOff = 13093080,541097977,1073812034,4160782339,1674572284,  20971525   # 374.596154 MHz no Lock Detect
-readReg6      = 13093080,541097977,1342247490,4160782339,1674572284,2151940101   # Read register 6
-
-dataRow = lockDetectOn      # default
 
 M_list = []
-
-def getSettingsFromUI(frequency=23.5, delay=2, refClock=60, lockDetect=True, fractionalOpt=False, freqMode=1):
-    print(delay)           # milliseconds delay between one serial xmission and the next
-    print(refClock)
-    print(lockDetect)
-    print(fractionalOpt)
-    print(freqMode)
-
-    # Select serial port
-    # Select baud rate
-    # Enter transmission delay
-    # Enter reference clock frequency
-    # Enable/Disable Lock Detect
-    # Enable/Disable Fraction Optimization
-    # Select Swept or Fixed frequency RF Output
-        # If Swept...
-            # Enter Start Frequency
-            # Enter Stop Frequency
-            # Enter Number of steps from Start to Stop Frequency
-        # Else
-            # Enter Fixed Frequency
+FMN_list = []
 
 
-def adf4356_write_registers(reg_num, reg_value):
+
+
+"""
+    NOTE: The LO1, LO2 and LO3 register values are stored in reverse.
+          For LO1 that means register value 13 is stored in Reg[0]
+          and register value 0 is stored in Reg[13].
+
+          Likewise for LO2 and LO3 where register value 5 is stored
+          in Reg[0] and register value 0 is stored in Reg[5].
+
+          This is done to match the requirement that the chip
+          registers are programmed from highest to lowest.
+"""
+
+class LO1():
+    """
+        The LO1 register values are stored in reverse. That means
+        register value 13 is stored in Reg[0] and register value 0
+        is stored in Reg[13].
+
+        This is done to match the requirement that the chip is
+        programmed starting from the highest register first.
+    """
+    Reg = []
+    Reg.append(0x0000000D)
+    Reg.append(0x000015FC)
+    Reg.append(0x0061200B)
+    Reg.append(0x00C00EBA)
+    Reg.append(0x0F09FCC9)
+    Reg.append(0x15596568)
+    Reg.append(0x060000F7)
+    Reg.append(0x95012046)
+    Reg.append(0x00800025)
+    Reg.append(0x32008984)
+    Reg.append(0x00000003)
+    Reg.append(0x00000012)
+    Reg.append(0x00000001)
+    Reg.append(0x002007C0)
+
+
+class LO2():
+    """
+        The LO2 register values are stored in reverse. That means
+        register value 5 is stored in Reg[0] and register value 0
+        is stored in Reg[5].
+
+        This is done to match the requirement that the chip is
+        programmed starting from the highest register first.
+    """
+    Reg = []
+    Reg.append(0x00400005)
+    Reg.append(0x638FF1C4)
+    Reg.append(0xF8008003)
+    Reg.append(0x58008042)    # Digital Lock detect ON
+    Reg.append(0x2000FFE9)
+    Reg.append(0x00419550)
+
+
+class LO3():
+    """
+        The LO3 register values are stored in reverse. That means
+        register value 5 is stored in Reg[0] and register value 0
+        is stored in Reg[5].
+
+        This is done to match the requirement that the chip is
+        programmed starting from the highest register first.
+    """
+    Reg = []
+    Reg.append(0x00400005)
+    Reg.append(0x63CFF104)
+    Reg.append(0xF8008003)
+    Reg.append(0x58008042)    # Digital Lock detect ON
+    Reg.append(0x20008011)
+    Reg.append(0x00480000)
+
+
+
+def write_adf4356_registers(reg_num, reg_value):
     pass
 
 
 oldChipRegisters = [0, 0, 0, 0, 0, 0]   # Set to zero's for initialization
 # The steps required to program the chip is to start with the highest
 # register and work your way down.
-def max2871_write_registers(target_frequency, ref_clock, initialized = False):
+def max2871_write_registers(target_frequency, ref_clock = 60):
     rfOut = target_frequency
-    refClock = ref_clock
     stepNumber = 0
 
-    if sp.ser.is_open:
-        arduinoCmd = b'r'
-        # Calculate and store a new set of register values used for
-        # programming the MAX2871 chip with a new output frequency.
-        registers = max2871_registers(rfOut, stepNumber, refClock)
+    # Calculate and store a new set of MAX2871 register values
+    # used for setting LO2 or LO3 output frequency.
+    registers = max2871_registers(rfOut, stepNumber, ref_clock)
 
-        if initialized:
-            for x, newChipRegister in enumerate(registers[::-1]):
-                # Only write to a register if its value has changed.
-                if newChipRegister != oldChipRegisters[x]:
-                    print(name, line(), f'Changed reg[{newChipRegister & 7}] = {newChipRegister}')
-                    sp.ser.write(arduinoCmd)       # Send command to the Arduino
-                    sp.ser.write(newChipRegister.to_bytes(4, 'big'))
-                    oldChipRegisters[x] = newChipRegister
-        else:   # Initialize the MAX2871 in accordance with manufacturer.
-            for x, newChipRegister in enumerate(registers[::-1]):
-                sp.ser.write(arduinoCmd)       # Send command to the Arduino
-                sp.ser.write(newChipRegister.to_bytes(4, 'big'))
-            time.sleep(0.025)
-            for x, newChipRegister in enumerate(registers[::-1]):
-                sp.ser.write(arduinoCmd)       # Send command to the Arduino
+    if sp.ser.is_open:
+        for x, newChipRegister in enumerate(registers[::-1]):
+            # Only write to a register if its value has changed.
+            if newChipRegister != oldChipRegisters[x]:
+                print(name, line(), f'Changed reg[{newChipRegister & 7}] = {newChipRegister}')
                 sp.ser.write(newChipRegister.to_bytes(4, 'big'))
                 oldChipRegisters[x] = newChipRegister
 
 
 def max2871_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, LockDetect="y"):
-    global lock_detect
     global dataRow
 
     refClockDivider = 4
@@ -117,15 +153,6 @@ def max2871_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, LockDete
         return Reg[stepNumber]
 
 
-def set_lock_detect(checked):
-    global lock_detect
-    global dataRow
-    if checked == True:
-        dataRow = lockDetectOn
-    else:
-#        dataRow = lockDetectOff
-        dataRow = readReg6
-
 
 # THIS IS NOT FOR SWEEPING!!!
 # If you have a frequency you want to focus on then this is the function for you.
@@ -138,19 +165,6 @@ def RF_to_LO1(freq_list, target_freq=1345):
     return lst.argmin()     # Returns the index of the lowest value in the array
 
 
-def sweep():
-    LO1_num_steps = int((6600 - 3600) / 30) + 1      # 3000MHz/30MHz = 100 steps
-    LO2_num_steps = int((3930 - 3900) / 0.150) + 1   #  30MHz/150kHz = 200 steps
-
-    LO1_freqs = np.linspace(3600, 6600, LO1_num_steps)    # List of LO1 freqs every 30 MHz
-    LO2_freqs = np.linspace(3900, 3930, LO2_num_steps)    # List of LO2 freqs every 150 kHz
-
-    for LO1_freq in LO1_freqs:
-        int_n = adf4356_n(LO1_freq, 60, 2)
-        for LO2_freq in LO2_freqs:
-            fmn_data = max2871_fmn(target_freq=LO2_freq, ref_clock=60)
-
-
 # Find the highest signal amplitudes in a spectrum plot.
 def peakSearch(amplitudeData, numPeaks):
     # Convert amplitudeData to a numpy.array so we can use argsort.
@@ -160,32 +174,61 @@ def peakSearch(amplitudeData, numPeaks):
     return(idx)
 
 
-def read_M_file(file_name='M.csv'):
-    with open(file_name, 'r') as M_file:
-        for M in M_file.readlines():
-            M_list.append(int(M))
+def read_FMN_file(file_name='FMN.csv'):
+    with open(file_name, 'r') as FMN_file:
+        for FMN in FMN_file.readlines():
+            FMN_list.append(int(FMN))
 
 
-def max2871_fmn(target_freq=3915, ref_clock=60, R=2):
+def MHz_to_fmn(RFout_MHz: float, Fref: float=60) -> int:
     """ Form a 32 bit word containing F, M and N.
 
-    NOTE: M_list must contain at least one item for this function to work.
-
-    The M.csv file contains a list of values for calculating the three
-    register values that are needed to set the chip to a new frequency.
-    This curated list of M-values provides adequate frequency accuracy.
+        F, M, and N are defined in the manufacturer's specsheet.
+        Frac F is the fractional division value (0 to MOD-1)
+        Mod M is the modulus value
+        Int N is the 16-bit N counter value (In Frac-N mode min 19 to 4091)
     """
-    err_list = []   # Find the index of the best error and use it for the best F.
-    F_list = []
-    read_M_file()           # Load the list, M_list, from the M.csv file
-    Fpfd = ref_clock / R
-    N = int(target_freq / Fpfd)
-    fraction = (target_freq / Fpfd) - N
-    F_list = [round(M * fraction) for M in M_list]
-    err_list = [abs(target_freq - (Fpfd * (N + F_list[i] / M))) for i, M in enumerate(M_list)]
-    idx = min(range(len(err_list)), key = err_list.__getitem__)     # Get the index of the minimum error value
-    frequency_word = (F_list[idx] << 20) | (M_list[idx] << 8) | N   # frequency word to be sent to the Arduino
-    return frequency_word
+    R = 2
+    Fvco = 0
+    div_range = 0
+    max_error = 2**32
+    for div_range in range(8):
+        div = 2**div_range
+        Fvco = div * RFout_MHz
+        if Fvco >= 3000:
+            break
+    Fpfd = Fref / R
+    N = int(Fvco / Fpfd)
+    Fract = Fvco / Fpfd - N
+    M_list = range(2, 4096)
+    for M in M_list:
+        F = round(Fract * M)
+        Err1 = abs(Fvco - (Fpfd * (N + F/M)))
+        if Err1 < max_error:
+            max_error = Err1
+            best_F = F
+            best_M = M
+        if Err1 == 0:
+            # Found the exact solution - Stop looking!
+            break
+    return best_F<<20 | best_M<<8 | N
+
+
+def fmn_to_MHz(fmn_word, Fpfd=30):
+    """
+    Function: fmn_to_freq is a utility for verifying that your fmn value
+              correctly matches the frequency that you think it does.
+
+    @param fmn_word is a 32 bit word that contains the F, M, and N values
+    @type <class 'int'>
+    @param Fpfd is half the frequency of the reference clock (defaults to 30)
+    @return Frequency in MHz
+    @rtype float
+    """
+    F = fmn_word >> 20
+    M = (fmn_word & 0xFFFFF) >> 8
+    N = fmn_word & 0xFF
+    return Fpfd*(N + F/M)
 
 
 def adf4356_n(Fvco: float = 3600, Fref: float = 60, R: int = 2) -> int:
@@ -197,23 +240,25 @@ def adf4356_n(Fvco: float = 3600, Fref: float = 60, R: int = 2) -> int:
 
 
 if __name__ == '__main__':
-    LO1_freq = 3720      # 3720 : 3776.52 :
-    LO1_cmd = 4607
-    LO2_freq = 3935         # 3935 : 3915 :
-    LO3_cmd = 4607
-    LO3_freq = 270
-    read_M_file()
+    print()
+    start = time.perf_counter()
 
-    N = adf4356_n(LO1_freq) + LO1_cmd
-    print(f'LO1 N = {N}\n')
+    num_loops = 100
+    for i in range(num_loops + 1):
+        LO3_fmn_list = [MHz_to_fmn(i) for i in range(23, 6000, 5)]
 
-    FMN = max2871_fmn(LO2_freq)
-    print('  LO2 Cmd = 78591')
-    print(f'  LO2 FMN = {FMN}\n')
+    average_delta = (time.perf_counter() - start)/num_loops
 
-    FMN = max2871_fmn(LO3_freq)
-    print('  LO3 Cmd = 78847')
-    print(f'  LO3 FMN = {FMN}')
+#    LO3_Fvco = [fmn_to_MHz(i) for i in LO3_fmn_list]
+#    print(LO3_Fvco, f'\nItems in list = {len(LO3_fmn_list)}')
+    print(f'Elapsed time = {average_delta}')
+
+
+
+
+
+
+
 
 
 

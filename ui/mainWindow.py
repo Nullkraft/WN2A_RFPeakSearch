@@ -4,11 +4,11 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
 from PyQt5.QtWidgets import QMainWindow
 import sys
-import time
+#import time
 import pyqtgraph as pg
 import numpy as np
 
-import concurrent.futures
+#import concurrent.futures
 
 from .Ui_mainWindow import Ui_MainWindow
 
@@ -36,34 +36,45 @@ class MainWindow(QMainWindow, Ui_MainWindow):
       #
         self.referenceClock = 60
         self.initialized = False        # MAX2871 chip will need to be initialized
-      # Populate the serial port selection list
+      # Query the O/S for a list of ports to populate the serial port selection list with
         ports = ss.get_os_ports()
+      # Populate the serial port selection list
         self.cbxSerialPortSelection.addItems(ports)
       # Populate the Serial Speed selection list
-#        speeds = ss.get_os_baudrates()
         speeds = ss.get_os_baudrates()
         for x in speeds:
             self.cbxSerialSpeedSelection.addItem(str(x), x)
-        ss.port_open()  # Checks to see if it can reopen the last port that was used.
+      # Check for, and reopen, the last serial port that was used.
+        ss.port_open()
+      # And now the user dropdowns need to be updated with the port and speed
+        foundPortIndex = self.cbxSerialPortSelection.findText(ss._port)
+        if (foundPortIndex >= 0):
+            self.cbxSerialPortSelection.setCurrentIndex(foundPortIndex)
+        foundSpeedIndex = self.cbxSerialSpeedSelection.findData(ss._baud)
+        if (foundSpeedIndex >= 0):
+            self.cbxSerialSpeedSelection.setCurrentIndex(foundSpeedIndex)
 
-    # SendRegisters() calls the Spectrum Analyzer code to generate new
-    # register values for programming the MAX2871 to set a new frequency.
-    # The amplitude of that frequency is then digitized (A2D) by the
-    # Arduino and sent back to the PC for plotting and analysis.
+
     @pyqtSlot()
     def on_btnSendRegisters_clicked(self):
+        """
+        Public slot
+        SendRegisters() calls the Spectrum Analyzer code to generate new
+        register values for programming the MAX2871 to set a new frequency.
+        The amplitude of that frequency is then digitized (A2D) by the
+        Arduino and sent back to the PC for plotting and analysis.
+        """
         if sp.ser.is_open:
             freq = self.floatStopMHz.value()
             if 23.5 < freq < 6000:
                 tmp_bytes = 0x000A2AFF.to_bytes(4, byteorder='little')
                 sp.ser.write(tmp_bytes)
-                for _ in range(10):
-                    self.max2871_set_freq(freq)
+                self.max2871_set_freq(freq)
+
 
     def max2871_set_freq(self, Fvco):
-        FMN = sa.max2871_fmn(Fvco)
+        FMN = sa.MHz_to_fmn(Fvco)
         tmp_bytes = FMN.to_bytes(4, byteorder='little')
-        print(name, line(), f'FMN = {FMN} for Freq = {Fvco} : tmp_bytes = {FMN}')
         sp.ser.write(tmp_bytes)
 
 
@@ -284,71 +295,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         print(name, line(), f'Arduino Message = {cmd_proc.get_message()}')
 
-    @pyqtSlot(bool)
-    def on_chkLockDetect_clicked(self, checked):
-        sa.set_lock_detect(checked)
-
-
     @pyqtSlot()
     def on_btnSweep_clicked(self):
-        """
-        TODO:   Write adf4356_n() for programming LO1
-                Cleanup max2871_fmn()
-                Make serial flow bidirectional with Arduino
-                Do a git commit & push
-        """
-        # Required Spectrum Analyzer hardware setup
-#        cmd_proc.turn_Arduino_LED_off()
-#        tmp_bytes = 0x000007ff.to_bytes(4, byteorder='little')  # Select 60 MHz reference clock
-#        sp.ser.write(tmp_bytes)
-        Fvco = 90
-        N = sa.adf4356_n(Fvco)
-        N |= 0x11FF
-        print(name, line(), f'For VCO = {Fvco} MHz, N = {N}')
-        tmp_bytes = N.to_bytes(4, byteorder='little')
-#        tmp_bytes = 0x000011ff.to_bytes(4, byteorder='little')  # Set LO1 to -4 dBm and freq #15 (0x0F)
-        sp.ser.write(tmp_bytes)
-#        tmp_bytes = 0x001323ff.to_bytes(4, byteorder='little')  # Set LO2 to +2 dBm followed by 19 freqs
-#        sp.ser.write(tmp_bytes)
-
-        # Generate a set of test data that can be replaced with user
-        # selected start, stop and step values.
-#        start_freq = 3000.0
-#        stop_freq =  6000.0
-#        num_freqs = 15385
-#        freq_data = np.linspace(start_freq, stop_freq, num_freqs)
-#        num_points = len(freq_data)
-#        count = 0
-#        step = 8
-#        start = time.perf_counter()
-#        while (num_points):
-#            for freq in freq_data[count: count + step]:
-#                FMN = sa.max2871_fmn(freq, self.referenceClock)
-#                tmp_bytes = FMN.to_bytes(4, byteorder='little')
-# #               sp.ser.write(tmp_bytes)
-#                num_points -= 1;
-#            count += step           # Move to the next 8 data points in freq_data
-#            if num_points < 8:      # If there are fewer than 8 remaining data points...
-#                step = num_points
-#        print(name, line(), f'Sent {len(freq_data)} data points in {time.perf_counter() - start} seconds.')
-#        print(name, line(), f'Finished sending {len(freq_data)} data points to Arduino')
-
-
-    def sweep(self, start_freq: float, stop_freq: float, step_size: float = None, num_steps: int = 5, ref_clock: float = 60):
-        start_freq = float(start_freq)
-        stop_freq = float(stop_freq)
-        ref_clock = float(ref_clock)
-
-        LO1_freqs = np.linspace(3600, 6600, 101)
-        LO2_freqs = np.linspace(3900, 3930, 601)
-        print(LO1_freqs)
-
-        LO1_map = map(sa.adf4356_n, LO1_freqs)
-        LO2_map = map(sa.max2871_fmn, LO2_freqs)
-#        for n_word in LO2_map:
-#            print(n_word)
-#            print(name, line(), f'LO2 value = {n_word}')
-#            sa.adf4356_write_registers(0, n_word)
+        pass
 
 
     @pyqtSlot()

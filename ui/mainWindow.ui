@@ -432,7 +432,7 @@
        <item row="20" column="0">
         <widget class="QPushButton" name="btnRefreshPortsList">
          <property name="text">
-          <string>New Ports</string>
+          <string>Refresh Ports</string>
          </property>
         </widget>
        </item>
@@ -507,6 +507,9 @@
          </property>
          <property name="decimals">
           <number>6</number>
+         </property>
+         <property name="maximum">
+          <double>10000.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -627,7 +630,7 @@
           <number>6</number>
          </property>
          <property name="minimum">
-          <double>0.100000000000000</double>
+          <double>23.000000000000000</double>
          </property>
          <property name="maximum">
           <double>3200.000000000000000</double>
@@ -636,7 +639,7 @@
           <double>0.500000000000000</double>
          </property>
          <property name="value">
-          <double>0.100000000000000</double>
+          <double>23.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -652,7 +655,7 @@
           <double>0.001000000000000</double>
          </property>
          <property name="value">
-          <double>3200.000000000000000</double>
+          <double>3000.000000000000000</double>
          </property>
         </widget>
        </item>

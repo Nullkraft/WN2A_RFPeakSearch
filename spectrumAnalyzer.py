@@ -4,6 +4,7 @@ import numpy as np
 import serial_port as sp
 import sys
 import time
+import command_processor as cmd_proc
 
 # Utilities provided for print debugging.
 line = lambda : sys._getframe(1).f_lineno
@@ -65,31 +66,61 @@ class LO2():
         programmed starting from the highest register first.
     """
     Reg = []
-    Reg.append(0x00400005)
-    Reg.append(0x638FF1C4)
-    Reg.append(0xF8008003)
-    Reg.append(0x58008042)    # Digital Lock detect ON
-    Reg.append(0x2000FFE9)
     Reg.append(0x00419550)
+    Reg.append(0x2000FFE9)
+    Reg.append(0x58008042)    # Digital Lock detect ON
+    Reg.append(0xF8008003)
+    Reg.append(0x638FF1C4)
+    Reg.append(0x00400005)
 
 
 class LO3():
     """
-        The LO3 register values are stored in reverse. That means
-        register value 5 is stored in Reg[0] and register value 0
+        The LO3 device registers are stored in reverse.  That means
+        device register 5 is stored in Reg[0] and device register 0
         is stored in Reg[5].
 
-        This is done to match the requirement that the chip is
-        programmed starting from the highest register first.
+        This matches the requirement that the chip is programmed
+        starting from the highest device register first.
     """
     Reg = []
-    Reg.append(0x00400005)
-    Reg.append(0x63CFF104)
-    Reg.append(0xF8008003)
-    Reg.append(0x58008042)    # Digital Lock detect ON
-    Reg.append(0x20008011)
     Reg.append(0x00480000)
+    Reg.append(0x20008011)
+    Reg.append(0x58008042)    # Digital Lock detect ON
+    Reg.append(0xF8008003)
+    Reg.append(0x63CFF104)
+    Reg.append(0x00400005)
 
+
+def sweep(start_freq: int=25, stop_freq: int=3000):
+    """
+    Function sweep() : Search the input for any or all RF signals
+    """
+    cmd_proc.enable_315MHz_adc()    # LO2 ADC selected
+    cmd_proc.enable_60MHz_ref_clock()
+    reference_freq = 60
+    IF1 = 3600   # Intermediate Frequency 1
+    step_size = int(reference_freq / 2)  # step_size is equivalent to Fpfd
+
+    F_start = int(IF1 + (start_freq - start_freq % step_size))           # Find LO1 start freq
+    F_stop = int(IF1 + (stop_freq - stop_freq % step_size) + step_size)  # Find LO1 stop freq
+    LO1_freq_list = [f for f in range(F_start, F_stop, step_size)]
+    LO1_num_steps = len(LO1_freq_list)
+
+    for LO1_freq in LO1_freq_list:
+        N = adf4356_n(LO1_freq)
+        cmd_proc.set_LO(cmd_proc.LO1_neg1dBm | N, LO1_num_steps)  # Select LO1, set frequency to N and RFout to -1dBm
+        cmd_proc.set_LO(cmd_proc.LO2_neg4dBm)
+        LO2_freq_list = [freq for freq in np.arange(3900, 3930, 0.25)]
+        for LO2_freq in LO2_freq_list:
+            FMN = MHz_to_fmn(LO2_freq)
+            FMN_bytes = FMN.to_bytes(4, byteorder='little')
+            sp.ser.write(FMN_bytes)                # Send FMN as bytes to set LO2 to a new freq
+            read_adc(0)
+
+
+def read_adc(selected_adc):
+    pass
 
 
 def write_adf4356_registers(reg_num, reg_value):
@@ -99,24 +130,24 @@ def write_adf4356_registers(reg_num, reg_value):
 oldChipRegisters = [0, 0, 0, 0, 0, 0]   # Set to zero's for initialization
 # The steps required to program the chip is to start with the highest
 # register and work your way down.
-def max2871_write_registers(target_frequency, ref_clock = 60):
+def max2871_write_registers(target_frequency, LO=None, ref_clock = 60):
     rfOut = target_frequency
     stepNumber = 0
 
     # Calculate and store a new set of MAX2871 register values
     # used for setting LO2 or LO3 output frequency.
-    registers = max2871_registers(rfOut, stepNumber, ref_clock)
+    registers = max2871_registers(rfOut, stepNumber, LO, ref_clock)
 
     if sp.ser.is_open:
         for x, newChipRegister in enumerate(registers[::-1]):
             # Only write to a register if its value has changed.
             if newChipRegister != oldChipRegisters[x]:
                 print(name, line(), f'Changed reg[{newChipRegister & 7}] = {newChipRegister}')
-                sp.ser.write(newChipRegister.to_bytes(4, 'big'))
+                sp.ser.write(newChipRegister.to_bytes(4, 'little'))
                 oldChipRegisters[x] = newChipRegister
 
 
-def max2871_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, LockDetect="y"):
+def max2871_registers(newFreq, stepNumber=0, LO=None, refClock=60, FracOpt=None, LockDetect="y"):
     global dataRow
 
     refClockDivider = 4
@@ -131,7 +162,7 @@ def max2871_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, LockDete
     else:
         Range = rangeNum
         Fvco = newFreq * Div
-        print(name, line(), f'Fvco = newFreq * Div : {Fvco} = {newFreq} * {Div}')
+#        print(name, line(), f'Fvco = newFreq * Div : {Fvco} = {newFreq} * {Div}')
         N = 1e6 * (Fvco/(Fpfd))
         NI = int(N)
         FracT = N - NI
@@ -141,10 +172,10 @@ def max2871_registers(newFreq, stepNumber=0, refClock=60, FracOpt=None, LockDete
 
         Reg[stepNumber][0] = (NI << 15) + (Fracc << 3)
         Reg[stepNumber][1] = 2**29 + 2**15 + (MOD1 << 3) + 1
-        Reg[stepNumber][2] = dataRow[2]
-        Reg[stepNumber][3] = dataRow[3]
+        Reg[stepNumber][2] = LO2.Reg[2]
+        Reg[stepNumber][3] = LO2.Reg[3]
         Reg[stepNumber][4] = 1670377980 + (Range << 20)
-        Reg[stepNumber][5] = dataRow[5]
+        Reg[stepNumber][5] = LO2.Reg[5]
 
         for i, x in enumerate(Reg[0]):
             print(name, line(), f'reg[{i}] = {x}')
@@ -174,7 +205,7 @@ def peakSearch(amplitudeData, numPeaks):
     return(idx)
 
 
-def read_FMN_file(file_name='FMN.csv'):
+def read_fmn_file(file_name='FMN.csv'):
     with open(file_name, 'r') as FMN_file:
         for FMN in FMN_file.readlines():
             FMN_list.append(int(FMN))
@@ -227,6 +258,8 @@ def fmn_to_MHz(fmn_word, Fpfd=30):
     """
     F = fmn_word >> 20
     M = (fmn_word & 0xFFFFF) >> 8
+    if M == 0:
+        print(fmn_word)
     N = fmn_word & 0xFF
     return Fpfd*(N + F/M)
 
@@ -241,17 +274,8 @@ def adf4356_n(Fvco: float = 3600, Fref: float = 60, R: int = 2) -> int:
 
 if __name__ == '__main__':
     print()
-    start = time.perf_counter()
 
-    num_loops = 100
-    for i in range(num_loops + 1):
-        LO3_fmn_list = [MHz_to_fmn(i) for i in range(23, 6000, 5)]
 
-    average_delta = (time.perf_counter() - start)/num_loops
-
-#    LO3_Fvco = [fmn_to_MHz(i) for i in LO3_fmn_list]
-#    print(LO3_Fvco, f'\nItems in list = {len(LO3_fmn_list)}')
-    print(f'Elapsed time = {average_delta}')
 
 
 

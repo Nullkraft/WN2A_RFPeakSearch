@@ -48,13 +48,11 @@ class simple_serial(QObject):
 
 
     def set_speed(self, selected_speed):
-#        self._read_config()          # Preset _baud and _port from config file
         self._baud = selected_speed  # Set a new _baud rate
         self._update_port()          # Open the port at the new speed and save it to the config
 
 
     def set_port(self, selected_port):
-#        self._read_config()          # Preset _baud and _port from config file
         self._port = selected_port   # Set a new _port
         self._update_port()          # Open the new port and save it to the config
 

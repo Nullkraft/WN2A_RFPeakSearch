@@ -64,41 +64,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         The amplitude of that frequency is then digitized (A2D) by the
         Arduino and sent back to the PC for plotting and analysis.
         """
+
         if sp.ser.is_open:
             freq = self.floatStopMHz.value()
             if 23.5 < freq < 6000:
-                tmp_bytes = 0x000A2AFF.to_bytes(4, byteorder='little')
-                sp.ser.write(tmp_bytes)
-                self.max2871_set_freq(freq)
+                fmn = sa.MHz_to_fmn(freq)
+                cmd_proc.set_max2871_freq(fmn)
 
 
-    def max2871_set_freq(self, Fvco):
-        FMN = sa.MHz_to_fmn(Fvco)
-        tmp_bytes = FMN.to_bytes(4, byteorder='little')
-        sp.ser.write(tmp_bytes)
-
+    def max2871_set_freq(self, RFout):
+        FMN = sa.MHz_to_fmn(RFout)
+        cmd_proc.LO_device_register(FMN)
 
 
     def __cmd(self, num_points):
-        """
-        The Arduino will only simulate a fixed number of RF data points and
-        only sees 1=256*16bits 2=512 3=768 4=1024 5=1280 (6 or greater)=1536
-        """
-        arduinoCmds = [b'1', b'2', b'3', b'4', b'5', b'6']
-        selection = (num_points // 256) - 1                # selection = floor(num_points/256)-1
-        selection = 5 if selection > 5 else selection
-        return arduinoCmds[selection]
+        pass
 
 
     @pyqtSlot()
     def on_btnTrigger_clicked(self):
-        """
-        Tell the Arduino how many data points we want to read from the A2D.
-        """
-        num_data_points = self.numDataPoints.value()
-        arduino_command = self.__cmd(num_data_points)
-        sp.ser.write(arduino_command)   # Send a new command to the Arduino
-        self.request_data()
+        pass
+
 
     def request_data(self):
         """
@@ -147,6 +133,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if index == 2:
             self.referenceClock = 100
             cmd_proc.enable_100MHz_ref_clock()
+        print(name, line(), self.referenceClock)
         return self.referenceClock
 
     # amplitudeData was collected as a bunch of linear 16-bit A/D values which we want
@@ -260,8 +247,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_line_edit_cmd_returnPressed(self):
-        pass
-
+        """ Create command name for disble LO3? """
+        cmd_str = self.line_edit_cmd.text()
+        cmd_int = int(cmd_str, 16)
+        tmp_bytes = cmd_int.to_bytes(4, byteorder='little')
+        sp.ser.write(tmp_bytes)
 
 
 
@@ -295,9 +285,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         print(name, line(), f'Arduino Message = {cmd_proc.get_message()}')
 
+
     @pyqtSlot()
     def on_btnSweep_clicked(self):
-        pass
+        LO1_step_size = self.referenceClock / 2
+        start_freq = self.floatStartMHz.value()
+        if not (start_freq % LO1_step_size):
+            pass
+        stop_freq = self.floatStopMHz.value()
+        sa.sweep(start_freq, stop_freq)
 
 
     @pyqtSlot()
@@ -315,8 +311,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sp.ser.write(tmp_bytes)
 
 
-
-
-
 # End MainWindow() class
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

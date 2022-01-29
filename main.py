@@ -12,3 +12,14 @@ if __name__ == '__main__':
     window.show()
     sys.exit(app.exec())    # Using sys.exit() provides a return code to the command line.
 
+
+
+
+
+
+#   *************** GET CmdProcessor TO PROCESS LO2 FREQUENCY CHANGES ***************
+
+
+
+
+

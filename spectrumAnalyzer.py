@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import serial_port as sp
 import sys
 import time
 import command_processor as cmd_proc
@@ -10,25 +9,8 @@ import command_processor as cmd_proc
 line = lambda : sys._getframe(1).f_lineno
 name = __name__
 
-Fvco = 0.0000       # Initialize as a type float
+referenceClock = 60
 
-M_list = []
-FMN_list = []
-
-
-
-
-"""
-    NOTE: The LO1, LO2 and LO3 register values are stored in reverse.
-          For LO1 that means register value 13 is stored in Reg[0]
-          and register value 0 is stored in Reg[13].
-
-          Likewise for LO2 and LO3 where register value 5 is stored
-          in Reg[0] and register value 0 is stored in Reg[5].
-
-          This is done to match the requirement that the chip
-          registers are programmed from highest to lowest.
-"""
 
 class LO1():
     """
@@ -91,60 +73,32 @@ class LO3():
     Reg.append(0x63CFF104)
     Reg.append(0x00400005)
 
-
-def sweep(start_freq: int=25, stop_freq: int=3000):
+def sweep(start_freq: int=25, stop_freq: int=3000, reference_freq: int=60):
     """
     Function sweep() : Search the input for any or all RF signals
     """
-    cmd_proc.enable_315MHz_adc()    # LO2 ADC selected
-    cmd_proc.enable_60MHz_ref_clock()
-    reference_freq = 60
-    IF1 = 3600   # Intermediate Frequency 1
+    intermediate_freq_1 = 3600           # Defined by the Spectrum Analyzer hardware design
     step_size = int(reference_freq / 2)  # step_size is equivalent to Fpfd
+    LO1_freq_start = int(intermediate_freq_1 + (start_freq - start_freq % step_size))
+    LO1_freq_stop = int(intermediate_freq_1 + (stop_freq - stop_freq % step_size) + step_size)
 
-    F_start = int(IF1 + (start_freq - start_freq % step_size))           # Find LO1 start freq
-    F_stop = int(IF1 + (stop_freq - stop_freq % step_size) + step_size)  # Find LO1 stop freq
-    LO1_freq_list = [f for f in range(F_start, F_stop, step_size)]
-    LO1_num_steps = len(LO1_freq_list)
-
+    cmd_proc.sel_315MHz_adc()    # LO2 ADC selected
+    cmd_proc.enable_60MHz_ref_clock()
+    LO1_freq_list = [MHz_to_N(freq) for freq in range(LO1_freq_start, LO1_freq_stop, step_size)]
+    start = time.perf_counter()
     for LO1_freq in LO1_freq_list:
-        N = adf4356_n(LO1_freq)
-        cmd_proc.set_LO(cmd_proc.LO1_neg1dBm | N, LO1_num_steps)  # Select LO1, set frequency to N and RFout to -1dBm
-        cmd_proc.set_LO(cmd_proc.LO2_neg4dBm)
-        LO2_freq_list = [freq for freq in np.arange(3900, 3930, 0.25)]
-        for LO2_freq in LO2_freq_list:
-            FMN = MHz_to_fmn(LO2_freq)
-            FMN_bytes = FMN.to_bytes(4, byteorder='little')
-            sp.ser.write(FMN_bytes)                # Send FMN as bytes to set LO2 to a new freq
-            read_adc(0)
+        cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, LO1_freq) # Set LO1 to next frequency
+        time.sleep(0.002)                         # Allow LO1 to finish updating
+        cmd_proc.set_LO(cmd_proc.LO2_pos5dBm)     # Select LO2
+        LO2_fmn_list = [MHz_to_fmn(freq) for freq in np.arange(3930, 3900, -0.25)]
+        for LO2_fmn in LO2_fmn_list:
+            cmd_proc.set_max2871_freq(LO2_fmn)
+#            print(name, line(), f'{hex(LO2_fmn)}, {fmn_to_MHz(LO2_fmn)}')
+            time.sleep(0.005)
 
-
-def read_adc(selected_adc):
+    print(f'Elapsed time for sweep = {time.perf_counter()-start}')
+def read_adc():
     pass
-
-
-def write_adf4356_registers(reg_num, reg_value):
-    pass
-
-
-oldChipRegisters = [0, 0, 0, 0, 0, 0]   # Set to zero's for initialization
-# The steps required to program the chip is to start with the highest
-# register and work your way down.
-def max2871_write_registers(target_frequency, LO=None, ref_clock = 60):
-    rfOut = target_frequency
-    stepNumber = 0
-
-    # Calculate and store a new set of MAX2871 register values
-    # used for setting LO2 or LO3 output frequency.
-    registers = max2871_registers(rfOut, stepNumber, LO, ref_clock)
-
-    if sp.ser.is_open:
-        for x, newChipRegister in enumerate(registers[::-1]):
-            # Only write to a register if its value has changed.
-            if newChipRegister != oldChipRegisters[x]:
-                print(name, line(), f'Changed reg[{newChipRegister & 7}] = {newChipRegister}')
-                sp.ser.write(newChipRegister.to_bytes(4, 'little'))
-                oldChipRegisters[x] = newChipRegister
 
 
 def max2871_registers(newFreq, stepNumber=0, LO=None, refClock=60, FracOpt=None, LockDetect="y"):
@@ -205,12 +159,6 @@ def peakSearch(amplitudeData, numPeaks):
     return(idx)
 
 
-def read_fmn_file(file_name='FMN.csv'):
-    with open(file_name, 'r') as FMN_file:
-        for FMN in FMN_file.readlines():
-            FMN_list.append(int(FMN))
-
-
 def MHz_to_fmn(RFout_MHz: float, Fref: float=60) -> int:
     """ Form a 32 bit word containing F, M and N.
 
@@ -231,8 +179,7 @@ def MHz_to_fmn(RFout_MHz: float, Fref: float=60) -> int:
     Fpfd = Fref / R
     N = int(Fvco / Fpfd)
     Fract = Fvco / Fpfd - N
-    M_list = range(2, 4096)
-    for M in M_list:
+    for M in range(2, 4096):
         F = round(Fract * M)
         Err1 = abs(Fvco - (Fpfd * (N + F/M)))
         if Err1 < max_error:
@@ -264,17 +211,18 @@ def fmn_to_MHz(fmn_word, Fpfd=30):
     return Fpfd*(N + F/M)
 
 
-def adf4356_n(Fvco: float = 3600, Fref: float = 60, R: int = 2) -> int:
+def MHz_to_N(RFout_MHz: float = 3600, Fref: float = 60, R: int = 2) -> int:
     """ Returns the integer portion of N which is used to program
         the integer step register of the ADF4356 chip.
     """
-    int_N = int(Fvco * R / Fref)    # OR Fvco/Fpfd == Fvco/30
-    return (int_N << 16)
+    N = int(RFout_MHz * (2/Fref))
+    return (N)
 
 
 if __name__ == '__main__':
     print()
-
+    N = MHz_to_N(3690)
+    print(N)
 
 
 

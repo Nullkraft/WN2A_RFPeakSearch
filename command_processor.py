@@ -8,7 +8,7 @@ line = lambda : sys._getframe(1).f_lineno
 name = __name__
 
 # Arduino and Device Commands
-Attenuator_level = 0x007F00FF   # Attenuates the RFinput from 0 to 32dB - default 32 dBm
+attenuator_sel   = 0x000000FF   # Attenuates the RFinput from 0 to 31.75dB
 
 LO1_device_sel   = 0x000001FF   # Select device before sending a General Command
 LO1_RF_off       = 0x000009FF   # Specific commands
@@ -54,23 +54,34 @@ Arduino_message  = 0x000017FF   # Query Arduino type and Software version
 Ready_to_send    = 0x000047FF   # Serial communication flow control
 
 # ADC selection and read request
-enable_adc_LO2   = 0x000027FF   # Enable 315 MHz LogAmp ADC and disable 45 MHz LogAmp ADC
-enable_adc_LO3   = 0x00002FFF   # Enable 45 MHz LogAmp ADC and disable 315 MHz LogAmp ADC
+sel_adc_LO2   = 0x000027FF   # Enable 315 MHz LogAmp ADC and disable 45 MHz LogAmp ADC
+sel_adc_LO3   = 0x00002FFF   # Enable 45 MHz LogAmp ADC and disable 315 MHz LogAmp ADC
 
+# Attenuator Command & Control
+def set_attenuator(decibels: float=31.75):
+    """
+    The level will be programmed into the deviceRegister and
+    can be found by multiplying the desired attenuation dB by 4.
+    The level is the merged with the 32 bit attenuator_sel
+    command found in the Spectrum Analyzer Interface Standard 3.
+    """
+    level = int(decibels * 4) << 16
+    _send_command(level | attenuator_sel)
 
 # LO1 Command & Control
-def set_LO1(LO_command, N: int=0):
-    if not (15 < N < 65536):
-        logging.error(f'{name}, {line()}, The value of N ({N}) exceeded the allowed limits for the ADF4356 (LO1)')
+def set_LO1(LO_command, int_N: int=0):
+    if not (120 <= int_N <= 220):
+        logging.error(f'{name}, {line()}, The value of N ({int_N}) exceeded the allowed limits for the ADF4356 (LO1)')
+    N = int_N << 16
     _send_command(LO_command | N)
+
+# Set new LO2/3 frequency
+def set_max2871_freq(fmn: int):
+    _send_command(fmn)
 
 # LO2 Command & Control
 def disable_LO2_RFout():
     _send_command(LO2_RF_off)
-
-# Set new frequency
-def set_max2871_freq(fmn: int):
-    _send_command(fmn)
 
 # LO3 Command & Control
 def disable_LO3_RFout():
@@ -93,10 +104,10 @@ def LO_device_register(device_command: int):
     """
     _send_command(device_command)
 
-def turn_Arduino_LED_on():
+def LED_on():
     _send_command(Arduino_LED_on)
 
-def turn_Arduino_LED_off():
+def LED_off():
     _send_command(Arduino_LED_off)
 
 def get_message():
@@ -115,11 +126,11 @@ def enable_60MHz_ref_clock():
 def enable_100MHz_ref_clock():
     _send_command(ref_100_enable)
 
-def enable_315MHz_adc():
-    _send_command(enable_adc_LO2)
+def sel_315MHz_adc():
+    _send_command(sel_adc_LO2)
 
-def enable_45MHz_adc():
-    _send_command(enable_adc_LO3)
+def sel_45MHz_adc():
+    _send_command(sel_adc_LO3)
 
 
 def _send_command(command: int):
@@ -128,7 +139,7 @@ def _send_command(command: int):
             cmd_bytes = command.to_bytes(4, 'little')
             sp.ser.write(cmd_bytes)
     except:
-        print(name, line(), f': The serial port was not opened before sending the command {command}.')
+        print(name, line(), f': The serial port was not opened before sending the command <{command.__name__}>.')
 
 
 

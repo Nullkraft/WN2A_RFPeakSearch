@@ -16,8 +16,7 @@ if __name__ == '__main__':
 
 
 
-
-#   *************** GET CmdProcessor TO PROCESS LO2 FREQUENCY CHANGES ***************
+# ********* POWER LEVEL and FREQUENCY NOT ADJUSTING ON SWEEP *********
 
 
 

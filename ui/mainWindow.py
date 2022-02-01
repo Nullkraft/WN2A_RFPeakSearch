@@ -34,7 +34,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.graphWidget.setYRange(0, 70000)
         self.dataLine = self.graphWidget.plot()
       #
-        self.referenceClock = 60
+        sa.referenceClock = 60
         self.initialized = False        # MAX2871 chip will need to be initialized
       # Query the O/S for a list of ports to populate the serial port selection list with
         ports = ss.get_os_ports()
@@ -125,16 +125,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(int)
     def on_selectReferenceOscillator_currentIndexChanged(self, index):
         if index == 0:
-            self.referenceClock = None
+            sa.referenceClock = None
             cmd_proc.disable_all_ref_clocks()
         if index == 1:
-            self.referenceClock = 60
+            sa.referenceClock = 60
             cmd_proc.enable_60MHz_ref_clock()
         if index == 2:
-            self.referenceClock = 100
+            sa.referenceClock = 100
             cmd_proc.enable_100MHz_ref_clock()
-        print(name, line(), self.referenceClock)
-        return self.referenceClock
+        print(name, line(), sa.referenceClock)
+        return sa.referenceClock
 
     # amplitudeData was collected as a bunch of linear 16-bit A/D values which we want
     # to convert to decibels.
@@ -251,7 +251,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         cmd_str = self.line_edit_cmd.text()
         cmd_int = int(cmd_str, 16)
         tmp_bytes = cmd_int.to_bytes(4, byteorder='little')
-        sp.ser.write(tmp_bytes)
+        sp.ser.write(tmp_bytes)     # Leave me alone!  I'm for testing...
 
 
 
@@ -274,9 +274,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(bool)
     def on_chkArduinoLED_toggled(self, checked):
         if checked:
-            cmd_proc.turn_Arduino_LED_on()
+            cmd_proc.LED_on()
         else:
-            cmd_proc.turn_Arduino_LED_off()
+            cmd_proc.LED_off()
 
     @pyqtSlot()
     def on_btn_get_arduino_msg_clicked(self):
@@ -288,12 +288,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
-        LO1_step_size = self.referenceClock / 2
+        ref_clock = sa.referenceClock
         start_freq = self.floatStartMHz.value()
-        if not (start_freq % LO1_step_size):
-            pass
         stop_freq = self.floatStopMHz.value()
-        sa.sweep(start_freq, stop_freq)
+        sa.sweep(start_freq, stop_freq, ref_clock)
 
 
     @pyqtSlot()
@@ -304,12 +302,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         @param 0 to 31.75 dB
         @type double
         """
-        attenuator_dB = float(self.dbl_attenuator_dB.value())
-        atten_byte = int(attenuator_dB * 2**18)
-        atten_byte += 255
-        tmp_bytes = atten_byte.to_bytes(4, byteorder='little')
-        sp.ser.write(tmp_bytes)
-
+        dB = float(self.dbl_attenuator_dB.value())
+        cmd_proc.set_attenuator(dB)
 
 # End MainWindow() class
 

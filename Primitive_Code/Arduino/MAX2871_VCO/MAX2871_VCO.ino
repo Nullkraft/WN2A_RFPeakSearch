@@ -10,7 +10,7 @@
 #include "MAX2871.h"
 
 
-#define EOS             0xFF  // 0xFF is reserved for End Of Serial transmission (EOS)
+#define EOS       0xFF  // 0xFF is reserved for End Of Serial transmission (EOS)
 
 // Arduino pin selections
 int latchPin    =  A3;  // MAX2871 LE

@@ -9,7 +9,8 @@ import command_processor as cmd_proc
 line = lambda : sys._getframe(1).f_lineno
 name = __name__
 
-referenceClock = 60
+reference_freq = 0
+
 
 
 class LO1():
@@ -73,6 +74,8 @@ class LO3():
     Reg.append(0x63CFF104)
     Reg.append(0x00400005)
 
+
+
 def sweep(start_freq: int=25, stop_freq: int=3000, reference_freq: int=60):
     """
     Function sweep() : Search the input for any or all RF signals
@@ -88,15 +91,19 @@ def sweep(start_freq: int=25, stop_freq: int=3000, reference_freq: int=60):
     start = time.perf_counter()
     for LO1_freq in LO1_freq_list:
         cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, LO1_freq) # Set LO1 to next frequency
-        time.sleep(0.002)                         # Allow LO1 to finish updating
+        time.sleep(0.050)                         # Allow LO1 to finish updating
         cmd_proc.set_LO(cmd_proc.LO2_pos5dBm)     # Select LO2
-        LO2_fmn_list = [MHz_to_fmn(freq) for freq in np.arange(3930, 3900, -0.25)]
-        for LO2_fmn in LO2_fmn_list:
+#        LO2_fmn_list = [MHz_to_fmn(freq) for freq in np.arange(3930, 3900, -0.25)]
+#        for LO2_fmn in LO2_fmn_list:
+        for LO2_freq in np.arange(3930, 3900, -0.25):
+            LO2_fmn = MHz_to_fmn(LO2_freq)
             cmd_proc.set_max2871_freq(LO2_fmn)
-#            print(name, line(), f'{hex(LO2_fmn)}, {fmn_to_MHz(LO2_fmn)}')
+            print(LO1_freq * 30 + 315 - LO2_freq, hex(LO2_fmn))
             time.sleep(0.005)
-
+    cmd_proc.sweep_done()
     print(f'Elapsed time for sweep = {time.perf_counter()-start}')
+
+
 def read_adc():
     pass
 

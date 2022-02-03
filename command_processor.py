@@ -50,12 +50,14 @@ Arduino_LED_on   = 0x00000FFF   # LED blink test - The 'Hello World' of embedded
 Arduino_LED_off  = 0x000007FF
 Arduino_message  = 0x000017FF   # Query Arduino type and Software version
 
-# Serial channel control
-Ready_to_send    = 0x000047FF   # Serial communication flow control
-
 # ADC selection and read request
-sel_adc_LO2   = 0x000027FF   # Enable 315 MHz LogAmp ADC and disable 45 MHz LogAmp ADC
-sel_adc_LO3   = 0x00002FFF   # Enable 45 MHz LogAmp ADC and disable 315 MHz LogAmp ADC
+sel_adc_LO2      = 0x000027FF   # Enable 315 MHz LogAmp ADC and disable 45 MHz LogAmp ADC
+sel_adc_LO3      = 0x00002FFF   # Enable 45 MHz LogAmp ADC and disable 315 MHz LogAmp ADC
+
+# Serial channel control
+ready_to_send    = 0x000047FF   # Serial communication flow control
+sweep_complete   = 0x000037FF   # Tell the Arduino that all data has been sent
+
 
 # Attenuator Command & Control
 def set_attenuator(decibels: float=31.75):
@@ -131,6 +133,9 @@ def sel_315MHz_adc():
 
 def sel_45MHz_adc():
     _send_command(sel_adc_LO3)
+
+def sweep_done():
+    _send_command(sweep_complete)
 
 
 def _send_command(command: int):

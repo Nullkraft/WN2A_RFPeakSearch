@@ -91,16 +91,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Read back data points in a separate thread so we don't block the gui.
         """
         if sp.ser.is_open:
-            self.thread = QThread()                                 # Create a separate thread for serial reads
-            self.worker = sp.simple_serial()                        # Function for reading from the serial port
-            self.worker.moveToThread(self.thread)                   # Serial reads happen inside its own thread
-            self.thread.started.connect(self.worker.read_serial)    # Connect to signals...
+            self.thread = QThread()                               # Create a separate thread for serial reads
+            self.worker = sp.simple_serial()                      # Function for reading from the serial port
+            self.worker.moveToThread(self.thread)                 # Serial reads happen inside its own thread
+            self.thread.started.connect(self.worker.read_serial)  # Connect to signals...
             self.worker.finished.connect(self.thread.quit)
             self.worker.finished.connect(self.worker.deleteLater)
             self.worker.finished.connect(self.show_ampl_data)
             self.thread.finished.connect(self.thread.deleteLater)
-            self.thread.start()                                     # After starting the thread...
-            self.btnTrigger.setEnabled(False)                       # disable the Trigger button until we're done
+            self.thread.start()                                   # After starting the thread...
+            self.btnTrigger.setEnabled(False)                     # disable the Trigger button until we're done
             self.thread.finished.connect(lambda: self.btnTrigger.setEnabled(True))
         else:
             print('')

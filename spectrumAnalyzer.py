@@ -10,7 +10,8 @@ line = lambda : sys._getframe(1).f_lineno
 name = __name__
 
 reference_freq = 0
-
+sweep_start = 0
+sweep_stop = 0
 
 
 class LO1():
@@ -80,32 +81,30 @@ def sweep(start_freq: int=25, stop_freq: int=3000, reference_freq: int=60):
     """
     Function sweep() : Search the input for any or all RF signals
     """
+    global sweep_start
+    global sweep_stop
+
     intermediate_freq_1 = 3600           # Defined by the Spectrum Analyzer hardware design
     step_size = int(reference_freq / 2)  # step_size is equivalent to Fpfd
-    LO1_freq_start = int(intermediate_freq_1 + (start_freq - start_freq % step_size))
-    LO1_freq_stop = int(intermediate_freq_1 + (stop_freq - stop_freq % step_size) + step_size)
-
+    LO1_start_freq = int(intermediate_freq_1 + (start_freq - start_freq % step_size))
+    LO1_stop_freq = int(intermediate_freq_1 + (stop_freq - stop_freq % step_size) + step_size)
+    sweep_start = LO1_start_freq - intermediate_freq_1
+    sweep_stop = LO1_stop_freq - intermediate_freq_1
     cmd_proc.sel_315MHz_adc()    # LO2 ADC selected
     cmd_proc.enable_60MHz_ref_clock()
-    LO1_freq_list = [MHz_to_N(freq) for freq in range(LO1_freq_start, LO1_freq_stop, step_size)]
+    LO1_N_list = [MHz_to_N(freq) for freq in range(LO1_start_freq, LO1_stop_freq, step_size)]
     start = time.perf_counter()
-    for LO1_freq in LO1_freq_list:
-        cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, LO1_freq) # Set LO1 to next frequency
+    for LO1_N in LO1_N_list:
+        cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, LO1_N) # Set LO1 to next frequency
+        print(name, line(), f'LO1 = {LO1_N * step_size}')
         time.sleep(0.050)                         # Allow LO1 to finish updating
         cmd_proc.set_LO(cmd_proc.LO2_pos5dBm)     # Select LO2
-#        LO2_fmn_list = [MHz_to_fmn(freq) for freq in np.arange(3930, 3900, -0.25)]
-#        for LO2_fmn in LO2_fmn_list:
-        for LO2_freq in np.arange(3930, 3900, -0.25):
-            LO2_fmn = MHz_to_fmn(LO2_freq)
+        LO2_fmn_list = [MHz_to_fmn(freq) for freq in np.arange(3914.75, 3884.75, -0.25)]
+        for LO2_fmn in LO2_fmn_list:
             cmd_proc.set_max2871_freq(LO2_fmn)
-            print(LO1_freq * 30 + 315 - LO2_freq, hex(LO2_fmn))
-            time.sleep(0.005)
+            time.sleep(0.003)
     cmd_proc.sweep_done()
-    print(f'Elapsed time for sweep = {time.perf_counter()-start}')
-
-
-def read_adc():
-    pass
+    print(name, line(), f'Elapsed time = {time.perf_counter() - start}')
 
 
 def max2871_registers(newFreq, stepNumber=0, LO=None, refClock=60, FracOpt=None, LockDetect="y"):

@@ -16,7 +16,6 @@ if __name__ == '__main__':
 
 
 
-# ********* POWER LEVEL and FREQUENCY NOT ADJUSTING ON SWEEP *********
 
 
 

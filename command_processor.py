@@ -70,13 +70,6 @@ def set_attenuator(decibels: float=31.75):
     level = int(decibels * 4) << 16
     _send_command(level | attenuator_sel)
 
-# LO1 Command & Control
-def set_LO1(LO_command, int_N: int=0):
-    if not (120 <= int_N <= 220):
-        logging.error(f'{name}, {line()}, The value of N ({int_N}) exceeded the allowed limits for the ADF4356 (LO1)')
-    N = int_N << 16
-    _send_command(LO_command | N)
-
 # Set new LO2/3 frequency
 def set_max2871_freq(fmn: int):
     _send_command(fmn)
@@ -89,13 +82,15 @@ def disable_LO2_RFout():
 def disable_LO3_RFout():
     _send_command(LO3_RF_off)
 
-def set_LO(LO_command, num_frequency_steps: int=0):
-    if num_frequency_steps > 0xFFFF:
-        num_steps = 0xFFFF0000    # Set and left shift to maximum frequency steps
-        logging.error(f'{name}, {line()}, Requested too many frequency steps:  Max is 65,535.')
+def set_LO(LO_command, int_N: int=None):
+    if int_N != None:
+        if (120 <= int_N <= 220):
+            N = int_N << 16
+        else:
+            logging.error(f'{name}, {line()}, N ({int_N}) is not within the limits of the ADF4356 (LO1)')
     else:
-        num_steps = int(num_frequency_steps) << 16
-    _send_command(LO_command | num_steps)
+        N = 0
+    _send_command(LO_command | N)
 
 def LO_device_register(device_command: int):
     """

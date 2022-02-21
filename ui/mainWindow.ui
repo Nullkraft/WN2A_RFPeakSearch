@@ -497,6 +497,58 @@
        <string>Frequency Controls</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_3">
+       <item row="4" column="2">
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Span (Mhz)</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="buddy">
+          <cstring>dblSpanMHz</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QDoubleSpinBox" name="dblStepKHz">
+         <property name="decimals">
+          <number>6</number>
+         </property>
+         <property name="maximum">
+          <double>9999.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>10.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QDoubleSpinBox" name="floatStartMHz">
+         <property name="decimals">
+          <number>6</number>
+         </property>
+         <property name="minimum">
+          <double>0.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>3200.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.500000000000000</double>
+         </property>
+         <property name="value">
+          <double>4.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="2">
+        <widget class="QDoubleSpinBox" name="dblSpanMHz">
+         <property name="decimals">
+          <number>6</number>
+         </property>
+        </widget>
+       </item>
        <item row="3" column="2">
         <widget class="QDoubleSpinBox" name="dblCenterMHz">
          <property name="minimumSize">
@@ -526,32 +578,6 @@
          </property>
         </spacer>
        </item>
-       <item row="5" column="0">
-        <widget class="QDoubleSpinBox" name="dblStepKHz">
-         <property name="decimals">
-          <number>6</number>
-         </property>
-         <property name="maximum">
-          <double>9999.000000000000000</double>
-         </property>
-         <property name="value">
-          <double>10.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="2">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Span (Mhz)</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="buddy">
-          <cstring>dblSpanMHz</cstring>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="4">
         <widget class="QLabel" name="label_3">
          <property name="text">
@@ -562,13 +588,6 @@
          </property>
          <property name="buddy">
           <cstring>floatStopMHz</cstring>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="2">
-        <widget class="QDoubleSpinBox" name="dblSpanMHz">
-         <property name="decimals">
-          <number>6</number>
          </property>
         </widget>
        </item>
@@ -621,25 +640,6 @@
          </property>
          <property name="buddy">
           <cstring>dblStepKHz</cstring>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QDoubleSpinBox" name="floatStartMHz">
-         <property name="decimals">
-          <number>6</number>
-         </property>
-         <property name="minimum">
-          <double>23.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>3200.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.500000000000000</double>
-         </property>
-         <property name="value">
-          <double>23.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -959,6 +959,28 @@
         <widget class="QPushButton" name="btnSweep">
          <property name="text">
           <string>Sweep</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QDoubleSpinBox" name="dblStepSize">
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="decimals">
+          <number>3</number>
+         </property>
+         <property name="minimum">
+          <double>0.001000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>0.250000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.001000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.250000000000000</double>
          </property>
         </widget>
        </item>

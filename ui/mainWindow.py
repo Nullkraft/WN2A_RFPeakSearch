@@ -31,29 +31,39 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         pg.setConfigOptions(useOpenGL=True)
-        self.setupUi(self)  # Must come before self.plot[]
-        self.graphWidget.setYRange(0, 70000)
+        self.setupUi(self)  # Must come before self.plot()
+        self.graphWidget.setYRange(0, 2.5)
+        self.graphWidget.setMouseEnabled(x=True, y=False)
         self.dataLine = self.graphWidget.plot()
-      #
+        # When zooming the graph update the x-axis start & stop frequencies
+        self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
+        #
         sa.referenceClock = 60
         self.initialized = False        # MAX2871 chip will need to be initialized
-      # Populate the 'User serial port drop-down selection list'
+        # Populate the 'User serial port drop-down selection list'
         serial_ports = ss.get_os_ports()
         self.cbxSerialPortSelection.addItems(serial_ports)
-      # Populate the 'User serial speed drop-down selection list'
+        # Populate the 'User serial speed drop-down selection list'
         serial_speeds = ss.get_os_baudrates()
         for baud in serial_speeds:
             self.cbxSerialSpeedSelection.addItem(str(baud), baud)
-      # Check for, and reopen, the last serial port that was used.
+        # Check for, and reopen, the last serial port that was used.
         ss.port_open()
-      # And now the user dropdowns need to be updated with the port and speed
+        # And now the user dropdowns need to be updated with the port and speed
         foundPortIndex = self.cbxSerialPortSelection.findText(ss._port)
         if (foundPortIndex >= 0):
             self.cbxSerialPortSelection.setCurrentIndex(foundPortIndex)
         foundSpeedIndex = self.cbxSerialSpeedSelection.findData(ss._baud)
         if (foundSpeedIndex >= 0):
             self.cbxSerialSpeedSelection.setCurrentIndex(foundSpeedIndex)
+        sa.load_LO2_freq_steps()
 
+
+    @pyqtSlot()
+    def update_start_stop(self):
+        view_range = self.graphWidget.viewRange()
+#        print(name, line(), f'View range = {view_range}')
+        return view_range
 
     @pyqtSlot()
     def on_btnSendRegisters_clicked(self):
@@ -83,10 +93,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnTrigger_clicked(self):
+#        sa.make_fmn_file()
         pass
 
 
-    def request_data(self):
+    def serial_read_thread(self):
         """
         Read back data points in a separate thread so we don't block the gui.
         """
@@ -140,15 +151,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def plot_ampl_data(self, amplBytes):
         self.amplitude = []       # Declare amplitude storage that will allow appending
         nBytes = len(amplBytes)
-        # Serial reads deliver each data point as as two 8-bit values
-        # which get turned into half as many 16 bit data points.
+        # Convert two 8-bit serial bytes into one 16 bit amplitude.
         for x in range(0, nBytes, 2):
             ampl = amplBytes[x] | (amplBytes[x+1] << 8)
-            volts = (ampl/1023) * 5
+            volts = (ampl/1024) * 5
             self.amplitude.append(volts)
-        stepSize = (sa.sweep_stop - sa.sweep_start) / len(self.amplitude)
-        self.freqRange = np.arange(sa.sweep_start, sa.sweep_stop, stepSize)
-        self.dataLine.setData(self.freqRange, self.amplitude, pen=(155,155,255))
+        assert len(sa.x_axis_list)==len(self.amplitude)
+        self.dataLine.setData(sa.x_axis_list, self.amplitude, pen=(155,155,255))
 
 
     @pyqtSlot()
@@ -159,20 +168,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self._peak_search()
 
     def _peak_search(self):
-        self.marker = np.array([pg.ArrowItem()])     # First, we need to create a growable array of markers
-        self.text = np.array([pg.TextItem()])        # Let's make some labels for each of the markers
-
-        # Read num markers from front-panel control
-        for _ in range(self.numPeakMarkers.value()-1):
-            self.marker = np.append(self.marker, pg.ArrowItem())  # Add markers up to numPeakMarkers
-            self.text = np.append(self.text, pg.TextItem())       # Add labels for each marker
-
-        # idx is an array that is presorted such that idx[0] points to the highest value
-        # in the amplitudeData array and idx[1] points to the second highest, etc.
+        self.marker = np.array([pg.ArrowItem()])     # Create a growable array of markers
+        self.text = np.array([pg.TextItem()])        # Make a growable array of labels
+        # idx is sorted so that idx[0] points to the highest amplitude in the
+        # amplitudeData array, idx[1] points to the second highest and so on.
         idx = sa.peakSearch(self.amplitude, self.numPeakMarkers.value())
-
-        # Create and add Peak Markers to the graph. Number of peak markers is chosen by the user.
-        for i in range(self.numPeakMarkers.value()):
+        # Get the number of markers from the user control on the front panel
+        num_markers = self.numPeakMarkers.value()
+        # Create and add Peak Markers to the graph.
+        for i in range(min(num_markers, len(idx))):
+            self.marker = np.append(self.marker, pg.ArrowItem())  # Add a place for a new marker
+            self.text = np.append(self.text, pg.TextItem())       # Add a place for a new label
             self.marker[i] = pg.ArrowItem(angle=-90, tipAngle=40, tailWidth=10, pen={'color': 'w', 'width': 1})
             frequency = self.freqRange[idx[i]]
             amplitude = self.amplitude[idx[i]]
@@ -292,9 +298,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ref_clock = sa.referenceClock
         start_freq = self.floatStartMHz.value()
         stop_freq = self.floatStopMHz.value()
-        sp.ser.read(sp.ser.in_waiting) # Clear (read out) all the data from the serial buffer
-        self.request_data()            # Start the serial read thread
-        sa.sweep(start_freq, stop_freq, ref_clock)
+        step_size = self.dblStepSize.value()
+        sp.ser.read(sp.ser.in_waiting) # Clear all the garbage that is clogging up the serial buffer.
+        self.serial_read_thread()      # Start the serial receive read thread to accept sweep data
+        sa.sweep(start_freq, stop_freq, step_size, ref_clock)
+        self.graphWidget.setXRange(sa.x_axis_list[0], sa.x_axis_list[-1])   # Limit plot to user selected frequency range
 
 
     @pyqtSlot()
@@ -308,14 +316,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         dB = float(self.dbl_attenuator_dB.value())
         cmd_proc.set_attenuator(dB)
 
-# End MainWindow() class
+
+    @pyqtSlot()
+    def on_dblStepSize_editingFinished(self):
+        """ Load the LO2 fmn list based on the user selected step size
+        """
+        step_size = round(self.dblStepSize.value(), 6)
+        sa.update_LO2_fmn_list(step_size)
 
 
-
-
-
-
-
+    def get_freq_step(self):
+        freq_step = round(self.dblStepSize.value(), 6)
+        return freq_step
 
 
 

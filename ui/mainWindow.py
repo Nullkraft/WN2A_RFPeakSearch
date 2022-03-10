@@ -56,7 +56,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         foundSpeedIndex = self.cbxSerialSpeedSelection.findData(ss._baud)
         if (foundSpeedIndex >= 0):
             self.cbxSerialSpeedSelection.setCurrentIndex(foundSpeedIndex)
-        sa.load_LO2_freq_steps()
+        sa.hardware().load_LO1_freq_steps()
+        sa.hardware().load_LO2_freq_steps()
+        # Populate the 'User RFin step size drop-down selection list'
+        sa.step_size_dict = {"250.0" : 0.250,
+                             "125.0" : 0.125,
+                             " 62.5" : 0.0625,
+                             " 32.0" : 0.03125,
+                             " 16.0" : 0.015625,
+                             "  8.0" : 0.0078125,
+                             "  4.0" : 0.00390625,
+                             "  2.0" : 0.001953125}
+        for str_step in sa.step_size_dict:
+            self.cbx_RFin_step_size.addItem(str_step)
+
 
 
     @pyqtSlot()
@@ -93,7 +106,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnTrigger_clicked(self):
-#        sa.make_fmn_file()
         pass
 
 
@@ -125,6 +137,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(str)
     def on_cbxSerialSpeedSelection_activated(self, speed_str):
         ss.set_speed(speed_str)
+
+    @pyqtSlot(str)
+    def on_cbx_RFin_step_size_activated(self, RFin_step_size_str):
+        """
+        Slot documentation goes here.
+
+        @param RFin_step_size DESCRIPTION
+        @type str
+        """
+        sa.sweep_step = sa.step_size_dict[RFin_step_size_str]
+
 
     @pyqtSlot()
     def on_btnRefreshPortsList_clicked(self):
@@ -293,15 +316,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print(name, line(), f'Arduino Message = {cmd_proc.get_message()}')
 
 
+
+
+
+        # TODO: Store sweep__start, sweep_stop, and sweep_step in spectrumAnalyzer.py
+        #
+        # When the user updates the start, stop, or step frequency on the GUI then
+        # make a function in spectrumAnalyzer.py that converts the frequency into
+        # sa.sweep__start, sa.sweep_stop, and sa.sweep_step as 1 kHz values that
+        # become the index into the:
+        #     sa.full_freq_list[sa.sweep_start:sa.sweep_stop:sa.sweep_step]
+
+
+
+
+
+
+
+
+
     @pyqtSlot()
     def on_btnSweep_clicked(self):
         ref_clock = sa.referenceClock
-        start_freq = self.floatStartMHz.value()
-        stop_freq = self.floatStopMHz.value()
-        step_size = self.dblStepSize.value()
-        sp.ser.read(sp.ser.in_waiting) # Clear all the garbage that is clogging up the serial buffer.
+        sweep_start = self.floatStartMHz.value()
+        sweep_stop = self.floatStopMHz.value()
+        sweep_step_kHz = sa.sweep_step
+        sp.ser.read(sp.ser.in_waiting) # Clear out the serial buffer.
         self.serial_read_thread()      # Start the serial receive read thread to accept sweep data
-        sa.sweep(start_freq, stop_freq, step_size, ref_clock)
+        sa.sweep(sweep_start, sweep_stop, sweep_step_kHz, ref_clock)
+        assert len(sa.x_axis_list) != 0, "sa.x_axis_list was empty"
         self.graphWidget.setXRange(sa.x_axis_list[0], sa.x_axis_list[-1])   # Limit plot to user selected frequency range
 
 
@@ -328,7 +371,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def get_freq_step(self):
         freq_step = round(self.dblStepSize.value(), 6)
         return freq_step
-
 
 
 

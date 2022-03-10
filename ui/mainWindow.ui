@@ -226,6 +226,25 @@
        <string/>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
+       <item row="27" column="0" alignment="Qt::AlignHCenter">
+        <widget class="QComboBox" name="cbx_RFin_step_size">
+         <property name="minimumSize">
+          <size>
+           <width>50</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+         <property name="currentIndex">
+          <number>-1</number>
+         </property>
+         <property name="sizeAdjustPolicy">
+          <enum>QComboBox::AdjustToContents</enum>
+         </property>
+        </widget>
+       </item>
        <item row="15" column="0">
         <widget class="QPushButton" name="btn_disable_LO2_RFout">
          <property name="text">
@@ -463,6 +482,53 @@
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="24" column="0" alignment="Qt::AlignHCenter">
+        <widget class="QLabel" name="label_14">
+         <property name="text">
+          <string>RFin Step Size (in kHz)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="25" column="0">
+        <widget class="QDoubleSpinBox" name="dblStepSize">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>180</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="accelerated">
+          <bool>false</bool>
+         </property>
+         <property name="prefix">
+          <string/>
+         </property>
+         <property name="decimals">
+          <number>3</number>
+         </property>
+         <property name="minimum">
+          <double>0.001000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>0.250000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.001000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.250000000000000</double>
          </property>
         </widget>
        </item>
@@ -959,28 +1025,6 @@
         <widget class="QPushButton" name="btnSweep">
          <property name="text">
           <string>Sweep</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QDoubleSpinBox" name="dblStepSize">
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-         <property name="decimals">
-          <number>3</number>
-         </property>
-         <property name="minimum">
-          <double>0.001000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>0.250000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.001000000000000</double>
-         </property>
-         <property name="value">
-          <double>0.250000000000000</double>
          </property>
         </widget>
        </item>

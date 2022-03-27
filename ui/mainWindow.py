@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from PyQt5 import QtCore
-from PyQt5.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
-from PyQt5.QtWidgets import QMainWindow
+from PyQt6 import QtCore
+from PyQt6.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
+from PyQt6.QtWidgets import QMainWindow
 import sys
 #import time
 import pyqtgraph as pg
@@ -129,14 +129,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print('')
             print('     You have to open the serial port.')
             print('     You must select both a Serial port AND speed.')
-
-    @pyqtSlot(str)
-    def on_cbxSerialPortSelection_activated(self, selected_port):
-        ss.set_port(selected_port)
-
-    @pyqtSlot(str)
-    def on_cbxSerialSpeedSelection_activated(self, speed_str):
-        ss.set_speed(speed_str)
 
     @pyqtSlot(str)
     def on_cbx_RFin_step_size_activated(self, RFin_step_size_str):
@@ -371,12 +363,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def get_freq_step(self):
         freq_step = round(self.dblStepSize.value(), 6)
         return freq_step
-
-
-
-
-
-
+    
+    @pyqtSlot(str)
+    def on_cbxSerialPortSelection_activated(self, selected_port):
+        ss.set_port(selected_port)
+    
+    @pyqtSlot(str)
+    def on_cbxSerialSpeedSelection_currentTextChanged(self, speed_str):
+        """
+        Slot documentation goes here.
+        
+        @param p0 DESCRIPTION
+        @type str
+        """
+        ss.set_speed(speed_str)
 
 
 

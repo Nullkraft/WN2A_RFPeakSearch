@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from serial.tools import list_ports
 import serial       # requires 'pip3 install pyserial'
+from serial.tools import list_ports
 
 import time
 import errno as error
 import sys
 import configparser
 import os
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QObject, pyqtSignal
 
 
 # Utils to print filename and linenumber, print(name, line(), ...), when using print debugging.
@@ -48,8 +48,8 @@ class simple_serial(QObject):
 
 
     def set_speed(self, selected_speed):
-        self._baud = selected_speed  # Set a new _baud rate
-        self._update_port()          # Open the port at the new speed and save it to the config
+        self._baud = int(selected_speed)  # Set a new _baud rate
+        self._update_port()               # Open the port at the new speed and save it to the config
 
 
     def set_port(self, selected_port):
@@ -92,9 +92,16 @@ class simple_serial(QObject):
         ser_port = None
         if not os.path.isfile(self.config_fname):    # If needed create a new default serial.conf
             self._write_config(self.default_serial_speed, self.default_serial_port)
-        port_config = self._read_config()            # Get the port settings from the config file.
+        config_port = self._read_config()            # Get the port settings from the config file.
         active_ports = self.get_os_ports()           # Get a list of all the serial ports on this system.
-        if port_config[0] in active_ports:           # If our port is alive on this system then open it.
+        if config_port[0] in active_ports:
+            selected_port = config_port[0]
+            print(name, line(), f'selected config_port = {selected_port}')
+        else:
+            selected_port = active_ports[0]
+            print(name, line(), f'selected active_port = {selected_port}')
+            
+        if selected_port != None:           # If our port is alive on this system then open it.
             try:
                 ser_port = serial.Serial(self._port, self._baud, timeout=100/int(self._baud))
             except OSError as e:
@@ -109,6 +116,8 @@ class simple_serial(QObject):
                 print(name, line(), f': {ser_port.port} opened at {ser_port.baudrate} baud.')
             finally:
                 ser = ser_port
+        else:
+            print(name, line(), f'config_port[0], {config_port[0]}, is NOT in active_ports')
 
 
     def _write_config(self, speed=None, port=None):
@@ -164,9 +173,10 @@ class simple_serial(QObject):
 
 
 if __name__ == '__main__':
-    sw = simple_serial()
-    print(name, line(), f'Available serial ports = {sw.get_os_ports()}')
-    print(name, line(), f'Available baud rates = {sw.get_os_baudrates()}')
+    dir(serial)
+#    sw = simple_serial()
+#    print(name, line(), f'Available serial ports = {sw.get_os_ports()}')
+#    print(name, line(), f'Available baud rates = {sw.get_os_baudrates()}')
 
 
 

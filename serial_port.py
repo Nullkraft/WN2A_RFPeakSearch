@@ -47,16 +47,6 @@ class simple_serial(QObject):
         self._read_config()          # Preset _baud and _port from config file
 
 
-    def set_speed(self, selected_speed):
-        self._baud = int(selected_speed)  # Set a new _baud rate
-        self._update_port()               # Open the port at the new speed and save it to the config
-
-
-    def set_port(self, selected_port):
-        self._port = selected_port   # Set a new _port
-        self._update_port()          # Open the new port and save it to the config
-
-
     def get_os_ports(self):
         """
         Function get_os_ports()
@@ -82,10 +72,13 @@ class simple_serial(QObject):
         return ser.BAUDRATES[idx9600:]      # Only show rates at or above 9600 baud
 
 
-    def _update_port(self):
-        self._write_config(self._baud, self._port)     # Saves new settings to the config file.
-        self.port_open()                    # This will reopen the last port used if it's available.
+    def set_speed(self, selected_speed):
+        self._baud = int(selected_speed)  # Set a new _baud rate
+        self._write_config(self._baud, self._port)      # Saves new speed to the config file.
 
+    def set_port(self, selected_port):
+        self._port = selected_port   # Set a new _port
+        self._write_config(self._baud, self._port)      # Saves new port to the config file.
 
     def port_open(self):
         global ser
@@ -103,7 +96,8 @@ class simple_serial(QObject):
             
         if selected_port != None:           # If our port is alive on this system then open it.
             try:
-                ser_port = serial.Serial(self._port, self._baud, timeout=100/int(self._baud))
+                ser_port = serial.Serial(selected_port, self._baud, timeout=100/int(self._baud))
+                self._port = selected_port
             except OSError as e:
                 if e.errno == error.EBUSY:
                     print(name, line(), ": Another program has already opened the port. Arduino?")
@@ -112,7 +106,8 @@ class simple_serial(QObject):
                 print(name, line(), f': One of the lines in {self.config_fname} is messed up.')
                 self._write_config(self.default_serial_speed, self.default_serial_port)     # Messed up serial.conf keys so recreate a default copy.
             else:
-                time.sleep(0.2)         # Give the port a moment to finish opening.
+                time.sleep(0.2)                                 # Give the port a moment to finish opening.
+                self._write_config(self._baud, self._port)      # Saves new settings to the config file.
                 print(name, line(), f': {ser_port.port} opened at {ser_port.baudrate} baud.')
             finally:
                 ser = ser_port

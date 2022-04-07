@@ -2,7 +2,7 @@
   "header": {
     "comment": "eric project file for project WN2A_RFPeakSearch",
     "copyright": "Copyright (C) 2022 , ",
-    "saved": "2022-03-23, 16:25:07"
+    "saved": "2022-04-06, 18:51:48"
   },
   "project": {
     "AUTHOR": "",
@@ -166,7 +166,9 @@
       "ui/Ui_mainWindow.py",
       "ui/mainWindow.py",
       "command_processor.py",
-      "z_scratch.py"
+      "z_scratch.py",
+      "sa_hw_config.py",
+      "file_generator.py"
     ],
     "SPELLEXCLUDES": "",
     "SPELLLANGUAGE": "en_US",

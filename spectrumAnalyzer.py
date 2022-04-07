@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import yappi
+#import yappi
 
 import numpy as np
 import sys
 import time
 import command_processor as cmd_proc
+from multiprocessing import Pool as pool
 
 # Utilities provided for print debugging.
 line = lambda : sys._getframe(1).f_lineno
@@ -183,8 +184,8 @@ def sweep(start_freq: int=4, stop_freq: int=3000, freq_step: float=0.25, referen
     print(name, line(), f'Num frequencies = {len(sweep_freq_list)}')
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     x_axis_list.clear()
-    intermediate_freq_1 = 3600           # Defined by the Spectrum Analyzer hardware design
-    Fpfd = int(reference_freq / 2)  # Fpfd is equivalent to Fpfd
+    intermediate_freq_1 = 3600          # Defined by the Spectrum Analyzer hardware design
+    Fpfd = int(reference_freq / 2)      # Fpfd is equivalent to Fpfd
     LO1_start_freq = int(intermediate_freq_1 + (start_freq - start_freq % Fpfd))
     LO1_stop_freq = int(intermediate_freq_1 + (stop_freq - stop_freq % Fpfd) + Fpfd)
     sweep_start = LO1_start_freq - intermediate_freq_1
@@ -195,7 +196,6 @@ def sweep(start_freq: int=4, stop_freq: int=3000, freq_step: float=0.25, referen
     LO1_N_list = [MHz_to_N(freq) for freq in range(LO1_start_freq, LO1_stop_freq, Fpfd)]
 
     mixer1_freq_list = [(N * Fpfd + 315) for N in LO1_N_list]
-
     print(name, line(), f'sweep_step = {sweep_step}, {type(sweep_step)}')
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -299,7 +299,7 @@ def is_peak(amplitude_list, idx):
         return (amplitude_list[idx-1] + plus_delta) < amplitude_list[idx] > (amplitude_list[idx+1] + plus_delta)
 
 
-def fmn_to_MHz(fmn_word, Fpfd=30):
+def fmn_to_MHz(fmn_word, Fpfd=33):
     """
     Function: fmn_to_freq is a utility for verifying that your fmn value
               correctly matches the frequency that you think it does.
@@ -318,7 +318,7 @@ def fmn_to_MHz(fmn_word, Fpfd=30):
     return Fpfd*(N + F/M)
 
 
-def MHz_to_N(RFout_MHz: float = 3600, Fref: float = 60, R: int = 2) -> int:
+def MHz_to_N(RFout_MHz: float = 3600, Fref: float = 66, R: int = 2) -> int:
     """ Returns the integer portion of N which is used to program
         the integer step register of the ADF4356 chip.
     """
@@ -326,7 +326,7 @@ def MHz_to_N(RFout_MHz: float = 3600, Fref: float = 60, R: int = 2) -> int:
     return (N)
 
 
-def MHz_to_fmn(max2871_out_MHz: float, Fref: float=60) -> int:
+def MHz_to_fmn(max2871_out_MHz: float, Fref: float=66) -> int:
     """ Form a 32 bit word containing F, M and N.
 
         F, M, and N are defined in the manufacturer's specsheet.
@@ -360,7 +360,7 @@ def MHz_to_fmn(max2871_out_MHz: float, Fref: float=60) -> int:
 
 
 
-def get_LO1_freq(RFin: float=0.001, Fref_MHz: float=60.0, IF1_MHz: float=3600.0):
+def get_LO1_freq(RFin: float=0.001, Fref_MHz: float=66.0, IF1_MHz: float=3600.0):
     """ LO1 has a range of 3600.0 to 6600.0 MHz
         LO1 = (IF1 + RFin) - ((IF1 + RFin) % Fpfd)
     """
@@ -368,15 +368,12 @@ def get_LO1_freq(RFin: float=0.001, Fref_MHz: float=60.0, IF1_MHz: float=3600.0)
     LO1 = (RFin + IF1_MHz) - ((RFin + IF1_MHz) % (Fref_MHz/2))
     return LO1
 
-def get_LO2_freq(RFin: float=0.001, Fref_MHz: float=60.0, IF2_MHz: float=315.0):
+def get_LO2_freq(RFin: float=0.001, Fref_MHz: float=66.0, IF2_MHz: float=315.0):
     """ LO2 has a range of 3914.999 to 3885.001 MHz
         LO2 = LO1 - RFin + IF2
     """
     LO1_MHz = get_LO1_freq(RFin)
-    if RFin <= 2500.0:
-        LO2 = LO1_MHz - IF2_MHz - RFin
-    else:
-        LO2 = LO1_MHz + IF2_MHz - RFin
+    LO2 = LO1_MHz - IF2_MHz - RFin
     return LO2
 
 def get_RFin_freq(LO1_MHz: float=3000.0, LO2_MHz: float=3914.999, IF2_MHz: float=315.0):

@@ -93,7 +93,6 @@ class simple_serial(QObject):
         else:
             selected_port = active_ports[0]
             print(name, line(), f'selected active_port = {selected_port}')
-            
         if selected_port != None:           # If our port is alive on this system then open it.
             try:
                 ser_port = serial.Serial(selected_port, self._baud, timeout=100/int(self._baud))

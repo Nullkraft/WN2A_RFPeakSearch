@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1533</width>
-    <height>1191</height>
+    <height>1236</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -226,22 +226,26 @@
        <string/>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="27" column="0" alignment="Qt::AlignHCenter">
-        <widget class="QComboBox" name="cbx_RFin_step_size">
-         <property name="minimumSize">
-          <size>
-           <width>50</width>
-           <height>0</height>
-          </size>
+       <item row="12" column="0">
+        <widget class="QLabel" name="label_13">
+         <property name="text">
+          <string>Attenuator (dB)</string>
          </property>
-         <property name="layoutDirection">
-          <enum>Qt::LeftToRight</enum>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
-         <property name="currentIndex">
-          <number>-1</number>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QSpinBox" name="numPlotCeiling">
+         <property name="minimum">
+          <number>-190</number>
          </property>
-         <property name="sizeAdjustPolicy">
-          <enum>QComboBox::AdjustToContents</enum>
+         <property name="maximum">
+          <number>30</number>
+         </property>
+         <property name="value">
+          <number>-40</number>
          </property>
         </widget>
        </item>
@@ -252,64 +256,19 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_7">
+       <item row="26" column="0" alignment="Qt::AlignHCenter">
+        <widget class="QLabel" name="label_14">
          <property name="text">
-          <string>Plot Ceiling</string>
-         </property>
-         <property name="buddy">
-          <cstring>numPlotCeiling</cstring>
+          <string>RFin Step Size (in kHz)</string>
          </property>
         </widget>
        </item>
-       <item row="23" column="0">
-        <spacer name="verticalSpacer_4">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="label_6">
+       <item row="21" column="0">
+        <widget class="QLabel" name="label_12">
          <property name="text">
-          <string>Plot Floor</string>
-         </property>
-         <property name="buddy">
-          <cstring>numPlotFloor</cstring>
+          <string>Serial Speed</string>
          </property>
         </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QSpinBox" name="numPeakMarkers">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>25</number>
-         </property>
-         <property name="value">
-          <number>3</number>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0">
-        <spacer name="verticalSpacer_11">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
        </item>
        <item row="7" column="0">
         <widget class="QSpinBox" name="numPlotFloor">
@@ -324,16 +283,32 @@
          </property>
         </widget>
        </item>
-       <item row="18" column="0">
-        <widget class="QLabel" name="label_5">
+       <item row="16" column="0">
+        <widget class="QCheckBox" name="chkArduinoLED">
          <property name="minimumSize">
           <size>
-           <width>85</width>
+           <width>110</width>
            <height>0</height>
           </size>
          </property>
          <property name="text">
-          <string>Serial Port</string>
+          <string>ArduinoLED</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
+        <widget class="QDoubleSpinBox" name="dbl_attenuator_dB">
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="maximum">
+          <double>31.750000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.250000000000000</double>
          </property>
         </widget>
        </item>
@@ -359,23 +334,6 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="0">
-        <widget class="QPushButton" name="btnPeakSearch">
-         <property name="text">
-          <string>Peak Search</string>
-         </property>
-        </widget>
-       </item>
-       <item row="17" column="0" alignment="Qt::AlignHCenter">
-        <widget class="QCheckBox" name="chkShowGrid">
-         <property name="whatsThis">
-          <string extracomment="Enable or disable the display of the screen grid"/>
-         </property>
-         <property name="text">
-          <string>Grid</string>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="0">
         <spacer name="verticalSpacer_5">
          <property name="orientation">
@@ -392,52 +350,10 @@
          </property>
         </spacer>
        </item>
-       <item row="16" column="0">
-        <widget class="QCheckBox" name="chkArduinoLED">
-         <property name="minimumSize">
-          <size>
-           <width>110</width>
-           <height>0</height>
-          </size>
-         </property>
+       <item row="14" column="0">
+        <widget class="QPushButton" name="btn_disable_LO3_RFout">
          <property name="text">
-          <string>ArduinoLED</string>
-         </property>
-         <property name="checked">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="22" column="0">
-        <widget class="QComboBox" name="cbxSerialSpeedSelection">
-         <property name="minimumSize">
-          <size>
-           <width>85</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="sizeAdjustPolicy">
-          <enum>QComboBox::AdjustToContents</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QSpinBox" name="numPlotCeiling">
-         <property name="minimum">
-          <number>-190</number>
-         </property>
-         <property name="maximum">
-          <number>30</number>
-         </property>
-         <property name="value">
-          <number>-40</number>
-         </property>
-        </widget>
-       </item>
-       <item row="21" column="0">
-        <widget class="QLabel" name="label_12">
-         <property name="text">
-          <string>Serial Speed</string>
+          <string>Disable LO3</string>
          </property>
         </widget>
        </item>
@@ -448,51 +364,20 @@
          </property>
         </widget>
        </item>
-       <item row="20" column="0">
-        <widget class="QPushButton" name="btnRefreshPortsList">
-         <property name="text">
-          <string>Refresh Ports</string>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="0">
-        <widget class="QPushButton" name="btn_disable_LO3_RFout">
-         <property name="text">
-          <string>Disable LO3</string>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="0">
-        <widget class="QDoubleSpinBox" name="dbl_attenuator_dB">
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-         <property name="maximum">
-          <double>31.750000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.250000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="0">
-        <widget class="QLabel" name="label_13">
-         <property name="text">
-          <string>Attenuator (dB)</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="24" column="0" alignment="Qt::AlignHCenter">
-        <widget class="QLabel" name="label_14">
-         <property name="text">
-          <string>RFin Step Size (in kHz)</string>
-         </property>
-        </widget>
-       </item>
        <item row="25" column="0">
+        <spacer name="verticalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="27" column="0">
         <widget class="QDoubleSpinBox" name="dblStepSize">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -529,6 +414,128 @@
          </property>
          <property name="value">
           <double>0.250000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="23" column="0">
+        <widget class="QComboBox" name="cbxSerialSpeedSelection">
+         <property name="minimumSize">
+          <size>
+           <width>85</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="sizeAdjustPolicy">
+          <enum>QComboBox::AdjustToContents</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QPushButton" name="btnPeakSearch">
+         <property name="text">
+          <string>Peak Search</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
+        <spacer name="verticalSpacer_11">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="label_6">
+         <property name="text">
+          <string>Plot Floor</string>
+         </property>
+         <property name="buddy">
+          <cstring>numPlotFloor</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="29" column="0" alignment="Qt::AlignHCenter">
+        <widget class="QComboBox" name="cbx_RFin_step_size">
+         <property name="minimumSize">
+          <size>
+           <width>50</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+         <property name="currentIndex">
+          <number>-1</number>
+         </property>
+         <property name="sizeAdjustPolicy">
+          <enum>QComboBox::AdjustToContents</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="17" column="0" alignment="Qt::AlignHCenter">
+        <widget class="QCheckBox" name="chkShowGrid">
+         <property name="whatsThis">
+          <string extracomment="Enable or disable the display of the screen grid"/>
+         </property>
+         <property name="text">
+          <string>Grid</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QSpinBox" name="numPeakMarkers">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>25</number>
+         </property>
+         <property name="value">
+          <number>3</number>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>Plot Ceiling</string>
+         </property>
+         <property name="buddy">
+          <cstring>numPlotCeiling</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="18" column="0">
+        <widget class="QLabel" name="label_5">
+         <property name="minimumSize">
+          <size>
+           <width>85</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Serial Port</string>
+         </property>
+        </widget>
+       </item>
+       <item row="20" column="0">
+        <widget class="QPushButton" name="btnRefreshPortsList">
+         <property name="text">
+          <string>Refresh Ports</string>
+         </property>
+        </widget>
+       </item>
+       <item row="24" column="0">
+        <widget class="QPushButton" name="btn_open_serial_port">
+         <property name="text">
+          <string>Open Port</string>
          </property>
         </widget>
        </item>

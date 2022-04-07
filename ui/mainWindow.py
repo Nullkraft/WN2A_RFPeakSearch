@@ -366,6 +366,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     @pyqtSlot(str)
     def on_cbxSerialPortSelection_activated(self, selected_port):
+        """
+        Slot documentation goes here.
+        
+        @param p0 DESCRIPTION
+        @type str
+        """
         ss.set_port(selected_port)
     
     @pyqtSlot(str)
@@ -377,10 +383,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         @type str
         """
         ss.set_speed(speed_str)
-
-
-
-
-
-
-
+    
+    @pyqtSlot()
+    def on_btn_open_serial_port_clicked(self):
+        """
+        Slot documentation goes here.
+        """
+        ss.port_open()

@@ -86,9 +86,8 @@ class LO3():
 
 
 class hardware():
-    """ HARDWARE DEFINITIONS for the Spectrum Analyzer board.
-    RFin_list contains 1kHz frequency steps from 0.0 to 3000MHz.
-    It is only necessary to perform a slice in order to provide
+    """ HARDWARE DEFINITIONS for the Spectrum Analyzer board. RFin_list contains 1kHz frequency
+    steps from 0.0 to 3000MHz. It is only necessary to perform a slice in order to provide
     different sweep ranges and step sizes.  For example,
 
     # User requested sweep start, stop, and step frequencies in MHz
@@ -326,7 +325,11 @@ def MHz_to_N(RFout_MHz: float = 3600, Fref: float = 66, R: int = 2) -> int:
     return (N)
 
 
-def MHz_to_fmn(max2871_out_MHz: float, Fref: float=66) -> int:
+
+    """    REDO THIS SHIT AS LIST COMPREHENSION
+    """
+
+def MHz_to_fmn(LO2_target_freq_MHz: float, Fref: float=66) -> int:
     """ Form a 32 bit word containing F, M and N.
 
         F, M, and N are defined in the manufacturer's specsheet.
@@ -338,11 +341,12 @@ def MHz_to_fmn(max2871_out_MHz: float, Fref: float=66) -> int:
     Fvco = 0
     div_range = 0
     max_error = 2**32
+    vco_fundamental_freq = 3000
     # Surprisingly this for-loop is slightly faster than list-comprehension
     for div_range in range(8):
         div = 2**div_range
-        Fvco = div * max2871_out_MHz
-        if Fvco >= 3000:
+        Fvco = div * LO2_target_freq_MHz
+        if Fvco >= vco_fundamental_freq:
             break
     Fpfd = Fref / R
     N = int(Fvco / Fpfd)
@@ -359,7 +363,6 @@ def MHz_to_fmn(max2871_out_MHz: float, Fref: float=66) -> int:
     return best_F<<20 | best_M<<8 | N
 
 
-
 def get_LO1_freq(RFin: float=0.001, Fref_MHz: float=66.0, IF1_MHz: float=3600.0):
     """ LO1 has a range of 3600.0 to 6600.0 MHz
         LO1 = (IF1 + RFin) - ((IF1 + RFin) % Fpfd)
@@ -372,7 +375,7 @@ def get_LO2_freq(RFin: float=0.001, Fref_MHz: float=66.0, IF2_MHz: float=315.0):
     """ LO2 has a range of 3914.999 to 3885.001 MHz
         LO2 = LO1 - RFin + IF2
     """
-    LO1_MHz = get_LO1_freq(RFin)
+    LO1_MHz = get_LO1_freq(RFin, Fref_MHz)
     LO2 = LO1_MHz - IF2_MHz - RFin
     return LO2
 
@@ -386,11 +389,21 @@ def get_RFin_freq(LO1_MHz: float=3000.0, LO2_MHz: float=3914.999, IF2_MHz: float
 
 
 
-
+""" """
 if __name__ == '__main__':
     print()
     num_loops = 1
-
+    freq_start = 3885.0
+    freq_stop = 3915.0
+    freq_step = 0.001
+    
+    start = time.perf_counter()
+    fmn_list = [freq for freq in np.arange(freq_start, freq_stop, freq_step)]
+    with pool(processes=8) as executor:
+        LO2_freq_list = executor.map(MHz_to_fmn, fmn_list)
+    delta_time = round(time.perf_counter()-start, 6)
+    print(f'Slow FMN took {delta_time} seconds')
+    
 
     print("Done")
 

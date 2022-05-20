@@ -14,9 +14,16 @@ if __name__ == '__main__':
 
 
 
+""" TODO: Auto-open last serial port used if still available """
 
+""" TODO: Refactor Initial-Startup if needed
+        1) Auto-create Ref1 dictionary - Choose as default on startup
+        2) Auto-create Ref2 dictionary
+"""
 
+""" TODO: Change the initial loading of LO1 and LO2 step files to their new names """
 
+""" TODO: Automatically select the correct LO1 and LO2 step files based on the selected reference clock """
 
 
 

@@ -6,7 +6,8 @@ import numpy as np
 import sys
 import time
 import command_processor as cmd_proc
-from multiprocessing import Pool as pool
+from sa_hw_config import *
+#from multiprocessing import Pool as pool
 
 # Utilities provided for print debugging.
 line = lambda : sys._getframe(1).f_lineno
@@ -84,6 +85,13 @@ class LO3():
     Reg.append(0x63CFF104)
     Reg.append(0x00400005)
 
+#RFin_list = list()         # List of every kHz step from 0 to 3,000,000 kHz
+LO1_n_list = list()        # LO1_N value for each kHz in RFin_list
+LO1_freq_list = list()     # LO1_frequency for each kHz in RFin_list
+LO1_30Fpfd_steps = dict()  # {LO1_frequency : LO1_N} dictionary for fast searches
+LO2_fmn_list = list()      # LO2_FMN value for each kHz in RFin_list
+LO2_freq_list = list()     # LO2_frequency for each kHz in RFin_list
+LO2_30Fpfd_steps = dict()  # {LO2_frequency : LO2_FMN} dictionary for fast searches
 
 class hardware():
     """ HARDWARE DEFINITIONS for the Spectrum Analyzer board. RFin_list contains 1kHz frequency
@@ -108,32 +116,25 @@ class hardware():
 
     def __init__(self):
         super().__init__()
-        self.RFin_list = list()         # List of every kHz step from 0 to 3,000,000 kHz
-        self.LO1_n_list = list()        # LO1_N value for each kHz in RFin_list
-        self.LO1_freq_list = list()     # LO1_frequency for each kHz in RFin_list
-        self.LO1_30Fpfd_steps = dict()  # {LO1_frequency : LO1_N} dictionary for fast searches
-        self.LO2_fmn_list = list()      # LO2_FMN value for each kHz in RFin_list
-        self.LO2_freq_list = list()     # LO2_frequency for each kHz in RFin_list
-        self.LO2_30Fpfd_steps = dict()  # {LO2_frequency : LO2_FMN} dictionary for fast searches
 
     def load_RFin_list(self, freq_file: str='RFin_1kHz_freq_steps.csv'):
         with open(freq_file) as record:
-            self.RFin_list = [float(x) for x in record]     # For sweeping and plotting
-        return self.RFin_list
+            RFin_list = [float(x) for x in record]     # For sweeping and plotting
+        return RFin_list
 
-    def load_LO1_freq_steps(self, n_file='LO1_1kHz_n_steps.csv', freq_file='LO1_1kHz_freq_steps.csv'):
+    def load_LO1_freq_steps(self, n_file='LO1_ref1_N_steps.csv', freq_file='LO1_ref1_freq_steps.csv'):
         with open(n_file) as n:
             self.LO1_n_list = [int(x) for x in n]           # For sweeping
         with open(freq_file) as freq:
             self.LO1_freq_list = [float(x) for x in freq]   # For plotting
-        self.LO1_30Fpfd_steps = dict(zip(self.RFin_list, self.LO1_n_list))
+        self.LO1_30Fpfd_steps = dict(zip(sa_hw_config.RFin_list, self.LO1_n_list))
 
-    def load_LO2_freq_steps(self, fmn_file='LO2_1kHz_fmn_steps.csv', freq_file='LO2_1kHz_freq_steps.csv'):
+    def load_LO2_freq_steps(self, fmn_file='LO2_ref1_fmn_steps.csv', freq_file='LO2_ref1_freq_steps.csv'):
         with open(fmn_file) as fmn:
             self.LO2_fmn_list = [int(x) for x in fmn]       # For sweeping
         with open(freq_file) as freq:
             self.LO2_freq_list = [float(x) for x in freq]   # For plotting
-        self.LO2_30Fpfd_steps = dict(zip(self.RFin_list, self.LO2_fmn_list))
+        self.LO2_30Fpfd_steps = dict(zip(sa_hw_config.RFin_list, self.LO2_fmn_list))
 
     def MHz_to_LO1_freq(self, freq_in_MHz=0, Fpfd=30.0):
         LO1_N = MHz_to_N(freq_in_MHz)
@@ -179,7 +180,7 @@ def sweep(start_freq: int=4, stop_freq: int=3000, freq_step: float=0.25, referen
     global x_axis_list
 #~~~~~~~~~~~~~~~~~~~~~~~~~   IMPLEMENT ALL SWEEPS USING THIS METHOD   ~~~~~~~~~~~~~~~~~~~~~~~~~
         # sweep_start, sweep_stop, and sweep_step_kHz need to be indexes
-    sweep_freq_list = hardware.unit_freq_list[sweep_start:sweep_stop:sweep_step]
+    sweep_freq_list = sa_hw_config.RFin_list[sweep_start:sweep_stop:sweep_step]
     print(name, line(), f'Num frequencies = {len(sweep_freq_list)}')
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     x_axis_list.clear()
@@ -194,7 +195,7 @@ def sweep(start_freq: int=4, stop_freq: int=3000, freq_step: float=0.25, referen
 
     LO1_N_list = [MHz_to_N(freq) for freq in range(LO1_start_freq, LO1_stop_freq, Fpfd)]
 
-    mixer1_freq_list = [(N * Fpfd + 315) for N in LO1_N_list]
+#    mixer1_freq_list = [(N * Fpfd + 315) for N in LO1_N_list]
     print(name, line(), f'sweep_step = {sweep_step}, {type(sweep_step)}')
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -298,14 +299,14 @@ def is_peak(amplitude_list, idx):
         return (amplitude_list[idx-1] + plus_delta) < amplitude_list[idx] > (amplitude_list[idx+1] + plus_delta)
 
 
-def fmn_to_MHz(fmn_word, Fpfd=33):
+def fmn_to_MHz(fmn_word, Fpfd=33.0):
     """
     Function: fmn_to_freq is a utility for verifying that your fmn value
               correctly matches the frequency that you think it does.
 
     @param fmn_word is a 32 bit word that contains the F, M, and N values
     @type <class 'int'>
-    @param Fpfd is half the frequency of the reference clock (defaults to 30)
+    @param Fpfd is half the frequency of the reference clock (defaults to ref_clock_LO)
     @return Frequency in MHz
     @rtype float
     """
@@ -314,6 +315,7 @@ def fmn_to_MHz(fmn_word, Fpfd=33):
     if M == 0:
         print(fmn_word)
     N = fmn_word & 0xFF
+    print(name, line(), f'F = {F} : M = {M} : N = {N}')
     return Fpfd*(N + F/M)
 
 
@@ -358,7 +360,7 @@ def MHz_to_fmn(LO2_target_freq_MHz: float, Fref: float=66) -> int:
             max_error = Err1
             best_F = F
             best_M = M
-        if Err1 == 0:
+        if Err1 < 0.001:
             break      # Found the exact solution - Stop looking!
     return best_F<<20 | best_M<<8 | N
 
@@ -397,13 +399,15 @@ if __name__ == '__main__':
     freq_stop = 3915.0
     freq_step = 0.001
     
-    start = time.perf_counter()
-    fmn_list = [freq for freq in np.arange(freq_start, freq_stop, freq_step)]
-    with pool(processes=8) as executor:
-        LO2_freq_list = executor.map(MHz_to_fmn, fmn_list)
-    delta_time = round(time.perf_counter()-start, 6)
-    print(f'Slow FMN took {delta_time} seconds')
-    
+#    start = time.perf_counter()
+#    fmn_list = [freq for freq in np.arange(freq_start, freq_stop, freq_step)]
+#    with pool(processes=8) as executor:
+#        LO2_freq_list = executor.map(MHz_to_fmn, fmn_list)
+#    delta_time = round(time.perf_counter()-start, 6)
+#    print(f'Slow FMN took {delta_time} seconds')
+
+    print(fmn_to_MHz(0x600b73))
+    print(hex(MHz_to_fmn(3813)))
 
     print("Done")
 

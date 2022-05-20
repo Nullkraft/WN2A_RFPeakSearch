@@ -133,7 +133,7 @@ def sweep_done():
     _send_command(sweep_complete)
 
 
-def _send_command(command: int):
+def _send_command(command):
     try:
         if sp.ser.is_open:
             cmd_bytes = command.to_bytes(4, 'little')

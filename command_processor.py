@@ -4,8 +4,8 @@ import time
 import logging
 
 # Utility to simplify print debugging.
-line = lambda : sys._getframe(1).f_lineno
-name = __name__
+line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+name = f'File \"{__name__}.py\",'
 
 # Arduino and Device Commands
 attenuator_sel   = 0x000000FF   # Attenuates the RFinput from 0 to 31.75dB

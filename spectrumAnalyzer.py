@@ -10,8 +10,8 @@ from sa_hw_config import *
 #from multiprocessing import Pool as pool
 
 # Utilities provided for print debugging.
-line = lambda : sys._getframe(1).f_lineno
-name = __name__
+line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+name = f'File \"{__name__}.py\",'
 
 reference_freq = 0.0
 sweep_start = 0.0

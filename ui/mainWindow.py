@@ -15,10 +15,12 @@ from .Ui_mainWindow import Ui_MainWindow
 # Functions specific to the operation of the WN2A Spectrum Analyzer hardware, hopefully.
 # Including setting up the serial port.
 import spectrumAnalyzer as sa
-import serial_port as sp
 import command_processor as cmd_proc
 
+#from serial_port import simple_serial as sp
+import serial_port as sp
 ss = sp.simple_serial()
+
 
 # Utility to simplify print debugging.
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
@@ -378,7 +380,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         @param speed_str DESCRIPTION
         @type str
         """
-        ss.set_serial_port_speed(speed_str)
+        ss.set_serial_speed(speed_str)
     
     @pyqtSlot(str)
     def on_cbxSerialPortSelection_currentTextChanged(self, selected_port):
@@ -388,7 +390,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         @param selected_port DESCRIPTION
         @type str
         """
-        ss.set_port(selected_port)
+        ss.set_serial_port(selected_port)
     
     @pyqtSlot()
     def on_btn_open_serial_port_clicked(self):
@@ -396,3 +398,4 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Slot documentation goes here.
         """
         ss.port_open()
+        ss.save_settings()

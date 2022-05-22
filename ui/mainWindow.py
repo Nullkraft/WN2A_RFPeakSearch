@@ -21,8 +21,8 @@ import command_processor as cmd_proc
 ss = sp.simple_serial()
 
 # Utility to simplify print debugging.
-line = lambda : sys._getframe(1).f_lineno
-name = __name__
+line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+name = f'File \"{__name__}.py\",'
 
 
 
@@ -31,7 +31,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         pg.setConfigOptions(useOpenGL=True)
-        self.setupUi(self)  # Must come before self.plot()
+        self.setupUi(self)  # Must come before self.graphWidget.plot()
         self.graphWidget.setYRange(0, 2.5)
         self.graphWidget.setMouseEnabled(x=True, y=False)
         self.dataLine = self.graphWidget.plot()
@@ -40,22 +40,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #
         sa.referenceClock = 60
         self.initialized = False        # MAX2871 chip will need to be initialized
-        # Populate the 'User serial port drop-down selection list'
-        serial_ports = ss.get_os_ports()
+
+
+        # Request the list of available serial ports and use it to
+        # populate the user 'Serial Port' drop-down selection list.
+        serial_ports = ss.get_serial_port_list()
         self.cbxSerialPortSelection.addItems(serial_ports)
         # Populate the 'User serial speed drop-down selection list'
-        serial_speeds = ss.get_os_baudrates()
+        serial_speeds = ss.get_baud_rate_list()
         for baud in serial_speeds:
             self.cbxSerialSpeedSelection.addItem(str(baud), baud)
         # Check for, and reopen, the last serial port that was used.
         ss.port_open()
-        # And now the user dropdowns need to be updated with the port and speed
+
+        # And now the user dropdowns need to be updated with the selected port and speed
         foundPortIndex = self.cbxSerialPortSelection.findText(ss._port)
         if (foundPortIndex >= 0):
             self.cbxSerialPortSelection.setCurrentIndex(foundPortIndex)
         foundSpeedIndex = self.cbxSerialSpeedSelection.findData(ss._baud)
         if (foundSpeedIndex >= 0):
             self.cbxSerialSpeedSelection.setCurrentIndex(foundSpeedIndex)
+
+
         sa.hardware().load_LO1_freq_steps()
         sa.hardware().load_LO2_freq_steps()
         # Populate the 'User RFin step size drop-down selection list'
@@ -145,7 +151,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_btnRefreshPortsList_clicked(self):
         for x in range(10):
             self.cbxSerialPortSelection.removeItem(0)
-        ports = ss.get_os_ports()
+        ports = ss.get_serial_port_list()
         self.cbxSerialPortSelection.addItems(ports)
 
     @pyqtSlot(int)
@@ -365,24 +371,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return freq_step
     
     @pyqtSlot(str)
-    def on_cbxSerialPortSelection_activated(self, selected_port):
-        """
-        Slot documentation goes here.
-        
-        @param p0 DESCRIPTION
-        @type str
-        """
-        ss.set_port(selected_port)
-    
-    @pyqtSlot(str)
     def on_cbxSerialSpeedSelection_currentTextChanged(self, speed_str):
         """
         Slot documentation goes here.
         
-        @param p0 DESCRIPTION
+        @param speed_str DESCRIPTION
         @type str
         """
-        ss.set_speed(speed_str)
+        ss.set_serial_port_speed(speed_str)
+    
+    @pyqtSlot(str)
+    def on_cbxSerialPortSelection_currentTextChanged(self, selected_port):
+        """
+        Slot documentation goes here.
+        
+        @param selected_port DESCRIPTION
+        @type str
+        """
+        ss.set_port(selected_port)
     
     @pyqtSlot()
     def on_btn_open_serial_port_clicked(self):

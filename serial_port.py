@@ -12,8 +12,8 @@ from PyQt6.QtCore import QObject, pyqtSignal
 
 
 # Utils to print filename and linenumber, print(name, line(), ...), when using print debugging.
-line = lambda : sys._getframe(1).f_lineno
-name = __name__
+line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+name = f'File \"{__name__}.py\",'
 
 
 # Serial port object that can be shared across source files.
@@ -47,38 +47,40 @@ class simple_serial(QObject):
         self._read_config()          # Preset _baud and _port from config file
 
 
-    def get_os_ports(self):
+    def get_serial_port_list(self):
         """
-        Function get_os_ports()
+        Function get_serial_port_list()
 
-        @return List of available serial ports
+        @return List of available serial ports from the local system.
         @rtype List
         """
-        com_list = []
+        port_list = list()
         ports = list_ports.comports()
         for port in ports:
-            com_list.append(port.device)
-        return com_list
+            port_list.append(port.device)
+        return port_list
 
 
-    def get_os_baudrates(self):
+    def get_baud_rate_list(self):
         """
-        Function get_os_baudrates()
+        Function get_baud_rate_list()
 
-        @return Available serial rates, at or above 9600 baud, on your system.
+        @return Return the list of serial speeds starting at 9600 baud.
         @rtype Tuple
         """
-        idx9600 = ser.BAUDRATES.index(9600)
-        return ser.BAUDRATES[idx9600:]      # Only show rates at or above 9600 baud
+        baud_rate_list = sorted(ser.BAUDRATES)          # Make sure the list of baud rates is in ascending order
+        idx_9600_baud = baud_rate_list.index(9600)
+        baud_rate_list = baud_rate_list[idx_9600_baud:] # Limit baud rate list to speeds starting from 9600 baud
+        return baud_rate_list                     
 
 
-    def set_speed(self, selected_speed):
-        self._baud = int(selected_speed)  # Set a new _baud rate
-        self._write_config(self._baud, self._port)      # Saves new speed to the config file.
+    def set_serial_port_speed(self, selected_speed):
+        self._baud = int(selected_speed)                # Set a new _baud rate
+#        self._write_config(self._baud, self._port)      # Saves new baud rate to the config file.
 
     def set_port(self, selected_port):
         self._port = selected_port   # Set a new _port
-        self._write_config(self._baud, self._port)      # Saves new port to the config file.
+#        self._write_config(self._baud, self._port)      # Saves new port to the config file.
 
     def port_open(self):
         global ser
@@ -86,13 +88,14 @@ class simple_serial(QObject):
         if not os.path.isfile(self.config_fname):    # If needed create a new default serial.conf
             self._write_config(self.default_serial_speed, self.default_serial_port)
         config_port = self._read_config()            # Get the port settings from the config file.
-        active_ports = self.get_os_ports()           # Get a list of all the serial ports on this system.
+        active_ports = self.get_serial_port_list()   # Get a list of all the serial ports on this system.
         if config_port[0] in active_ports:
             selected_port = config_port[0]
             print(name, line(), f'selected config_port = {selected_port}')
         else:
             selected_port = active_ports[0]
             print(name, line(), f'selected active_port = {selected_port}')
+
         if selected_port != None:           # If our port is alive on this system then open it.
             try:
                 ser_port = serial.Serial(selected_port, self._baud, timeout=100/int(self._baud))
@@ -107,7 +110,7 @@ class simple_serial(QObject):
             else:
                 time.sleep(0.2)                                 # Give the port a moment to finish opening.
                 self._write_config(self._baud, self._port)      # Saves new settings to the config file.
-                print(name, line(), f': {ser_port.port} opened at {ser_port.baudrate} baud.')
+                print(name, line(), f'{ser_port.port} opened at {ser_port.baudrate} baud.')
             finally:
                 ser = ser_port
         else:
@@ -167,11 +170,8 @@ class simple_serial(QObject):
 
 
 if __name__ == '__main__':
-    dir(serial)
-#    sw = simple_serial()
-#    print(name, line(), f'Available serial ports = {sw.get_os_ports()}')
-#    print(name, line(), f'Available baud rates = {sw.get_os_baudrates()}')
-
+    print("")
+    print(simple_serial().get_baud_rate_list())
 
 
 

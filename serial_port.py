@@ -22,9 +22,8 @@ ser = serial.Serial()
 
 class simple_serial(QObject):
     """
-    simple_serial will receive large amounts of data of a known size from the Arduino.
+    simple_serial is used to receive large amounts of data of a known size from the Arduino.
     """
-
     default_serial_speed = '9600'
     # Set the default serial port name based on the user's platform.
     if sys.platform == "linux" or sys.platform == "linux2":
@@ -46,7 +45,6 @@ class simple_serial(QObject):
         self.end_of_record = bytearray([255, 255])  # Arduino A2D is only 10 bits so we can safely use 0xffff
         self._read_config()          # Preset _baud and _port from config file
 
-
     def get_serial_port_list(self):
         """
         Function get_serial_port_list()
@@ -60,7 +58,6 @@ class simple_serial(QObject):
             port_list.append(port.device)
         return port_list
 
-
     def get_baud_rate_list(self):
         """
         Function get_baud_rate_list()
@@ -73,14 +70,11 @@ class simple_serial(QObject):
         baud_rate_list = baud_rate_list[idx_9600_baud:] # Limit baud rate list to speeds starting from 9600 baud
         return baud_rate_list                     
 
+    def set_serial_speed(self, selected_speed):
+        self._baud = int(selected_speed)    # Set a new _baud rate
 
-    def set_serial_port_speed(self, selected_speed):
-        self._baud = int(selected_speed)                # Set a new _baud rate
-#        self._write_config(self._baud, self._port)      # Saves new baud rate to the config file.
-
-    def set_port(self, selected_port):
-        self._port = selected_port   # Set a new _port
-#        self._write_config(self._baud, self._port)      # Saves new port to the config file.
+    def set_serial_port(self, selected_port):
+        self._port = selected_port          # Set a new _port
 
     def port_open(self):
         global ser
@@ -91,7 +85,6 @@ class simple_serial(QObject):
         active_ports = self.get_serial_port_list()   # Get a list of all the serial ports on this system.
         if config_port[0] in active_ports:
             selected_port = config_port[0]
-            print(name, line(), f'selected config_port = {selected_port}')
         else:
             selected_port = active_ports[0]
             print(name, line(), f'selected active_port = {selected_port}')
@@ -102,20 +95,18 @@ class simple_serial(QObject):
                 self._port = selected_port
             except OSError as e:
                 if e.errno == error.EBUSY:
-                    print(name, line(), ": Another program has already opened the port. Arduino?")
+                    print(name, line(), f': {selected_port} has already been opened by another program. Arduino?')
         #        print(name, line(), ": OSError e =", e.errno, e.strerror)
             except TypeError:
                 print(name, line(), f': One of the lines in {self.config_fname} is messed up.')
-                self._write_config(self.default_serial_speed, self.default_serial_port)     # Messed up serial.conf keys so recreate a default copy.
+                self._write_config(self.default_serial_speed, self.default_serial_port)     # Corrupted file contents so recreate a default.
             else:
                 time.sleep(0.2)                                 # Give the port a moment to finish opening.
-                self._write_config(self._baud, self._port)      # Saves new settings to the config file.
                 print(name, line(), f'{ser_port.port} opened at {ser_port.baudrate} baud.')
             finally:
                 ser = ser_port
         else:
             print(name, line(), f'config_port[0], {config_port[0]}, is NOT in active_ports')
-
 
     def _write_config(self, speed=None, port=None):
         config = configparser.ConfigParser()
@@ -134,7 +125,6 @@ class simple_serial(QObject):
         except AttributeError as err:
             print(name, line(), f': Unable to open one of the keys in {err.filename}')
 
-
     def _read_config(self):
         if os.path.isfile(self.config_fname):
             config = configparser.ConfigParser()
@@ -150,10 +140,13 @@ class simple_serial(QObject):
         else:
             print(name, line(), f': Unable to read {self.config_fname}, file not found.')
 
-
+    def save_settings(self):
+        self._write_config(self._baud, self._port)
+        print(name, line(), f'Supposedly saved _baud = {self._baud} and _port = {self._port}')
+        
     def read_serial(self):
         """
-        Worker thread for streaming incoming serial data
+        Worker thread for collecting incoming serial data
         """
         serial_bytes = bytearray()       # Incoming serial buffer
         while True:

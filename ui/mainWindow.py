@@ -19,8 +19,6 @@ import command_processor as cmd_proc
 
 #from serial_port import simple_serial as sp
 import serial_port as sp
-ss = sp.simple_serial()
-
 
 # Utility to simplify print debugging.
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
@@ -46,20 +44,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Request the list of available serial ports and use it to
         # populate the user 'Serial Port' drop-down selection list.
-        serial_ports = ss.get_serial_port_list()
+        serial_ports = sp.simple_serial().get_serial_port_list()
         self.cbxSerialPortSelection.addItems(serial_ports)
         # Populate the 'User serial speed drop-down selection list'
-        serial_speeds = ss.get_baud_rate_list()
+        serial_speeds = sp.simple_serial().get_baud_rate_list()
         for baud in serial_speeds:
             self.cbxSerialSpeedSelection.addItem(str(baud), baud)
         # Check for, and reopen, the last serial port that was used.
-        ss.port_open()
+        sp.simple_serial().port_open()
 
         # And now the user dropdowns need to be updated with the selected port and speed
-        foundPortIndex = self.cbxSerialPortSelection.findText(ss._port)
+        foundPortIndex = self.cbxSerialPortSelection.findText(sp.simple_serial()._port)
         if (foundPortIndex >= 0):
             self.cbxSerialPortSelection.setCurrentIndex(foundPortIndex)
-        foundSpeedIndex = self.cbxSerialSpeedSelection.findData(ss._baud)
+        foundSpeedIndex = self.cbxSerialSpeedSelection.findData(sp.simple_serial()._baud)
         if (foundSpeedIndex >= 0):
             self.cbxSerialSpeedSelection.setCurrentIndex(foundSpeedIndex)
 
@@ -153,7 +151,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_btnRefreshPortsList_clicked(self):
         for x in range(10):
             self.cbxSerialPortSelection.removeItem(0)
-        ports = ss.get_serial_port_list()
+        ports = sp.get_serial_port_list()
         self.cbxSerialPortSelection.addItems(ports)
 
     @pyqtSlot(int)
@@ -380,7 +378,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         @param speed_str DESCRIPTION
         @type str
         """
-        ss.set_serial_speed(speed_str)
+        sp.simple_serial().set_serial_speed(speed_str)
     
     @pyqtSlot(str)
     def on_cbxSerialPortSelection_currentTextChanged(self, selected_port):
@@ -390,12 +388,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         @param selected_port DESCRIPTION
         @type str
         """
-        ss.set_serial_port(selected_port)
+        sp.simple_serial().set_serial_port(selected_port)
     
     @pyqtSlot()
     def on_btn_open_serial_port_clicked(self):
         """
         Slot documentation goes here.
         """
-        ss.port_open()
-        ss.save_settings()
+        sp.simple_serial().port_open()
+        sp.simple_serial().save_settings()

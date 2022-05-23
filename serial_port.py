@@ -15,10 +15,8 @@ from PyQt6.QtCore import QObject, pyqtSignal
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 name = f'File \"{__name__}.py\",'
 
-
 # Serial port object that can be shared across source files.
 ser = serial.Serial()
-
 
 class simple_serial(QObject):
     """

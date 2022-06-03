@@ -29,6 +29,7 @@ class simple_serial(QObject):
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
         self.end_of_record = bytearray([255, 255])  # Arduino A2D is only 10 bits so we can safely use 0xffff
+        self.minimum_baud_rate = 9600
         self.config_fname = 'serial.conf'
         self.default_serial_speed = '9600'
         # Set the default serial port name based on the user's platform.
@@ -55,12 +56,12 @@ class simple_serial(QObject):
         """
         Function get_baud_rate_list()
 
-        @return Return the list of serial speeds starting at 9600 baud.
+        @return Return the list of serial speeds starting with minimum_baud_rate.
         @rtype Tuple
         """
-        baud_rate_list = sorted(ser.BAUDRATES)          # Make sure the list of baud rates is in ascending order
-        idx_9600_baud = baud_rate_list.index(9600)
-        baud_rate_list = baud_rate_list[idx_9600_baud:] # Limit baud rate list to speeds starting from 9600 baud
+        baud_rate_list = sorted(ser.BAUDRATES)              # List baud rates in ascending order
+        idx_minimum_baud = baud_rate_list.index(self.minimum_baud_rate)
+        baud_rate_list = baud_rate_list[idx_minimum_baud:]  # Rewrite the list starting from the minimum baud
         return baud_rate_list                     
 
 

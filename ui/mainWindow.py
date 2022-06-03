@@ -53,13 +53,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Check for, and reopen, the last serial port that was used.
         sp.simple_serial().port_open()
 
-        # And now the user dropdowns need to be updated with the selected port and speed
-        foundPortIndex = self.cbxSerialPortSelection.findText(sp.simple_serial()._port)
-        if (foundPortIndex >= 0):
-            self.cbxSerialPortSelection.setCurrentIndex(foundPortIndex)
-        foundSpeedIndex = self.cbxSerialSpeedSelection.findData(sp.simple_serial()._baud)
-        if (foundSpeedIndex >= 0):
-            self.cbxSerialSpeedSelection.setCurrentIndex(foundSpeedIndex)
+        # GUI dropdowns should display port and speed values from the port that was opened
+        serial_port, serial_speed = sp.simple_serial().read_config()
+        port_index = self.cbxSerialPortSelection.findText(serial_port)
+        if (port_index >= 0):
+            self.cbxSerialPortSelection.setCurrentIndex(port_index)
+        speed_index = self.cbxSerialSpeedSelection.findData(str(serial_speed))
+        if (speed_index >= 0):
+            self.cbxSerialSpeedSelection.setCurrentIndex(speed_index)
 
 
         sa.hardware().load_LO1_freq_steps()
@@ -369,31 +370,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def get_freq_step(self):
         freq_step = round(self.dblStepSize.value(), 6)
         return freq_step
-    
-    @pyqtSlot(str)
-    def on_cbxSerialSpeedSelection_currentTextChanged(self, speed_str):
-        """
-        Slot documentation goes here.
-        
-        @param speed_str DESCRIPTION
-        @type str
-        """
-        sp.simple_serial().set_serial_speed(speed_str)
-    
-    @pyqtSlot(str)
-    def on_cbxSerialPortSelection_currentTextChanged(self, selected_port):
-        """
-        Slot documentation goes here.
-        
-        @param selected_port DESCRIPTION
-        @type str
-        """
-        sp.simple_serial().set_serial_port(selected_port)
-    
+
     @pyqtSlot()
     def on_btn_open_serial_port_clicked(self):
         """
-        Slot documentation goes here.
+        Open a new serial port at the user selected port and baud_rate
         """
-        sp.simple_serial().port_open()
-        sp.simple_serial().save_settings()
+        sel_baud = self.cbxSerialSpeedSelection.currentText()
+        sel_port = self.cbxSerialPortSelection.currentText()
+        sp.simple_serial().port_open(baud_rate=sel_baud, port=sel_port)
+    
+
+
+
+
+
+
+
+
+
+

@@ -2,7 +2,7 @@
   "header": {
     "comment": "eric project file for project WN2A_RFPeakSearch",
     "copyright": "Copyright (C) 2022 , ",
-    "saved": "2022-06-03, 13:53:38"
+    "saved": "2022-06-03, 18:42:57"
   },
   "project": {
     "AUTHOR": "",
@@ -163,6 +163,7 @@
       "command_processor.py",
       "file_generator.py",
       "main.py",
+      "sa_hw_config.py",
       "serial_port.py",
       "spectrumAnalyzer.py",
       "ui/Ui_mainWindow.py",

@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import serial       # requires 'pip3 install pyserial'
-from serial.tools import list_ports
-
 import time
 import errno as error
 import sys
-import configparser
 import os
+import serial       # requires 'pip3 install pyserial'
+from serial.tools import list_ports
+import configparser
 from PyQt6.QtCore import QObject, pyqtSignal
 
 
@@ -29,7 +28,6 @@ class simple_serial(QObject):
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
         self.end_of_record = bytearray([255, 255])  # Arduino A2D is only 10 bits so we can safely use 0xffff
-        self.minimum_baud_rate = 9600
         self.config_fname = 'serial.conf'
         self.default_serial_speed = '9600'
         # Set the default serial port name based on the user's platform.
@@ -40,8 +38,8 @@ class simple_serial(QObject):
         elif sys.platform == "win32":
             self.default_serial_port = 'COM1'
 
-
-    def get_serial_port_list(self):
+    @staticmethod
+    def get_serial_port_list():
         """
         Function get_serial_port_list()
 
@@ -51,8 +49,8 @@ class simple_serial(QObject):
         port_list = [port.device for port in list_ports.comports()]
         return port_list
 
-
-    def get_baud_rate_list(self):
+    @staticmethod
+    def get_baud_rate_list(minimum_baud_rate=9600):
         """
         Function get_baud_rate_list()
 
@@ -60,10 +58,9 @@ class simple_serial(QObject):
         @rtype Tuple
         """
         baud_rate_list = sorted(ser.BAUDRATES)              # List baud rates in ascending order
-        idx_minimum_baud = baud_rate_list.index(self.minimum_baud_rate)
+        idx_minimum_baud = baud_rate_list.index(minimum_baud_rate)
         baud_rate_list = baud_rate_list[idx_minimum_baud:]  # Rewrite the list starting from the minimum baud
         return baud_rate_list                     
-
 
     def port_open(self, baud_rate=None, port=None):
         global ser
@@ -82,6 +79,12 @@ class simple_serial(QObject):
         active_ports_list = self.get_serial_port_list()
         if self.port in active_ports_list:
             try:
+                """ TODO: Move the serial object creation to the __init__ function above
+                    using the method found here:
+                        https://youtu.be/2ejbLVkCndI?t=434
+                    See also:
+                        https://pyserial.readthedocs.io/en/latest/shortintro.html#configuring-ports-later
+                """
                 ser_port = serial.Serial(self.port, self.baud, timeout=100/int(self.baud))
             except OSError as e:
                 if e.errno == error.EBUSY:
@@ -145,6 +148,13 @@ class simple_serial(QObject):
 
 # End simple_serial() class
 
+# Dependency Injection video
+# https://www.youtube.com/watch?v=-ghD-XjjO2g&t=622s
+
+""" Dependency Inversion would remove the responsibility of open_port()
+    from creating and opening the serial port object. """
+# Dependency inversion: write BETTER PYTHON CODE
+# https://www.youtube.com/watch?v=Kv5jhbSkqLE
 
 
 

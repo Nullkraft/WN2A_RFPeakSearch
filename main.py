@@ -14,7 +14,16 @@ if __name__ == '__main__':
 
 
 
-""" TODO: Auto-open last serial port used if still available """
+""" TODO: Move serial.Serial() to the simple_serial class initializer.
+    SEE : https://youtu.be/2ejbLVkCndI?t=432
+"""
+
+
+""" TODO: Use Dependency Injection on the serial port when calling open_port() 
+              Dependency Inversion
+              Protocol class
+              Abstract base class
+"""
 
 """ TODO: Refactor Initial-Startup if needed
         1) Auto-create Ref1 dictionary - Choose as default on startup

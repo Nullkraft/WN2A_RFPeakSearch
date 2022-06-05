@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-#import yappi
-
 import numpy as np
 import sys
 import time
@@ -170,7 +168,6 @@ def _rxtx(frequency: float=0.0, device_name: str="LO2"):
         cmd_proc.set_LO(cmd_proc.LO1_neg4dBm, LO1_N)    # Set LO1 to next frequency
 
 
-#@yappi.profile(clock_type="wall")
 def sweep(start_freq: int=4, stop_freq: int=3000, freq_step: float=0.25, reference_freq: int=60):
     """
     Function sweep() : Search the input for any or all RF signals

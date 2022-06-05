@@ -111,11 +111,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         pass
 
 
-    @pyqtSlot()
-    def on_btnTrigger_clicked(self):
-        pass
-
-
     def serial_read_thread(self):
         """
         Read back data points in a separate thread so we don't block the gui.

@@ -32,39 +32,47 @@ class LO1():
         This is done to match the requirement that the chip is
         programmed starting from the highest register first.
     """
-    Reg = []
-    Reg.append(0x0000000D)
-    Reg.append(0x000015FC)
-    Reg.append(0x0061200B)
-    Reg.append(0x00C00EBA)
-    Reg.append(0x0F09FCC9)
-    Reg.append(0x15596568)
-    Reg.append(0x060000F7)
-    Reg.append(0x95012046)
-    Reg.append(0x00800025)
-    Reg.append(0x32008984)
-    Reg.append(0x00000003)
-    Reg.append(0x00000012)
-    Reg.append(0x00000001)
-    Reg.append(0x002007C0)
+    Reg = list()
+    Reg.append(0x0000000D)  # Reg[13]
+    Reg.append(0x000015FC)  # .
+    Reg.append(0x0061200B)  # .
+    Reg.append(0x00C00EBA)  # .
+    Reg.append(0x0F09FCC9)  # .
+    Reg.append(0x15596568)  # .
+    Reg.append(0x060000F7)  # .
+    Reg.append(0x95012046)  # .
+    Reg.append(0x00800025)  # .
+    Reg.append(0x32008984)  # .
+    Reg.append(0x00000003)  # .
+    Reg.append(0x00000012)  # .
+    Reg.append(0x00000001)  # .
+    Reg.append(0x002007C0)  # Reg[0]
 
 
+@dataclass
 class LO2():
     """
         The LO2 register values are stored in reverse. That means
         register value 5 is stored in Reg[0] and register value 0
         is stored in Reg[5].
 
-        This is done to match the requirement that the chip is
-        programmed starting from the highest register first.
+        This is done so the chip can be programmed starting from
+        the highest register first.
     """
-    Reg = []
-    Reg.append(0x00419550)
-    Reg.append(0x2000FFE9)
-    Reg.append(0x58008042)    # Digital Lock detect ON
-    Reg.append(0xF8008003)
-    Reg.append(0x638FF1C4)
-    Reg.append(0x00400005)
+    Reg = [0, 0, 0, 0, 0, 0]
+    Reg[0] = 0x00400005     # Register 5 on the MAX2871 chip
+    Reg[1] = 0x638FF1C4     # .
+    Reg[2] = 0xF8008003     # .
+    Reg[3] = 0xD8008042     # . (Digital Lock detect ON), (if Fpfd > 32 MHz Bit[31] must be 1)
+    Reg[4] = 0x2000FFE9     # .
+    Reg[5] = 0x00419550     # Register 0 on the MAX2871 chip
+#    Reg = list()
+#    Reg.append(0x00419550)
+#    Reg.append(0x2000FFE9)
+#    Reg.append(0x58008042)    # Digital Lock detect ON
+#    Reg.append(0xF8008003)
+#    Reg.append(0x638FF1C4)
+#    Reg.append(0x00400005)
 
 
 class LO3():
@@ -73,16 +81,23 @@ class LO3():
         device register 5 is stored in Reg[0] and device register 0
         is stored in Reg[5].
 
-        This matches the requirement that the chip is programmed
-        starting from the highest device register first.
+        This is done so the chip can be programmed starting from
+        the highest register first.
     """
-    Reg = []
-    Reg.append(0x00480000)
-    Reg.append(0x20008011)
-    Reg.append(0x58008042)    # Digital Lock detect ON
-    Reg.append(0xF8008003)
-    Reg.append(0x63CFF104)
-    Reg.append(0x00400005)
+    Reg: hex = [0, 0, 0, 0, 0, 0]
+    Reg[5] = 0x00480000
+    Reg[4] = 0x20008011
+    Reg[3] = 0xD8008042    # Digital Lock detect ON  (if Fpfd > 32 MHz Bit[31] must be 1
+    Reg[2] = 0xF8008003
+    Reg[1] = 0x63CFF104
+    Reg[0] = 0x00400005
+#    Reg = list()
+#    Reg.append(0x00480000)
+#    Reg.append(0x20008011)
+#    Reg.append(0x58008042)    # Digital Lock detect ON
+#    Reg.append(0xF8008003)
+#    Reg.append(0x63CFF104)
+#    Reg.append(0x00400005)
 
 #RFin_list = list()         # List of every kHz step from 0 to 3,000,000 kHz
 LO1_n_list = list()        # LO1_N value for each kHz in RFin_list

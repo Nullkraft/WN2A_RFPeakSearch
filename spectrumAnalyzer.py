@@ -281,7 +281,7 @@ def max2871_registers(newFreq, stepNumber=0, LO=None, refClock=60, FracOpt=None,
 def RF_to_LO1(freq_list, target_freq=1345):
     remainders = []
     for LO_freq in freq_list:
-        # The lowest remainder will be at the index of the closest freq to the target freq
+        # The lowest remainder is the closest freq to the target freq
         remainders.append(np.abs(LO_freq - (target_freq + 3600)))
     lst = np.asarray(remainders)
     return lst.argmin()     # Returns the index of the lowest value in the array
@@ -329,7 +329,7 @@ def fmn_to_MHz(fmn_word, Fpfd=33.0):
         print(fmn_word)
     N = fmn_word & 0xFF
     print(name, line(), f'F = {F} : M = {M} : N = {N}')
-    return Fpfd*(N + F/M)
+    return Fpfd * (N + F/M)
 
 
 def MHz_to_N(RFout_MHz: float = 3600, Fref: float = 66, R: int = 2) -> int:

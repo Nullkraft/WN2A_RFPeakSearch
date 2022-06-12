@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from dataclasses import dataclass
 import numpy as np
 import sys
 import time
@@ -21,7 +22,7 @@ step_size_dict = {}
 x_axis_list = list()        # List of frequencies that sychronizes plotting with sweeping.
 y_axis_list = list()        # List of amplitudes that are sychronized with plotting.
 
-
+@dataclass
 class LO1():
     """
         The LO1 register values are stored in reverse. That means

@@ -161,7 +161,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if index == 2:
             sa.referenceClock = 100
             cmd_proc.enable_100MHz_ref_clock()
-        print(name, line(), sa.referenceClock)
+        print(name, line(), f'Reference Frequency = {sa.referenceClock}')
         return sa.referenceClock
 
     # amplitude was collected as a bunch of linear 16-bit A/D values

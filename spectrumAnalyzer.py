@@ -407,10 +407,6 @@ def get_RFin_freq(LO1_MHz: float=3000.0, LO2_MHz: float=3914.999, IF2_MHz: float
 """ """
 if __name__ == '__main__':
     print()
-    num_loops = 1
-    freq_start = 3885.0
-    freq_stop = 3915.0
-    freq_step = 0.001
     
 #    start = time.perf_counter()
 #    fmn_list = [freq for freq in np.arange(freq_start, freq_stop, freq_step)]
@@ -419,37 +415,7 @@ if __name__ == '__main__':
 #    delta_time = round(time.perf_counter()-start, 6)
 #    print(f'Slow FMN took {delta_time} seconds')
 
-    print(fmn_to_MHz(0x600b73))
-    print(hex(MHz_to_fmn(3813)))
-
     
-    """ HOWTO: LO1 and reference clock data formatting
-        Spectrum_Analyzer_register_format = {selected_ref_clock: 
-    """
-    ref_clk_sel = 1
-    lo1_n = 0x1c3
-    lo2_fmn = 0xdeadbeef
-    lo3_fmn = 0xbedfaced
-    
-    # The rf_in_list will be 0.000 to 3000.001 for the full list of 3,000,001 entries
-    rf_in_list = np.arange(1342.007, 1342.015, .001)
-    # Force all frequencies in rf_in_list to have 3 decimal places. Allows the user to select a frequency.
-    rf_in_list = np.around(rf_in_list, 3)
-    
-    # Dictionary of frequency tuning values for the Spectrum Analyzer. See file_generator.py
-    # 1) This dict can initially take input from the uncalibrated step files, once for each ref_clock
-    # 2) Then you run two sweeps, one for each ref_clock, and compare the amplitudes
-    # 3) Take the tuning values that resulted in the lower amplitude and ...
-    # 4) Store the selected tuning values to our final calibrated dictionary.
-    # 5) Load the file containing the calibrated values if it exists
-    # P.S. This will allow the user to select calibrated or uncalibrated operation of the Spectrum Analyzer
-    sweep_frequency_tuning_dict = {freq: (ref_clk_sel, lo1_n, lo2_fmn, lo3_fmn) for freq in rf_in_list}
-
-    # Verify the contents of the sweep_frequency_tuning_dict
-    for rf_in in rf_in_list:
-        REF_CLK, LO1_N, LO2_FMN, LO3_FMN = sweep_frequency_tuning_dict[rf_in]
-        print(f'{rf_in, REF_CLK, LO1_N, LO2_FMN, LO3_FMN}')
-
     print("Done")
 
 

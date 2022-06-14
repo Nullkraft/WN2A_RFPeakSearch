@@ -1,4 +1,6 @@
 import time
+import json
+
 
 def freq_to_index(freq_MHz: float=4.0):
     return int(freq_MHz * 1000)
@@ -50,5 +52,28 @@ if __name__ == '__main__':
     
     print(f'Step dict size: {len(step_dict)}')
     print(f'Elapsed time: {round(stop-start, 6)}')
+
+#    with open('freq_sweep_dict.txt', 'w') as out_file:
+#        out_file.write(str(freq_sweep_dict))
+
+    start = time.perf_counter()
+    with open('freq_sweep_dict.txt', 'r') as in_file:
+        new_dict = in_file.read()
+    stop = time.perf_counter()
+    print(f'Time to read dictionary file: {round(stop-start, 6)}')
+#    print(f'Size new_pickle_dict: {len(new_pickle_dict)}')
+
     print("********** DONE! **********")
+
+
+
+
+
+
+
+
+
+
+
+
 

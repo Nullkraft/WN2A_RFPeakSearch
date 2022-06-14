@@ -450,8 +450,6 @@ if __name__ == '__main__':
         REF_CLK, LO1_N, LO2_FMN, LO3_FMN = sweep_frequency_tuning_dict[rf_in]
         print(f'{rf_in, REF_CLK, LO1_N, LO2_FMN, LO3_FMN}')
 
-
-
     print("Done")
 
 

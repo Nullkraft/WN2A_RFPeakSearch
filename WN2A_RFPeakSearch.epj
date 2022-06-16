@@ -2,7 +2,7 @@
   "header": {
     "comment": "eric project file for project WN2A_RFPeakSearch",
     "copyright": "Copyright (C) 2022 , ",
-    "saved": "2022-06-03, 18:42:57"
+    "saved": "2022-06-14, 12:20:49"
   },
   "project": {
     "AUTHOR": "",
@@ -160,6 +160,7 @@
     },
     "RESOURCES": [],
     "SOURCES": [
+      "calibrate_sa.py",
       "command_processor.py",
       "file_generator.py",
       "main.py",

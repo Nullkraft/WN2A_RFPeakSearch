@@ -13,6 +13,11 @@ if __name__ == '__main__':
 
 
 
+""" TODO: Use a pool in the calibrate_sa.py for file reads """
+""" QUERY: How to save and reload a dictionary to and from a file """
+""" NEXT: Make calibrate_sa.py take its filenames as input variables """
+
+
 
 """ TODO: Move serial.Serial() to the simple_serial class initializer.
     SEE : https://youtu.be/2ejbLVkCndI?t=432

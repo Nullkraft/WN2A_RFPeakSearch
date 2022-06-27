@@ -24,7 +24,7 @@ if __name__ == '__main__':
 """
 
 
-""" TODO: Use Dependency Injection on the serial port when calling open_port() 
+""" TODO: Use Dependency Injection for setting up the serial port when calling open_port() 
               Dependency Inversion
               Protocol class
               Abstract base class

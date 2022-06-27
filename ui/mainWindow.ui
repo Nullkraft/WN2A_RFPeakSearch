@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1533</width>
-    <height>1236</height>
+    <height>1258</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -259,7 +259,7 @@
        <item row="26" column="0" alignment="Qt::AlignHCenter">
         <widget class="QLabel" name="label_14">
          <property name="text">
-          <string>RFin Step Size (in kHz)</string>
+          <string>RFin Step Size (kHz)</string>
          </property>
         </widget>
        </item>
@@ -811,21 +811,21 @@
           </size>
          </property>
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
          <item>
           <property name="text">
-           <string extracomment="Disable all Reference clocks">No Ref Clock</string>
+           <string extracomment="Disable all Reference clocks">All Off</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string extracomment="Select 60 MHz Reference clock">60 MHz</string>
+           <string extracomment="Select 60 MHz Reference clock">Ref1</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string extracomment="Select 100 MHz Reference clock">100 MHz</string>
+           <string extracomment="Select 100 MHz Reference clock">Ref2</string>
           </property>
          </item>
         </widget>

@@ -27,7 +27,7 @@ class simple_serial(QObject):
 
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
-        self.end_of_record = bytearray([255, 255])  # Arduino A2D is only 10 bits so we can safely use 0xffff
+        self.end_of_stream = bytearray([255, 255])  # Arduino A2D is only 10 bits so we can safely use 0xffff
         self.config_fname = 'serial.conf'
         self.default_serial_speed = '9600'
         # Set the default serial port name based on the user's platform.
@@ -80,7 +80,7 @@ class simple_serial(QObject):
         if self.port in active_ports_list:
             try:
                 """ TODO: Move the serial object creation to the __init__ function above
-                    using the method found here:
+                    using the method of Dependency Injection found here:
                         https://youtu.be/2ejbLVkCndI?t=434
                     See also:
                         https://pyserial.readthedocs.io/en/latest/shortintro.html#configuring-ports-later
@@ -137,12 +137,12 @@ class simple_serial(QObject):
         """
         Worker thread for collecting incoming serial data
         """
-        serial_bytes = bytearray()       # Incoming serial buffer
+        data_buffer_in = bytearray()       # Incoming serial buffer
         while True:
-            serial_bytes += ser.read(ser.in_waiting)                    # Accumulate the data bytes
-            end_of_data_bytes = serial_bytes.find(self.end_of_record)
-            if end_of_data_bytes > 0:                                   # end-of-stream found
-                self.finished.emit(serial_bytes[:end_of_data_bytes])    # slice off excess data bytes
+            data_buffer_in += ser.read(ser.in_waiting)              # Accumulate the data bytes
+            end_of_data = data_buffer_in.find(self.end_of_stream)   # Location for the end of the list
+            if end_of_data > 0:                                     # The end of the list was found...
+                self.finished.emit(data_buffer_in[:end_of_data])    # so slice off any excess data bytes
                 break
 
 

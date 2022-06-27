@@ -27,11 +27,6 @@ class cfg():
 
 
 
-    sweep_control_files = 'LO1_N_steps.csv', 'LO2_fmn_steps.csv', 'LO1_freq_steps.csv', 'LO2_freq_steps.csv', 'full_sweep_step_dict.csv'
-
-
-
-
 
 
 

@@ -303,25 +303,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print(name, line(), f'Arduino Message = {cmd_proc.get_message()}')
 
 
-
-
-
-        # TODO: Store sweep__start, sweep_stop, and sweep_step in spectrumAnalyzer.py
-        #
-        # When the user updates the start, stop, or step frequency on the GUI then
-        # make a function in spectrumAnalyzer.py that converts the frequency into
-        # sa.sweep__start, sa.sweep_stop, and sa.sweep_step as 1 kHz values that
-        # become the index into the:
-        #     sa.full_freq_list[sa.sweep_start:sa.sweep_stop:sa.sweep_step]
-
-
-
-
-
-
-
-
-
     @pyqtSlot()
     def on_btnSweep_clicked(self):
         ref_clock = sa.referenceClock

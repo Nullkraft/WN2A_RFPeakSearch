@@ -14,9 +14,9 @@ class cfg():
     IF1: float = 3600.0                     # First intermediate frequency in MHz
     IF2: float = 315.0                      # Second intermediate frequency in MHz
 
-    _RFin_start: float = 0.0                # Maximum hardware sweep capabilities
-    _RFin_stop:  float = 3000.001
-    _RFin_step:  float = 0.001
+    _RFin_start: float = 0.0                #
+    _RFin_stop:  float = 3000.001           # Maximum hardware bandwidth 
+    _RFin_step:  float = 0.001              #
 
 
 class hardware():

@@ -15,6 +15,7 @@ from .Ui_mainWindow import Ui_MainWindow
 # Functions specific to the operation of the WN2A Spectrum Analyzer hardware, hopefully.
 # Including setting up the serial port.
 import spectrumAnalyzer as sa
+import hardware_cfg as hw
 import command_processor as cmd_proc
 
 #from serial_port import simple_serial as sp
@@ -38,7 +39,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # When zooming the graph update the x-axis start & stop frequencies
         self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
         #
-        sa.referenceClock = 60
+#        sa.reference_freq = 66
         self.initialized = False        # MAX2871 chip will need to be initialized
 
 
@@ -63,8 +64,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.cbxSerialSpeedSelection.setCurrentIndex(speed_index)
 
 
-        sa.hardware().load_LO1_freq_steps()
-        sa.hardware().load_LO2_freq_steps()
+        hw.hardware().load_LO1_freq_steps()
+        hw.hardware().load_LO2_freq_steps()
         # Populate the 'User RFin step size drop-down selection list'
         sa.step_size_dict = {"250.0" : 0.250,
                              "125.0" : 0.125,
@@ -87,19 +88,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSendRegisters_clicked(self):
-        """
-        Public slot
-        SendRegisters() calls the Spectrum Analyzer code to generate new
-        register values for programming the MAX2871 to set a new frequency.
-        The amplitude of that frequency is then digitized (A2D) by the
-        Arduino and sent back to the PC for plotting and analysis.
-        """
-
-        if sp.ser.is_open:
-            freq = self.floatStopMHz.value()
-            if 23.5 < freq < 6000:
-                fmn = sa.MHz_to_fmn(freq)
-                cmd_proc.set_max2871_freq(fmn)
+        print(name, line(), f'Reference clock = {sa.reference_freq}')
+#        if sp.ser.is_open:
+#            freq = self.floatStopMHz.value()
+#            if 23.5 < freq < 6000:
+#                fmn = sa.MHz_to_fmn(freq)
+#                cmd_proc.set_max2871_freq(fmn)
 
 
     def max2871_set_freq(self, RFout):
@@ -153,16 +147,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(int)
     def on_selectReferenceOscillator_currentIndexChanged(self, index):
         if index == 0:
-            sa.referenceClock = None
+            sa.reference_freq = None
             cmd_proc.disable_all_ref_clocks()
         if index == 1:
-            sa.referenceClock = 60
+            sa.reference_freq = 66.000
             cmd_proc.enable_60MHz_ref_clock()
         if index == 2:
-            sa.referenceClock = 100
+            sa.reference_freq = 66.666
             cmd_proc.enable_100MHz_ref_clock()
-        print(name, line(), f'Reference Frequency = {sa.referenceClock}')
-        return sa.referenceClock
+        return sa.reference_freq
 
     # amplitude was collected as a bunch of linear 16-bit A/D values
     def plot_ampl_data(self, amplBytes):

@@ -36,24 +36,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.graphWidget.setYRange(0, 2.5)
         self.graphWidget.setMouseEnabled(x=True, y=False)
         self.dataLine = self.graphWidget.plot()
-        # When zooming the graph update the x-axis start & stop frequencies
+        # When zooming the graph this updates the x-axis start & stop frequencies
         self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
         #
 #        sa.reference_freq = 66
         self.initialized = False        # MAX2871 chip will need to be initialized
-
-
+        # sa.full_sweep_dict is used to control the unit when sweeping
+        sa.load_control_list('full_sweep_dict_1.csv', sa.full_sweep_dict)
+        #
         # Request the list of available serial ports and use it to
         # populate the user 'Serial Port' drop-down selection list.
         serial_ports = sp.simple_serial().get_serial_port_list()
         self.cbxSerialPortSelection.addItems(serial_ports)
+        #
         # Populate the 'User serial speed drop-down selection list'
         serial_speeds = sp.simple_serial().get_baud_rate_list()
         for baud in serial_speeds:
             self.cbxSerialSpeedSelection.addItem(str(baud), baud)
         # Check for, and reopen, the last serial port that was used.
         sp.simple_serial().port_open()
-
         # GUI dropdowns should display port and speed values from the port that was opened
         serial_port, serial_speed = sp.simple_serial().read_config()
         port_index = self.cbxSerialPortSelection.findText(serial_port)
@@ -62,10 +63,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         speed_index = self.cbxSerialSpeedSelection.findData(str(serial_speed))
         if (speed_index >= 0):
             self.cbxSerialSpeedSelection.setCurrentIndex(speed_index)
-
-
+        #
+        # Load this lists with 
         hw.hardware().load_LO1_freq_steps()
         hw.hardware().load_LO2_freq_steps()
+        #
         # Populate the 'User RFin step size drop-down selection list'
         sa.step_size_dict = {"250.0" : 0.250,
                              "125.0" : 0.125,
@@ -309,8 +311,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sweep_start = self.floatStartMHz.value()
         sweep_stop = self.floatStopMHz.value()
         sweep_step_kHz = sa.sweep_step
-        sp.ser.read(sp.ser.in_waiting) # Clear out the serial buffer.
-        self.serial_read_thread()      # Start the serial receive read thread to accept sweep data
+        sp.ser.read(sp.ser.in_waiting)                                      # Clear out the serial buffer.
+        self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
         sa.sweep(sweep_start, sweep_stop, sweep_step_kHz, ref_clock)
         assert len(sa.x_axis_list) != 0, "sa.x_axis_list was empty"
         self.graphWidget.setXRange(sa.x_axis_list[0], sa.x_axis_list[-1])   # Limit plot to user selected frequency range

@@ -35,8 +35,9 @@ def load_list(var_tuple):
     return tmp_list
 
 def write_dict(file_name, dict):
-    with open(file_name, 'w') as save_file:
-        save_file.write(str(dict))
+    with open(file_name, 'w') as f:
+        for freq in dict:
+            f.write(str(freq) + ', ' + str(dict[freq][0]) + ', ' + str(dict[freq][1]) + '\n')
 
 def read_dict(file_name) -> dict:
     with open(file_name, 'r') as in_file:
@@ -83,6 +84,7 @@ if calibrate is None:
 full_sweep_step_dict = {freq:(LO1, LO2) for freq, LO1, LO2 in zip(RFin_list, LO1_n_list, LO2_fmn_list)}
 full_sweep_freq_dict = {freq:(LO1, LO2) for freq, LO1, LO2 in zip(RFin_list, LO1_freq_list, LO2_freq_list)}
 
+
 if calibrate is sw.cfg.ref_clock_1:
     write_dict('full_sweep_dict_1.csv', full_sweep_step_dict)
 if calibrate is sw.cfg.ref_clock_2:
@@ -108,7 +110,13 @@ print("********** Calibration done **********")
 
 if __name__ == '__main__':
     print()
-
+    
+    RFin_list = load_list(('RFin_steps.csv', float))     # For sweeps and plots. Convert x from string to float
+    LO1_n_list = load_list(('LO1_ref1_N_steps.csv', int))          # For sweeping. Convert N from a string to int
+    LO2_fmn_list = load_list(('LO2_ref1_fmn_steps.csv', int))      # For sweeping. Convert fmn from string to int
+    
+    full_sweep_step_dict = {freq:(LO1, LO2) for freq, LO1, LO2 in zip(RFin_list, LO1_n_list, LO2_fmn_list)}
+    write_dict('full_sweep_dict_1.csv', full_sweep_step_dict)
 
 
 

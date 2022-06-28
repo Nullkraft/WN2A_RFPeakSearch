@@ -86,13 +86,21 @@ class LO3():
     Reg[1] = 0x63CFF104
     Reg[0] = 0x00400005
 
-#RFin_list = list()         # List of every kHz step from 0 to 3,000,000 kHz
-#LO1_n_list = list()        # LO1_N value for each kHz in RFin_list
-#LO1_freq_list = list()     # LO1_frequency for each kHz in RFin_list
-#LO1_30Fpfd_steps = dict()  # {LO1_frequency : LO1_N} dictionary for fast searches
-#LO2_fmn_list = list()      # LO2_FMN value for each kHz in RFin_list
-#LO2_freq_list = list()     # LO2_frequency for each kHz in RFin_list
-#LO2_30Fpfd_steps = dict()  # {LO2_frequency : LO2_FMN} dictionary for fast searches
+full_sweep_dict = dict()    # RFin, LO1_N, LO2_FMN
+
+def load_control_list(file_name, dictionary):
+    """
+    NOTE: full_sweep_dict has a value that is a tuple of LO1_N and LO2_FMN.
+          LO3_FMN will be added later.
+
+    EXAMPLE USAGE:  N, FMN = full_sweep_dict[RFin]
+                    print(name, line(), f'N ={N} and FMN ={FMN}')
+    """
+    with open(file_name, 'r') as f:
+        for target_freq in f:
+            RFin, LO1_N, LO2_FMN = target_freq.strip().split(",")
+            RFin, LO1_N, LO2_FMN = float(RFin), int(LO1_N), int(LO2_FMN)
+            dictionary[RFin] = (LO1_N, LO2_FMN)
 
 
 def update_LO2_fmn_list(freq_step: float=0.25):
@@ -277,7 +285,6 @@ def MHz_to_N(RFout_MHz: float = 3600, Fref: float = 66, R: int = 2) -> int:
 def MHz_to_fmn(LO2_target_freq_MHz: float, Fref: float=66) -> int:
     """ Form a 32 bit word containing F, M and N for the MAX2871.
 
-        F, M, and N are defined in the manufacturer's specsheet.
         Frac F is the fractional division value (0 to MOD-1)
         Mod M is the modulus value
         Int N is the 16-bit N counter value (In Frac-N mode min 19 to 4091)
@@ -334,6 +341,9 @@ def get_RFin_freq(LO1_MHz: float=3000.0, LO2_MHz: float=3914.999, IF2_MHz: float
 """ """
 if __name__ == '__main__':
     print()
+    
+    load_control_list('full_sweep_dict_1.csv', full_sweep_dict)
+#    load_control_list('full_sweep_dict_2.csv', full_sweep_dict)
     
     print("Done")
 

@@ -15,14 +15,13 @@ if __name__ == '__main__':
     print(f'Number of physical CPUs = {cpu_hw_cores}')
     num_loops = 1
 
-    """ See if you can replace these two functions with a lambda  """
     def ref1_mhz_to_fmn(LO2_target_freq):
-        fmn_list = sa.MHz_to_fmn(LO2_target_freq, Fref=66.0)
-        return fmn_list
+        fmn = sa.MHz_to_fmn(LO2_target_freq, Fref=66.0)
+        return fmn
 
     def ref2_mhz_to_fmn(LO2_target_freq):
-        fmn_list = sa.MHz_to_fmn(LO2_target_freq, Fref=66.666)
-        return fmn_list
+        fmn = sa.MHz_to_fmn(LO2_target_freq, Fref=66.666)
+        return fmn
 
     # Fpfd sets the LO1 step size. 'ref_divider' is R and can be 1 for any RFin above 46.7 MHz
     Fpfd_list = [Fpfd/cfg.ref_divider for Fpfd in cfg.ref_list]

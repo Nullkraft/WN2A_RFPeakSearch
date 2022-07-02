@@ -15,7 +15,6 @@ from .Ui_mainWindow import Ui_MainWindow
 # Functions specific to the operation of the WN2A Spectrum Analyzer hardware, hopefully.
 # Including setting up the serial port.
 import spectrumAnalyzer as sa
-import hardware_cfg as hw
 import command_processor as cmd_proc
 
 #from serial_port import simple_serial as sp

@@ -1036,9 +1036,9 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="btnSendRegisters">
+        <widget class="QPushButton" name="btn_set_frequency">
          <property name="text">
-          <string>Send Registers</string>
+          <string>Set Frequency</string>
          </property>
         </widget>
        </item>

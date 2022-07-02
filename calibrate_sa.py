@@ -26,7 +26,15 @@ LO2_freq_list = list()
 calibrate = sw.cfg.ref_clock_1
 
 
-def load_list(var_tuple):
+def load_list(var_tuple) -> list:
+    """
+    Function Load the control codes for LO1, LO2 or LO3 into their associated lists.
+    
+    @param var_tuple A tuple of 2 values which contains the name of a file and the data type contained in the file.
+    @type <class 'tuple'>
+    @return A list containing the values of 'type'
+    @rtype <class 'list'>
+    """
     file_name, data_type = var_tuple
     tmp_list = list()
     with open(file_name, 'r') as f:
@@ -35,9 +43,20 @@ def load_list(var_tuple):
     return tmp_list
 
 def write_dict(file_name, dict):
+    """
+    Function Saves the contents of a unit control dictionary to file
+    
+    @param file_name Name of the file to save the dictionary into
+    @type <class 'str'>
+    @param dict A dictionary where (key = RFin) and value = (LO1_n, LO2_fmn)
+    @type <class 'dict'>
+    """
     with open(file_name, 'w') as f:
         for freq in dict:
-            f.write(str(freq) + ', ' + str(dict[freq][0]) + ', ' + str(dict[freq][1]) + '\n')
+            RFin = str(freq)
+            LO1_n = str(dict[freq][0])
+            LO2_fmn = str(dict[freq][1])
+            f.write(RFin + ', ' + LO1_n + ', ' + LO2_fmn + '\n')
 
 def read_dict(file_name) -> dict:
     with open(file_name, 'r') as in_file:
@@ -59,8 +78,6 @@ idx_stop = freq_to_index(freq_stop)
 idx_step = freq_to_index(freq_step)
 
 # I *REALLY* want to use a threadpool when loading these lists from file(s)
-from time import perf_counter
-start = perf_counter()
 RFin_list = load_list(('RFin_steps.csv', float))     # For sweeps and plots. Convert x from string to float
 if calibrate is sw.cfg.ref_clock_1:
     LO1_n_list = load_list(('LO1_ref1_N_steps.csv', int))          # For sweeping. Convert N from a string to int
@@ -91,8 +108,6 @@ if calibrate is sw.cfg.ref_clock_2:
     write_dict('full_sweep_dict_2.csv', full_sweep_step_dict)
 if calibrate is None:
     write_dict('full_sweep_dict.csv', full_sweep_step_dict)
-
-print(f'Time to load lists = {round(perf_counter()-start, 2)} seconds')
 
 """ ********************* This block will move to spectrumAnalyzer.py ************************* """
 """

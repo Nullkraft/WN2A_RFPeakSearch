@@ -82,15 +82,23 @@ def disable_LO2_RFout():
 def disable_LO3_RFout():
     _send_command(LO3_RF_off)
 
-def set_LO(LO_command, int_N: int=None):
+def set_LO1(LO1_command, int_N: int=None):
+    """
+    Function 
+    
+    @param LO1_command (Choose one from the list of "Arduino and Device Commands" above)
+    @type int_32
+    @param int_N LO1, LO2, or LO3 control code (defaults to None)
+    @type int (optional)
+    """
     if int_N != None:
-        if (120 <= int_N <= 220):
+        if (54 <= int_N <= 100):
             N = int_N << 16
         else:
             logging.error(f'{name}, {line()}, N ({int_N}) is not within the limits of the ADF4356 (LO1)')
     else:
         N = 0
-    _send_command(LO_command | N)
+    _send_command(LO1_command | N)
 
 def LO_device_register(device_command: int):
     """

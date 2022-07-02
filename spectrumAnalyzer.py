@@ -88,7 +88,7 @@ class LO3():
 
 full_sweep_dict = dict()    # RFin, LO1_N, LO2_FMN
 
-def load_control_list(file_name, dictionary):
+def load_control_dict(file_name) -> dict:
     """
     NOTE: full_sweep_dict has a value that is a tuple of LO1_N and LO2_FMN.
           LO3_FMN will be added later.
@@ -96,11 +96,13 @@ def load_control_list(file_name, dictionary):
     EXAMPLE USAGE:  N, FMN = full_sweep_dict[RFin]
                     print(name, line(), f'N ={N} and FMN ={FMN}')
     """
+    fswp_dict = dict()
     with open(file_name, 'r') as f:
         for target_freq in f:
             RFin, LO1_N, LO2_FMN = target_freq.strip().split(",")
             RFin, LO1_N, LO2_FMN = float(RFin), int(LO1_N), int(LO2_FMN)
-            dictionary[RFin] = (LO1_N, LO2_FMN)
+            fswp_dict[RFin] = (LO1_N, LO2_FMN)
+    return fswp_dict
 
 
 def update_LO2_fmn_list(freq_step: float=0.25):
@@ -312,6 +314,7 @@ def MHz_to_fmn(LO2_target_freq_MHz: float, Fref: float=66) -> int:
             break      # Found a solution that is better than 1 kHz accuracy - Stop looking!
     return best_F<<20 | best_M<<8 | N
 
+
 def get_LO1_freq(RFin: float=0.001, Fref_MHz: float=66.0, IF1_MHz: float=3600.0):
     """ LO1 has a range of 3600.0 to 6600.0 MHz
         LO1 = (IF1 + RFin) - ((IF1 + RFin) % Fpfd)
@@ -342,9 +345,22 @@ def get_RFin_freq(LO1_MHz: float=3000.0, LO2_MHz: float=3914.999, IF2_MHz: float
 if __name__ == '__main__':
     print()
     
-    load_control_list('full_sweep_dict_1.csv', full_sweep_dict)
-#    load_control_list('full_sweep_dict_2.csv', full_sweep_dict)
-    
+    RFin = 1373.123
+
+    sweep_dict_1 = load_control_dict('full_sweep_dict_1.csv')
+    sweep_dict_2 = load_control_dict('full_sweep_dict_2.csv')
+
+    print(f'Len sweep_dict_1 = {len(sweep_dict_1)}')
+    print(f'full sweep dict = {sweep_dict_1[RFin]}')
+    print(f'LO1_n = {sweep_dict_1[RFin][0]}')
+    print(f'LO2_fmn = {sweep_dict_1[RFin][1]}')
+    print()
+    print(f'Len sweep_dict_2 = {len(sweep_dict_2)}')
+    print(f'full sweep dict = {sweep_dict_2[RFin]}')
+    print(f'LO1_n = {sweep_dict_2[RFin][0]}')
+    print(f'LO2_fmn = {sweep_dict_2[RFin][1]}')
+
+
     print("Done")
 
 

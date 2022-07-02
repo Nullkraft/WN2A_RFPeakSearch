@@ -16,15 +16,15 @@ if __name__ == '__main__':
     num_loops = 1
 
     def ref1_mhz_to_fmn(LO2_target_freq):
-        fmn = sa.MHz_to_fmn(LO2_target_freq, Fref=66.0)
+        fmn = sa.MHz_to_fmn(LO2_target_freq, Fref=cfg.ref_clock_tuple[0])
         return fmn
 
     def ref2_mhz_to_fmn(LO2_target_freq):
-        fmn = sa.MHz_to_fmn(LO2_target_freq, Fref=66.666)
+        fmn = sa.MHz_to_fmn(LO2_target_freq, Fref=cfg.ref_clock_tuple[1])
         return fmn
 
     # Fpfd sets the LO1 step size. 'ref_divider' is R and can be 1 for any RFin above 46.7 MHz
-    Fpfd_list = [Fpfd/cfg.ref_divider for Fpfd in cfg.ref_list]
+    Fpfd_list = [Fpfd/cfg.ref_divider for Fpfd in cfg.ref_clock_tuple]
     # RFin_list contains every frequency from 0 to 3000.001 MHz in 1 kHz steps
     RFin_list = [freq for freq in np.arange(cfg._RFin_start, cfg._RFin_stop, cfg._RFin_step)]
     # Create the list of LO1 frequencies when using reference clock 1.

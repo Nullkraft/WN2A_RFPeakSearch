@@ -11,10 +11,6 @@ if __name__ == '__main__':
     window.show()
     sys.exit(app.exec())    # Using sys.exit() provides a return code to the command line.
 
-"""
-    TODO: Time the new MHz_to_fmn function and compare it to using numba
-"""
-
 
 """ NEXT:
     Perform a sweep using full_sweep_dict_1 and/or full_sweep_dict_2

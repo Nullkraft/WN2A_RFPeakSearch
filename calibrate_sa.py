@@ -126,12 +126,6 @@ print("********** Calibration done **********")
 if __name__ == '__main__':
     print()
     
-    RFin_list = load_list(('RFin_steps.csv', float))     # For sweeps and plots. Convert x from string to float
-    LO1_n_list = load_list(('LO1_ref1_N_steps.csv', int))          # For sweeping. Convert N from a string to int
-    LO2_fmn_list = load_list(('LO2_ref1_fmn_steps.csv', int))      # For sweeping. Convert fmn from string to int
-    
-    full_sweep_step_dict = {freq:(LO1, LO2) for freq, LO1, LO2 in zip(RFin_list, LO1_n_list, LO2_fmn_list)}
-    write_dict('full_sweep_dict_1.csv', full_sweep_step_dict)
 
 
 

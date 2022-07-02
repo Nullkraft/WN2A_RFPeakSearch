@@ -122,15 +122,6 @@ def update_LO2_fmn_list(freq_step: float=0.25):
     return fmn_LT
 
 
-def _rxtx(frequency: float=0.0, device_name: str="LO2"):
-    LO2_fmn = hardware.LO2_fmn_dict[frequency]
-    LO1_N = hardware.LO1_n_dict[frequency]
-    if device_name == "LO2":
-        cmd_proc.set_max2871_freq(LO2_fmn)              # Select LO2
-    elif device_name == "LO1":
-        cmd_proc.set_LO(cmd_proc.LO1_neg4dBm, LO1_N)    # Set LO1 to next frequency
-
-
 def sweep(start_freq: int=4, stop_freq: int=3000, freq_step: float=0.25, reference_freq: int=60):
     """
     Function sweep() : Search the input for any or all RF signals
@@ -218,17 +209,6 @@ def max2871_registers(newFreq, stepNumber=0, LO=None, refClock=60, FracOpt=None,
 
         return Reg[stepNumber]
 
-
-
-# THIS IS NOT FOR SWEEPING!!!
-# If you have a frequency you want to focus on then this is the function for you.
-def RF_to_LO1(freq_list, target_freq=1345):
-    remainders = []
-    for LO_freq in freq_list:
-        # The lowest remainder is the closest freq to the target freq
-        remainders.append(np.abs(LO_freq - (target_freq + 3600)))
-    lst = np.asarray(remainders)
-    return lst.argmin()     # Returns the index of the lowest value in the array
 
 
 # Find the highest signal amplitudes in a spectrum plot.

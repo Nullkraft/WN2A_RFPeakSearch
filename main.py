@@ -11,33 +11,67 @@ if __name__ == '__main__':
     window.show()
     sys.exit(app.exec())    # Using sys.exit() provides a return code to the command line.
 
+"""
+    TODO: Time the new MHz_to_fmn function and compare it to using numba
+"""
 
 
-""" TODO: Use a pool in the calibrate_sa.py for file reads """
-""" QUERY: How to save and reload a dictionary to and from a file """
-""" NEXT: Make calibrate_sa.py take its filenames as input variables """
+""" NEXT:
+    Perform a sweep using full_sweep_dict_1 and/or full_sweep_dict_2
+    
+    1) After gui startup; select the full_sweep_dict file to be used.
+    2) Set the sweep freq_start, freq_stop, and freq_step values.
+    3) When the sweep button is clicked use the sweep freq_start,
+       freq_stop, and freq_step to create a sweep_slice from the 
+       full_sweep_dict.
+    4) Perform a sweep by grabbing the ref_clock_sel, LO1_n, LO2_fmn, 
+       and LO3_fmn values from the sweep_slice.
+       
+        for RFin in sweep_slice:
 
+            ref_clock_sel = sweep_slice[RFin][0]
+            LO1_n = sweep_slice[RFin][1]
+            LO2_fmn = sweep_slice[RFin][2]
+            LO3_fmn = sweep_slice[RFin][3]
+
+            if ref_clock_sel != last_ref_clock:
+                ser.write(ref_clock_sel)
+                last_ref_clock = ref_clock_sel
+
+            if LO1_n != last_LO1_n:
+                ser.write(LO1_n)
+                last_LO1_n = LO1_n
+
+            ser.write(LO2_fmn)
+
+            if (LO3 is enabled) and (last_LO3_fmn != LO3_fmn):
+                ser.write(LO3_fmn)
+"""
+
+
+
+
+""" TODO: 1) Use a pool in the calibrate_sa.py for file reads
+          2) Make calibrate_sa.py take its filenames as input variables
+"""
 
 
 """ TODO: Move serial.Serial() to the simple_serial class initializer.
     SEE : https://youtu.be/2ejbLVkCndI?t=432
+
+    Use Dependency Injection for setting up the serial port when calling open_port() 
+        Dependency Inversion
+        Protocol class
+        Abstract base class
 """
 
 
-""" TODO: Use Dependency Injection for setting up the serial port when calling open_port() 
-              Dependency Inversion
-              Protocol class
-              Abstract base class
-"""
 
-""" TODO: Refactor Initial-Startup if needed
-        1) Auto-create Ref1 dictionary - Choose as default on startup
-        2) Auto-create Ref2 dictionary
-"""
 
-""" TODO: Change the initial loading of LO1 and LO2 step files to their new names """
 
-""" TODO: Automatically select the correct LO1 and LO2 step files based on the selected reference clock """
+
+
+
 
 
 

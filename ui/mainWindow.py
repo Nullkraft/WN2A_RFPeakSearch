@@ -42,7 +42,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #        sa.reference_freq = 66
         self.initialized = False        # MAX2871 chip will need to be initialized
         # sa.full_sweep_dict is used to control the unit when sweeping
-        sa.load_control_list('full_sweep_dict_1.csv', sa.full_sweep_dict)
+        sa.full_sweep_dict = sa.load_control_dict('full_sweep_dict_1.csv')
         #
         # Request the list of available serial ports and use it to
         # populate the user 'Serial Port' drop-down selection list.
@@ -63,11 +63,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         speed_index = self.cbxSerialSpeedSelection.findData(str(serial_speed))
         if (speed_index >= 0):
             self.cbxSerialSpeedSelection.setCurrentIndex(speed_index)
-        #
-        # Load this lists with 
-        hw.hardware().load_LO1_freq_steps()
-        hw.hardware().load_LO2_freq_steps()
-        #
         # Populate the 'User RFin step size drop-down selection list'
         sa.step_size_dict = {"250.0" : 0.250,
                              "125.0" : 0.125,
@@ -351,13 +346,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sel_port = self.cbxSerialPortSelection.currentText()
         sp.simple_serial().port_open(baud_rate=sel_baud, port=sel_port)
     
-
-
-
-
-
-
-
-
-
-
+    @pyqtSlot()
+    def on_btn_set_frequency_clicked(self):
+        """
+        Program the SA to a single frequency for testing
+        """
+        LO1_control_code, LO2_control_code = sa.full_sweep_dict[100.0]
+        cmd_proc.enable_60MHz_ref_clock()
+        cmd_proc.sel_315MHz_adc()   # Selects LO2 path
+        LO1_control_code = LO1_control_code.to_bytes(4, byteorder='little')
+        cmd_proc.set_LO(cmd_proc.LO1_pos5dBm, LO1_control_code)
+        LO2_control_code = LO2_control_code.to_bytes(4, byteorder='little')
+        cmd_proc.set_LO(cmd_proc.LO2_pos5dBm, LO2_control_code)
+       
+ 

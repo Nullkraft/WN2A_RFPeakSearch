@@ -295,50 +295,11 @@ def MHz_to_fmn(LO2_target_freq_MHz: float, Fref: float=66) -> int:
     return best_F<<20 | best_M<<8 | N
 
 
-def get_LO1_freq(RFin: float=0.001, Fref_MHz: float=66.0, IF1_MHz: float=3600.0):
-    """ LO1 has a range of 3600.0 to 6600.0 MHz
-        LO1 = (IF1 + RFin) - ((IF1 + RFin) % Fpfd)
-    """
-    assert RFin <= 3000.0
-    LO1 = (RFin + IF1_MHz) - ((RFin + IF1_MHz) % (Fref_MHz/2))
-    return LO1
-
-def get_LO2_freq(RFin: float=0.001, Fref_MHz: float=66.0, IF2_MHz: float=315.0):
-    """ LO2 has a range of 3914.999 to 3885.001 MHz
-        LO2 = LO1 - RFin + IF2
-    """
-    LO1_MHz = get_LO1_freq(RFin, Fref_MHz)
-    LO2 = LO1_MHz - IF2_MHz - RFin
-    return LO2
-
-def get_RFin_freq(LO1_MHz: float=3000.0, LO2_MHz: float=3914.999, IF2_MHz: float=315.0):
-    """ LO1 has a range of 3600.0 to 6600.0 MHz
-        LO2 has a range of 3914.999 to 3885.001 MHz
-        RFin = LO1 + IF2 - LO2
-    """
-    RFin = LO1_MHz + IF2_MHz - LO2_MHz
-    return RFin
-
-
 
 """ """
 if __name__ == '__main__':
     print()
     
-    RFin = 1373.123
-
-    sweep_dict_1 = load_control_dict('full_sweep_dict_1.csv')
-    sweep_dict_2 = load_control_dict('full_sweep_dict_2.csv')
-
-    print(f'Len sweep_dict_1 = {len(sweep_dict_1)}')
-    print(f'full sweep dict = {sweep_dict_1[RFin]}')
-    print(f'LO1_n = {sweep_dict_1[RFin][0]}')
-    print(f'LO2_fmn = {sweep_dict_1[RFin][1]}')
-    print()
-    print(f'Len sweep_dict_2 = {len(sweep_dict_2)}')
-    print(f'full sweep dict = {sweep_dict_2[RFin]}')
-    print(f'LO1_n = {sweep_dict_2[RFin][0]}')
-    print(f'LO2_fmn = {sweep_dict_2[RFin][1]}')
 
 
     print("Done")

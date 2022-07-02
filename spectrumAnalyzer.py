@@ -263,7 +263,7 @@ def MHz_to_N(RFout_MHz: float = 3600, Fref: float = 66, R: int = 2) -> int:
     N = int(RFout_MHz * (2/Fref))
     return (N)
 
-@njit
+@njit(nogil=True)
 def MHz_to_fmn(LO2_target_freq_MHz: float, Fref: float=66) -> int:
     """ Form a 32 bit word containing F, M and N for the MAX2871.
 
@@ -290,8 +290,6 @@ def MHz_to_fmn(LO2_target_freq_MHz: float, Fref: float=66) -> int:
             max_error = Err1
             best_F = F
             best_M = M
-        if Err1 < 0.001:
-            break      # Found a solution that is better than 1 kHz accuracy - Stop looking!
     return best_F<<20 | best_M<<8 | N
 
 

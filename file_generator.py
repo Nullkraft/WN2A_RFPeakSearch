@@ -1,4 +1,3 @@
-import psutil
 import numpy as np
 import sys
 import spectrumAnalyzer as sa
@@ -8,12 +7,9 @@ from hardware_cfg import cfg
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 name = f'File \"{__name__}.py\",'
 
-cpu_hw_cores = psutil.cpu_count(logical=False)
 
 if __name__ == '__main__':
     print()
-    print(f'Number of physical CPUs = {cpu_hw_cores}')
-    num_loops = 1
 
     def ref1_mhz_to_fmn(LO2_target_freq):
         fmn = sa.MHz_to_fmn(LO2_target_freq, Fref=cfg.ref_clock_tuple[0])

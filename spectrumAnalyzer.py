@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from dataclasses import dataclass
-import numpy as np
 import sys
 import time
+
+import numpy as np
+from numba import njit
+from dataclasses import dataclass
+
 import command_processor as cmd_proc
 from sa_hw_config import *
-from numba import njit
-#from multiprocessing import Pool as pool
+import hardware_cfg as hw
+
 
 # Utilities provided for print debugging.
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
@@ -122,7 +125,7 @@ def update_LO2_fmn_list(freq_step: float=0.25):
     return fmn_LT
 
 
-def sweep(start_freq: int=4, stop_freq: int=3000, freq_step: float=0.25, reference_freq: int=60):
+def sweep(start_freq: int=4, stop_freq: int=3000, freq_step: float=0.25, reference_freq: int=66):
     """
     Function sweep() : Search the input for any or all RF signals
     """
@@ -173,11 +176,11 @@ def sweep(start_freq: int=4, stop_freq: int=3000, freq_step: float=0.25, referen
 
 
 
-def max2871_registers(newFreq, stepNumber=0, LO=None, refClock=60, FracOpt=None, LockDetect="y"):
+def max2871_registers(newFreq, stepNumber=0, LO=None, reference_freq=66, FracOpt=None, LockDetect="y"):
     global dataRow
 
     refClockDivider = 4
-    Fpfd = (refClock * (1e6)) / refClockDivider    # Default Fpfd = 15 MHz
+    Fpfd = (reference_freq * (1e6)) / refClockDivider    # Default Fpfd = 15 MHz
     rangeNum = 0
     Div = 1
     Reg = list(range(6)), list(range(402))
@@ -256,31 +259,30 @@ def fmn_to_MHz(fmn_word, Fpfd=33.0):
     return Fpfd * (N + F/M)
 
 
-def MHz_to_N(RFout_MHz: float = 3600, Fref: float = 66, R: int = 2) -> int:
+def MHz_to_N(RFout_MHz: float=3600, reference_freq: float=66, R: int=1) -> int:
     """ Returns the integer portion of N which is used to program
         the integer step register of the ADF4356 chip.
     """
-    N = int(RFout_MHz * (2/Fref))
+    N = int(RFout_MHz * (2/reference_freq))
     return (N)
 
 @njit(nogil=True)
-def MHz_to_fmn(LO2_target_freq_MHz: float, Fref: float=66) -> int:
+def MHz_to_fmn(LO2_target_freq_MHz: float) -> int:
     """ Form a 32 bit word containing F, M and N for the MAX2871.
 
         Frac F is the fractional division value (0 to MOD-1)
         Mod M is the modulus value
         Int N is the 16-bit N counter value (In Frac-N mode min 19 to 4091)
     """
+    reference_freq = 66.0
     R = 1
     max_error = 2**32
-    vco_fundamental_freq = 3000
-    # This for-loop is actually slightly faster than list-comprehension
     for div_range in range(8):
         div = 2**div_range
         Fvco = div * LO2_target_freq_MHz
-        if Fvco >= vco_fundamental_freq:
+        if Fvco >= 3000:                    # vco fundamental freq = 3000 MHz (numba requires a constant?)
             break
-    Fpfd = Fref / R
+    Fpfd = reference_freq / R
     N = int(Fvco / Fpfd)
     Fract = Fvco / Fpfd - N
     for M in range(2, 4096):
@@ -294,11 +296,18 @@ def MHz_to_fmn(LO2_target_freq_MHz: float, Fref: float=66) -> int:
 
 
 
-""" """
 if __name__ == '__main__':
     print()
-    
 
+    start_freq = 24.0
+    stop_freq = 3000.0
+ 
+    sweep_list = [freq for freq in np.arange(start_freq, stop_freq)]
+    fmn_list = list(map(MHz_to_fmn, sweep_list))
+
+    print(f'fmn[2975] value = {fmn_list[2975]}')
+    print(f'fmn[-1] = {fmn_list[-1]}')
+    print(f'Len fmn list = {len(fmn_list)}')
 
     print("Done")
 

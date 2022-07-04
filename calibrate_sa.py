@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import sys
 import psutil
-import software_cfg as sw
 
+import software_cfg as sw
+import hardware_cfg as hw
 
 # Utils to print filename and linenumber, print(name, line(), ...), when using print debugging.
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
@@ -126,7 +127,40 @@ print("********** Calibration done **********")
 if __name__ == '__main__':
     print()
     
+    """  1) Load the generated files for ref1
+         2) Program the SA with reference 1
+         3) Program the SA with LO1 and LO2 for each RFin
+         4) amplitude is collected from the 315 MHz filter A2D output
+         5) Create ampl_1_dict = {RFin: amplitude}
+         6) Save ampl_1_dict to ampl_ref1.csv
+        **** Next ****
+         7) Load the generated files for ref2
+         8) Program the SA with reference 2
+         9) Program the SA with LO1 and LO2 for each RFin
+        10) amplitude is collected from the 315 MHz filter A2D output
+        11) Create ampl_2_dict = {RFin: amplitude}
+        12) Save ampl_2_dict to ampl_ref2.csv
+        **** Next ****
+        13) Load sweep1 from full_sweep_dict_1.csv
+        14) Load sweep2 from full_sweep_dict_2.csv
+        15) Load Rfin_list from RFin_steps.csv
+    """
+    control_dict = dict()
+    for freq in RFin_list:
+        a1 = ampl_ref1_dict[freq]
+        a2 = ampl_ref2_dict[freq]
+        RFin = freq
+        if a2 < a1:
+            LO1, LO2 = sweep2[freq]
+            ref = hw.cfg.ref_clock_tuple[1]
+        else:
+            LO1, LO2 = sweep1[freq]
+            ref = hw.cfg.ref_clock_tuple[0]
+        tmp_dict = {RFin: (ref, LO1, LO2)}
+        control_dict.append(tmp_dict)
+            
 
+    print('Calibraion complete')
 
 
 

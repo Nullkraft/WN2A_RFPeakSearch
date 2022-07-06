@@ -11,6 +11,10 @@ RFin_list = list()         # List of every kHz step from 0 to 3,000,000 kHz
 class cfg():
     ref_clock_tuple: float = 66.000, 66.666 # Ref_1, Ref_2
     ref_divider: int = 1                    # R from the MAX2871 spec sheet
+
+    Fpfd1 = ref_clock_tuple[0] / ref_divider
+    Fpfd2 = ref_clock_tuple[1] / ref_divider
+
     IF1: float = 3600.0                     # First intermediate frequency in MHz
     IF2: float = 315.0                      # Second intermediate frequency in MHz
 

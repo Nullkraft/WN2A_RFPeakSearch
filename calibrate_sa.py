@@ -1,90 +1,65 @@
 # -*- coding: utf-8 -*-
-import sys
-import psutil
 
+from hardware_cfg import cfg
 import command_processor as cmd
 
-# Utils to print filename and linenumber, print(name, line(), ...), when using print debugging.
-line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
-name = f'File \"{__name__}.py\",'
+class calibrate():
+    ref1 = cmd.ref1_enable
+    ref2 = cmd.ref2_enable
 
-cpu_hw_cores = psutil.cpu_count(logical=False)
+    def load_list(self, cntl_tuple) -> list:
+        """
+        Function Load the control codes for LO1, LO2 or LO3 into their associated lists.
+        
+        @param cntl_tuple A tuple of 2 values which contains the name of a file and the data type contained in the file.
+        @type <class 'tuple'>
+        @return A list containing the values of 'type'
+        @rtype <class 'list'>
+        """
+        file_name, data_type = cntl_tuple
+        tmp_list = list()
+        with open(file_name, 'r') as f:
+            for x in f:
+                tmp_list.append(data_type(x))
+        return tmp_list
 
-RFin = list()
-LO1_n = list()
-LO2_fmn = list()
-LO1_freq = list()
-LO2_freq = list()
+    def write_dict(self, file_name, cntl_dict):
+        """
+        Function Saves the contents of a unit control dictionary to file
+        
+        @param file_name Name of the file to save the dictionary into
+        @type <class 'str'>
+        @param dict A dictionary where (key = RFin) and value = (LO1_n, LO2_fmn)
+        @type <class 'dict'>
+        """
+        with open(file_name, 'w') as f:
+            for freq in cntl_dict:
+                RFin = str(freq)
+                ref = str(cntl_dict[freq][0])
+                LO1_n = str(cntl_dict[freq][1])
+                LO2_fmn = str(cntl_dict[freq][2])
+                f.write(RFin + ', ' + ref + ', ' + LO1_n + ', ' + LO2_fmn + '\n')
 
-ref1 = cmd.ref1_enable
-ref2 = cmd.ref2_enable
+    def create_control_file_1(self):
+        LO1_n = self.load_list(('LO1_ref1_N_steps.csv', int))          # For sweeping. Convert N from a string to int
+        LO2_fmn = self.load_list(('LO2_ref1_fmn_steps.csv', int))      # For sweeping. Convert fmn from string to int
+        full_sweep_step_dict = {freq:(self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(cfg.RFin_array, LO1_n, LO2_fmn)}
+        self.write_dict('full_control_ref1.csv', full_sweep_step_dict)
 
-def load_list(var_tuple) -> list:
-    """
-    Function Load the control codes for LO1, LO2 or LO3 into their associated lists.
-    
-    @param var_tuple A tuple of 2 values which contains the name of a file and the data type contained in the file.
-    @type <class 'tuple'>
-    @return A list containing the values of 'type'
-    @rtype <class 'list'>
-    """
-    file_name, data_type = var_tuple
-    tmp_list = list()
-    with open(file_name, 'r') as f:
-        for x in f:
-            tmp_list.append(data_type(x))
-    return tmp_list
+    def create_control_file_2(self):
+        LO1_n = self.load_list(('LO1_ref2_N_steps.csv', int))          # For sweeping. Convert N from a string to int
+        LO2_fmn = self.load_list(('LO2_ref2_fmn_steps.csv', int))      # For sweeping. Convert fmn from string to int
+        full_sweep_step_dict = {freq:(self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(cfg.RFin_array, LO1_n, LO2_fmn)}
+        self.write_dict('full_control_ref2.csv', full_sweep_step_dict)
 
-def write_dict(file_name, dict):
-    """
-    Function Saves the contents of a unit control dictionary to file
-    
-    @param file_name Name of the file to save the dictionary into
-    @type <class 'str'>
-    @param dict A dictionary where (key = RFin) and value = (LO1_n, LO2_fmn)
-    @type <class 'dict'>
-    """
-    with open(file_name, 'w') as f:
-        for freq in dict:
-            RFin = str(freq)
-            ref = str(dict[freq][0])
-            LO1_n = str(dict[freq][1])
-            LO2_fmn = str(dict[freq][2])
-            f.write(RFin + ', ' + ref + ', ' + LO1_n + ', ' + LO2_fmn + '\n')
-
-def read_dict(file_name) -> dict:
-    with open(file_name, 'r') as in_file:
-        new_dict = in_file.read()
-    return new_dict
-
-def freq_to_index(freq_MHz: float=4.0) -> int:
-    return int(freq_MHz * 1000)
-
-def index_to_freq(index: int=4000) -> float:
-    return float(index / 1000)
-
-RFin = load_list(('RFin_steps.csv', float))     # For sweeps and plots. Convert x from string to float
-
-def create_control_file_1():
-    LO1_n = load_list(('LO1_ref1_N_steps.csv', int))          # For sweeping. Convert N from a string to int
-    LO2_fmn = load_list(('LO2_ref1_fmn_steps.csv', int))      # For sweeping. Convert fmn from string to int
-    full_sweep_step_dict = {freq:(ref1, LO1, LO2) for freq, LO1, LO2 in zip(RFin, LO1_n, LO2_fmn)}
-    write_dict('full_control_ref1.csv', full_sweep_step_dict)
-#    LO1_freq = load_list(('LO1_ref1_freq_steps.csv', float))  # For plotting. Convert f from a string to float
-#    LO2_freq = load_list(('LO2_ref1_freq_steps.csv', float))  # For plotting. Convert freq from string to float
-
-def create_control_file_2():
-    LO1_n = load_list(('LO1_ref2_N_steps.csv', int))          # For sweeping. Convert N from a string to int
-    LO2_fmn = load_list(('LO2_ref2_fmn_steps.csv', int))      # For sweeping. Convert fmn from string to int
-    full_sweep_step_dict = {freq:(ref2, LO1, LO2) for freq, LO1, LO2 in zip(RFin, LO1_n, LO2_fmn)}
-    write_dict('full_control_ref2.csv', full_sweep_step_dict)
-#    LO1_freq = load_list(('LO1_ref2_freq_steps.csv', float))  # For plotting. Convert f from a string to float
-#    LO2_freq = load_list(('LO2_ref2_freq_steps.csv', float))  # For plotting. Convert freq from string to float
-
-#full_sweep_freq_dict = {freq:(ref2, LO1, LO2) for freq, LO1, LO2 in zip(RFin, LO1_freq_list, LO2_freq_list)}
+    #full_sweep_freq_dict = {freq:(self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(RFin, LO1_freq_list, LO2_freq_list)}
 
 
 """ ********************* This block will move to spectrumAnalyzer.py ************************* """
+#LO1_freq = self.load_list(('LO1_ref1_freq_steps.csv', float))  # For plotting. Convert f from a string to float
+#LO2_freq = self.load_list(('LO2_ref1_freq_steps.csv', float))  # For plotting. Convert freq from string to float
+#LO1_freq = self.load_list(('LO1_ref2_freq_steps.csv', float))  # For plotting. Convert f from a string to float
+#LO2_freq = self.load_list(('LO2_ref2_freq_steps.csv', float))  # For plotting. Convert freq from string to float
 """
 Reading the sweep dictionary from a file
 """
@@ -96,13 +71,12 @@ Set the sweep range and sweep step size
 
 """ ********************************************************************************************* """
 
-print("********** Calibration done **********")
-
 if __name__ == '__main__':
     print()
-    create_control_file_1()
-    create_control_file_2()
-    print(len(RFin))
+    
+    cal = calibrate()
+    cal.create_control_file_1()
+    cal.create_control_file_2()
     
 #     1) Load the generated files for ref1
 #     2) Program the SA with reference 1
@@ -128,10 +102,10 @@ if __name__ == '__main__':
 #        RFin = freq
 #        if a2 < a1:
 #            LO1, LO2 = sweep2[freq]
-#            ref = hw.cfg.ref_clock_tuple[1]
+#            ref = cal.ref1
 #        else:
 #            LO1, LO2 = sweep1[freq]
-#            ref = hw.cfg.ref_clock_tuple[0]
+#            ref = cal.ref2
 #        tmp_dict = {RFin: (ref, LO1, LO2)}
 #        control_dict.append(tmp_dict)
             

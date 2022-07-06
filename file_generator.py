@@ -11,6 +11,10 @@ class data_generator():
     # Fpfd sets the LO1 step size where ref_divider=1 for LO1 frequencies >= 3000 MHz
     fpfd1 = cfg.Fpfd1
     fpfd2 = cfg.Fpfd2
+    
+    start = cfg._RFin_start
+    stop = cfg._RFin_stop
+    step = cfg._RFin_step
 
     def ref1_mhz_to_fmn(self, LO2_target_freq):
         fmn = sa.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_tuple[0])
@@ -22,7 +26,7 @@ class data_generator():
 
     def create_data(self):
         # RFin_array contains every frequency from 0 to 3000.001 MHz in 1 kHz steps
-        RFin_array = np.arange(cfg._RFin_start, cfg._RFin_stop, cfg._RFin_step)
+        RFin_array = np.arange(self.start, self.stop, self.step)
         # Create the list of LO1 frequencies when using reference clock 1.
         self.LO1_ref1_freq_list = [int((cfg.IF1 + freq) / self.fpfd1) * self.fpfd1 for freq in RFin_array]
         self.LO1_ref1_freq_list = [round(x, 9) for x in self.LO1_ref1_freq_list]
@@ -71,7 +75,7 @@ if __name__ == '__main__':
     print()
 
     dg = data_generator()
-    print(f'Fpfd values 1 & 2 are {dg.fpfd1} & {dg.fpfd2}')
+    print(f'Fpfd values are {dg.fpfd1} & {dg.fpfd2}')
     
     dg.create_data()
     dg.save_data_files()

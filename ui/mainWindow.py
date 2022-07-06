@@ -41,7 +41,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #        sa.reference_freq = 66
         self.initialized = False        # MAX2871 chip will need to be initialized
         # sa.full_sweep_dict is used to control the unit when sweeping
-        sa.full_sweep_dict = sa.load_control_dict('full_sweep_dict_1.csv')
+        sa.full_sweep_dict = sa.load_control_dict('full_control_ref1.csv')
         #
         # Request the list of available serial ports and use it to
         # populate the user 'Serial Port' drop-down selection list.
@@ -301,7 +301,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
-        ref_clock = sa.referenceClock
+        ref_clock = sa.reference_freq
         sweep_start = self.floatStartMHz.value()
         sweep_stop = self.floatStopMHz.value()
         sweep_step_kHz = sa.sweep_step
@@ -350,12 +350,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         Program the SA to a single frequency for testing
         """
-        LO1_control_code, LO2_control_code = sa.full_sweep_dict[100.0]
+        ref_clock, LO1_cntl_code, LO2_cntl_code = sa.full_sweep_dict[100.0]
         cmd_proc.enable_60MHz_ref_clock()
         cmd_proc.sel_315MHz_adc()   # Selects LO2 path
-        LO1_control_code = LO1_control_code.to_bytes(4, byteorder='little')
-        cmd_proc.set_LO(cmd_proc.LO1_pos5dBm, LO1_control_code)
-        LO2_control_code = LO2_control_code.to_bytes(4, byteorder='little')
+        LO1_cntl_code = LO1_cntl_code.to_bytes(4, byteorder='little')
+        cmd_proc.set_LO(cmd_proc.LO1_pos5dBm, LO1_cntl_code)
+        LO2_control_code = LO2_cntl_code.to_bytes(4, byteorder='little')
         cmd_proc.set_LO(cmd_proc.LO2_pos5dBm, LO2_control_code)
        
  

@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
+""" Spectrum Analyzer Notes:
 
+    LO1 = int({IF1 + RFin} - [{IF1 + RFin} / Fpfd])
+    LO2 = LO1 - RFin + IF2
+    RFin = LO1 + IF2 - LO2
+    
+"""
 import sys
 import time
 
@@ -9,7 +15,6 @@ from dataclasses import dataclass
 
 import command_processor as cmd_proc
 from sa_hw_config import *
-import hardware_cfg as hw
 
 
 # Utilities provided for print debugging.
@@ -102,9 +107,9 @@ def load_control_dict(file_name) -> dict:
     fswp_dict = dict()
     with open(file_name, 'r') as f:
         for target_freq in f:
-            RFin, LO1_N, LO2_FMN = target_freq.strip().split(",")
-            RFin, LO1_N, LO2_FMN = float(RFin), int(LO1_N), int(LO2_FMN)
-            fswp_dict[RFin] = (LO1_N, LO2_FMN)
+            RFin, ref, LO1_N, LO2_FMN = target_freq.strip().split(",")
+            RFin, ref, LO1_N, LO2_FMN = float(ref), float(RFin), int(LO1_N), int(LO2_FMN)
+            fswp_dict[RFin] = (ref, LO1_N, LO2_FMN)
     return fswp_dict
 
 
@@ -173,47 +178,6 @@ def sweep(start_freq: int=4, stop_freq: int=3000, freq_step: float=0.25, referen
     cmd_proc.sweep_done()   # Handshake signal to Arduino
 
 
-
-
-
-def max2871_registers(newFreq, stepNumber=0, LO=None, reference_freq=66, FracOpt=None, LockDetect="y"):
-    global dataRow
-
-    refClockDivider = 4
-    Fpfd = (reference_freq * (1e6)) / refClockDivider    # Default Fpfd = 15 MHz
-    rangeNum = 0
-    Div = 1
-    Reg = list(range(6)), list(range(402))
-
-    while (newFreq*Div) < 3000:
-        rangeNum += 1           # Divider Range still not found.
-        Div = 2**rangeNum       # Next Divider Range
-    else:
-        Range = rangeNum
-        Fvco = newFreq * Div
-#        print(name, line(), f'Fvco = newFreq * Div : {Fvco} = {newFreq} * {Div}')
-        N = 1e6 * (Fvco/(Fpfd))
-        NI = int(N)
-        FracT = N - NI
-        if FracOpt != "f":      # Only run these lines if the user selected Fractional Optimization
-            MOD1 = 4095
-            Fracc = int(FracT * MOD1)
-
-        Reg[stepNumber][0] = (NI << 15) + (Fracc << 3)
-        Reg[stepNumber][1] = 2**29 + 2**15 + (MOD1 << 3) + 1
-        Reg[stepNumber][2] = LO2.Reg[2]
-        Reg[stepNumber][3] = LO2.Reg[3]
-        Reg[stepNumber][4] = 1670377980 + (Range << 20)
-        Reg[stepNumber][5] = LO2.Reg[5]
-
-        for i, x in enumerate(Reg[0]):
-            print(name, line(), f'reg[{i}] = {x}')
-
-
-        return Reg[stepNumber]
-
-
-
 # Find the highest signal amplitudes in a spectrum plot.
 def peakSearch(amplitudeData, numPeaks):
     # Convert amplitudeData to a numpy.array so we can use argsort.
@@ -266,15 +230,15 @@ def MHz_to_N(RFout_MHz: float=3600, reference_freq: float=66, R: int=1) -> int:
     N = int(RFout_MHz * (2/reference_freq))
     return (N)
 
+
 @njit(nogil=True)
-def MHz_to_fmn(LO2_target_freq_MHz: float) -> int:
+def MHz_to_fmn(LO2_target_freq_MHz: float, reference_freq: float=66.0) -> int:
     """ Form a 32 bit word containing F, M and N for the MAX2871.
 
         Frac F is the fractional division value (0 to MOD-1)
         Mod M is the modulus value
         Int N is the 16-bit N counter value (In Frac-N mode min 19 to 4091)
     """
-    reference_freq = 66.0
     R = 1
     max_error = 2**32
     for div_range in range(8):

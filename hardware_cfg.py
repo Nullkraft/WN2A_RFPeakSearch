@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from numpy import arange
 from dataclasses import dataclass
 
 import spectrumAnalyzer as sa
@@ -10,20 +11,25 @@ RFin_list = list()         # List of every kHz step from 0 to 3,000,000 kHz
 
 @dataclass
 class cfg():
-    ref_clock_tuple: float = 66.000, 66.666 # Ref_1, Ref_2
-    ref_divider: int = 1                    # R from the MAX2871 spec sheet
+    ref_clock_1 = 66.000
+    ref_clock_2 = 66.666
+    ref_divider: int = 1                        # R from the MAX2871 spec sheet
 
-    Fpfd1 = ref_clock_tuple[0] / ref_divider
-    Fpfd2 = ref_clock_tuple[1] / ref_divider
+    Fpfd1 = ref_clock_1 / ref_divider    # LO1 step size when using ref_clock 1
+    Fpfd2 = ref_clock_2 / ref_divider    # LO1 step size when using ref_clock 2
 
-    IF1: float = 3600.0                     # First intermediate frequency in MHz
-    IF2: float = 315.0                      # Second intermediate frequency in MHz
+    IF1: float = 3600.0                         # First intermediate frequency in MHz
+    IF2: float = 315.0                          # Second intermediate frequency in MHz
 
-    vco_fundamental_freq = 3000             # MAX2871 VCO Fundamental
+    vco_fundamental_freq = 3000                 # MAX2871 VCO Fundamental
 
-    _RFin_start: float = 0.0                #
-    _RFin_stop:  float = 3000.001           # Maximum hardware bandwidth 
-    _RFin_step:  float = 0.001              #
+    _RFin_start: float = 0.0                    #
+    _RFin_stop:  float = 3000.001               # Maximum hardware bandwidth 
+    _RFin_step:  float = 0.001                  #
+    
+    # RFin_array contains every frequency from 0 to 3000.0 MHz in 1 kHz steps
+    RFin_array = [round(RFin, 9) for RFin in arange(_RFin_start, _RFin_stop, _RFin_step)]
+
 
 
 class hardware():
@@ -47,21 +53,6 @@ class hardware():
 
     """
 
-#    def __init__(self):
-#        super().__init__()
-
-    def load_RFin_list(self, freq_file: str='RFin_1kHz_freq_steps.csv'):
-        with open(freq_file) as record:
-            RFin_list = [float(x) for x in record]     # For sweeping and plotting
-        return RFin_list
-
-    def load_LO1_freq_steps(self, n_file='LO1_ref1_N_steps.csv', freq_file='LO1_ref1_freq_steps.csv'):
-        with open(n_file) as n:
-            self.LO1_n_list = [int(x) for x in n]           # For sweeping
-        with open(freq_file) as freq:
-            self.LO1_freq_list = [float(x) for x in freq]   # For plotting
-        self.LO1_30Fpfd_steps = dict(zip(RFin_list, self.LO1_n_list))
-
     def load_LO2_freq_steps(self, fmn_file='LO2_ref1_fmn_steps.csv', freq_file='LO2_ref1_freq_steps.csv'):
         with open(fmn_file) as fmn:
             self.LO2_fmn_list = [int(x) for x in fmn]       # For sweeping
@@ -69,7 +60,10 @@ class hardware():
             self.LO2_freq_list = [float(x) for x in freq]   # For plotting
         self.LO2_30Fpfd_steps = dict(zip(RFin_list, self.LO2_fmn_list))
 
-    def MHz_to_LO1_freq(self, freq_in_MHz=0, Fpfd=30.0):
-        LO1_N = sa.MHz_to_N(freq_in_MHz)
-        LO1_freq = LO1_N * Fpfd
-        return LO1_freq
+
+
+
+
+
+
+

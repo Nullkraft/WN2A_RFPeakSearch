@@ -357,5 +357,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         cmd_proc.set_LO(cmd_proc.LO1_pos5dBm, LO1_cntl_code)
         LO2_control_code = LO2_cntl_code.to_bytes(4, byteorder='little')
         cmd_proc.set_LO(cmd_proc.LO2_pos5dBm, LO2_control_code)
-       
- 
+    
+    @pyqtSlot()
+    def on_btnCalibrate_clicked(self):
+        """
+        Slot documentation goes here.
+        """
+        # TODO: not implemented yet
+        raise NotImplementedError
+
+
+
+
+
+
+
+
+
+
+
+

@@ -40,13 +40,13 @@ class calibrate():
                 LO2_fmn = str(cntl_dict[freq][2])
                 f.write(RFin + ', ' + ref + ', ' + LO1_n + ', ' + LO2_fmn + '\n')
 
-    def create_control_file_1(self):
+    def create_ref1_control_file(self):
         LO1_n = self.load_list(('LO1_ref1_N_steps.csv', int))          # For sweeping. Convert N from a string to int
         LO2_fmn = self.load_list(('LO2_ref1_fmn_steps.csv', int))      # For sweeping. Convert fmn from string to int
         full_sweep_step_dict = {freq:(self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(cfg.RFin_array, LO1_n, LO2_fmn)}
         self.write_dict('full_control_ref1.csv', full_sweep_step_dict)
 
-    def create_control_file_2(self):
+    def create_ref2_control_file(self):
         LO1_n = self.load_list(('LO1_ref2_N_steps.csv', int))          # For sweeping. Convert N from a string to int
         LO2_fmn = self.load_list(('LO2_ref2_fmn_steps.csv', int))      # For sweeping. Convert fmn from string to int
         full_sweep_step_dict = {freq:(self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(cfg.RFin_array, LO1_n, LO2_fmn)}
@@ -75,8 +75,8 @@ if __name__ == '__main__':
     print()
     
     cal = calibrate()
-    cal.create_control_file_1()
-    cal.create_control_file_2()
+    cal.create_ref1_control_file()
+    cal.create_ref2_control_file()
     
 #     1) Load the generated files for ref1
 #     2) Program the SA with reference 1

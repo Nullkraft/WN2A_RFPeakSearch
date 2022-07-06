@@ -1,5 +1,4 @@
-
-import numpy as np
+# -*- coding: utf-8 -*-
 
 import spectrumAnalyzer as sa
 from hardware_cfg import cfg
@@ -8,34 +7,34 @@ class data_generator():
     """ These files will be used by calibrate_sa.py for creating the
         control dictionaries needed by the calibration scripts.
     """
+    # RFin_array contains every frequency from 0 to 3000.001 MHz in 1 kHz steps
+    RFin_array = cfg.RFin_array
 
     def ref1_mhz_to_fmn(self, LO2_target_freq):
-        fmn = sa.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_tuple[0])
+        fmn = sa.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_1)
         return fmn
 
     def ref2_mhz_to_fmn(self, LO2_target_freq):
-        fmn = sa.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_tuple[1])
+        fmn = sa.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_2)
         return fmn
 
     def create_data(self):
-        # RFin_array contains every frequency from 0 to 3000.001 MHz in 1 kHz steps
-        RFin_array = np.arange(cfg._RFin_start, cfg._RFin_stop, cfg._RFin_step)
         # Create the list of LO1 frequencies when using reference clock 1.
-        self.LO1_ref1_freq_list = [int((cfg.IF1 + freq) / cfg.Fpfd1) * cfg.Fpfd1 for freq in RFin_array]
+        self.LO1_ref1_freq_list = [int((cfg.IF1 + freq) / cfg.Fpfd1) * cfg.Fpfd1 for freq in self.RFin_array]
         self.LO1_ref1_freq_list = [round(x, 9) for x in self.LO1_ref1_freq_list]
         # Create the list of LO1 frequencies when using reference clock 2.
-        self.LO1_ref2_freq_list = [int((cfg.IF1 + freq) / cfg.Fpfd2) * cfg.Fpfd2 for freq in RFin_array]
+        self.LO1_ref2_freq_list = [int((cfg.IF1 + freq) / cfg.Fpfd2) * cfg.Fpfd2 for freq in self.RFin_array]
         self.LO1_ref2_freq_list = [round(x, 9) for x in self.LO1_ref2_freq_list]
         # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 1
         self.LO1_ref1_N_list = [int(n/cfg.Fpfd1) for n in self.LO1_ref1_freq_list]
         # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 2
         self.LO1_ref2_N_list = [int(n/cfg.Fpfd2) for n in self.LO1_ref2_freq_list]
         # Create the frequency lookup tables for LO1
-        self.LO1_ref1_freq_dict = dict(zip(RFin_array, self.LO1_ref1_freq_list))
-        self.LO1_ref2_freq_dict = dict(zip(RFin_array, self.LO1_ref2_freq_list))
+        self.LO1_ref1_freq_dict = dict(zip(self.RFin_array, self.LO1_ref1_freq_list))
+        self.LO1_ref2_freq_dict = dict(zip(self.RFin_array, self.LO1_ref2_freq_list))
         # Create the frequency lookup tables for LO2. (LO2_freq = LO1 - freq + cfg.IF2)
-        self.LO2_ref1_freq_list = [self.LO1_ref1_freq_dict[freq] - freq + cfg.IF2 for freq in RFin_array]
-        self.LO2_ref2_freq_list = [self.LO1_ref2_freq_dict[freq] - freq + cfg.IF2 for freq in RFin_array]
+        self.LO2_ref1_freq_list = [self.LO1_ref1_freq_dict[freq] - freq + cfg.IF2 for freq in self.RFin_array]
+        self.LO2_ref2_freq_list = [self.LO1_ref2_freq_dict[freq] - freq + cfg.IF2 for freq in self.RFin_array]
         # Create the LO2 control codes for setting the frequency of the MAX2871 chip for ref clocks 1 and 2
         self.LO2_ref1_fmn_list = map(self.ref1_mhz_to_fmn, self.LO2_ref1_freq_list)
         self.LO2_ref2_fmn_list = map(self.ref2_mhz_to_fmn, self.LO2_ref2_freq_list)

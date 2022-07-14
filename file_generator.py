@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import spectrumAnalyzer as sa
 from hardware_cfg import cfg
 
 class data_generator():
@@ -11,11 +10,11 @@ class data_generator():
     RFin_array = cfg.RFin_array
 
     def ref1_mhz_to_fmn(self, LO2_target_freq):
-        fmn = sa.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_1)
+        fmn = cfg.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_1)
         return fmn
 
     def ref2_mhz_to_fmn(self, LO2_target_freq):
-        fmn = sa.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_2)
+        fmn = cfg.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_2)
         return fmn
 
     def create_data(self):

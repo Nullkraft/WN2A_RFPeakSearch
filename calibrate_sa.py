@@ -38,7 +38,7 @@ class calibrate():
                 ref = str(cntl_dict[freq][0])
                 LO1_n = str(cntl_dict[freq][1])
                 LO2_fmn = str(cntl_dict[freq][2])
-                f.write(RFin + ', ' + ref + ', ' + LO1_n + ', ' + LO2_fmn + '\n')
+                f.write(RFin + ' ' + ref + ' ' + LO1_n + ' ' + LO2_fmn + '\n')
 
     def create_ref1_control_file(self):
         LO1_n = self.load_list(('LO1_ref1_N_steps.csv', int))          # For sweeping. Convert N from a string to int
@@ -73,10 +73,21 @@ Set the sweep range and sweep step size
 
 if __name__ == '__main__':
     print()
+    from time import perf_counter
     
+    start_freq = 100.0
+    stop_freq = 1000.430
+    step_freq = 0.003
+    
+    start = perf_counter()
     cal = calibrate()
+
     cal.create_ref1_control_file()
-    cal.create_ref2_control_file()
+#    cal.create_ref2_control_file()
+
+    stop = perf_counter()
+
+    print(f'cal took {round(stop-start, 10)} seconds')
     
 #     1) Load the generated files for ref1
 #     2) Program the SA with reference 1

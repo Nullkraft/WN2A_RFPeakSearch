@@ -48,7 +48,7 @@ ref2_enable      = 0x000014FF   # Enables 100 MHz reference and disables 60 MHz 
 # Arduino status
 Arduino_LED_on   = 0x00000FFF   # LED blink test - The 'Hello World' of embedded dev
 Arduino_LED_off  = 0x000007FF
-Arduino_message  = 0x000017FF   # Query Arduino type and Software version
+version_message  = 0x000017FF   # Query Arduino type and Software version
 
 # ADC selection and read request
 sel_adc_LO2      = 0x000027FF   # Enable 315 MHz LogAmp ADC and disable 45 MHz LogAmp ADC
@@ -115,8 +115,8 @@ def LED_on():
 def LED_off():
     _send_command(Arduino_LED_off)
 
-def get_message():
-    _send_command(Arduino_message)
+def get_version_message():
+    _send_command(version_message)
     rf_out_status = sp.ser.read(64)
     time.sleep(0.5)
     return rf_out_status

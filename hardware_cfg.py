@@ -1,10 +1,18 @@
 # -*- coding: utf-8 -*-
 
-from numpy import arange
+import sys
+from numba import njit
 from dataclasses import dataclass
 
 
-RFin_list = list()         # List of every kHz step from 0 to 3,000,000 kHz
+# Utilities provided for print debugging.
+line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+name = f'File \"{__name__}.py\",'
+
+
+@njit(nogil=True)
+def round9(freq):
+    return round(freq, 9)
 
 
 @dataclass
@@ -26,9 +34,39 @@ class cfg():
     _RFin_step:  float = 0.001                  #
     
     # RFin_array contains every frequency from 0 to 3000.0 MHz in 1 kHz steps
-    RFin_array = [round(RFin, 9) for RFin in arange(_RFin_start, _RFin_stop, _RFin_step)]
+    RFin_array = dict()
+    with open('RFin_steps.csv', 'r') as f:
+        for freq in f:
+            RFin = float(freq)
+            RFin_array[RFin] = RFin
 
 
+    @njit(nogil=True)
+    def MHz_to_fmn(LO2_target_freq_MHz: float, reference_freq: float=66.0) -> int:
+        """ Form a 32 bit word containing F, M and N for the MAX2871.
+
+            Frac F is the fractional division value (0 to MOD-1)
+            Mod M is the modulus value
+            Int N is the 16-bit N counter value (In Frac-N mode min 19 to 4091)
+        """
+        R = 1
+        max_error = 2**32
+        for div_range in range(8):
+            div = 2**div_range
+            Fvco = div * LO2_target_freq_MHz
+            if Fvco >= 3000:                    # vco fundamental freq = 3000 MHz (numba requires a constant?)
+                break
+        Fpfd = reference_freq / R
+        N = int(Fvco / Fpfd)
+        Fract = Fvco / Fpfd - N
+        for M in range(2, 4096):
+            F = round(Fract * M)
+            Err1 = abs(Fvco - (Fpfd * (N + F/M)))
+            if Err1 < max_error:
+                max_error = Err1
+                best_F = F
+                best_M = M
+        return best_F<<20 | best_M<<8 | N
 
 
 

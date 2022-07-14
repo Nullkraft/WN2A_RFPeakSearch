@@ -7,14 +7,12 @@
     
 """
 import sys
-import time
 
 import numpy as np
-from numba import njit
 from dataclasses import dataclass
 
 import command_processor as cmd_proc
-from sa_hw_config import *
+from hardware_cfg import cfg
 
 
 # Utilities provided for print debugging.
@@ -94,23 +92,28 @@ class LO3():
     Reg[1] = 0x63CFF104
     Reg[0] = 0x00400005
 
-full_sweep_dict = dict()    # RFin, LO1_N, LO2_FMN
+#full_sweep_dict = dict()    # RFin, LO1_N, LO2_FMN
 
+from time import perf_counter
+    
 def load_control_dict(file_name) -> dict:
     """
     NOTE: full_sweep_dict has a value that is a tuple of LO1_N and LO2_FMN.
-          LO3_FMN will be added later.
+          LO3_FMN will be added later. The key, RFin, is a string.
 
-    EXAMPLE USAGE:  N, FMN = full_sweep_dict[RFin]
-                    print(name, line(), f'N ={N} and FMN ={FMN}')
+    EXAMPLE USAGE:  ref, N, FMN = full_sweep_dict[RFin]
+                    print(name, line(), f'ref = {ref}, N ={N} and FMN ={FMN}')
     """
-    fswp_dict = dict()
+    full_sweep_dict = dict()
     with open(file_name, 'r') as f:
-        for target_freq in f:
-            RFin, ref, LO1_N, LO2_FMN = target_freq.strip().split(",")
-            RFin, ref, LO1_N, LO2_FMN = float(ref), float(RFin), int(LO1_N), int(LO2_FMN)
-            fswp_dict[RFin] = (ref, LO1_N, LO2_FMN)
-    return fswp_dict
+        for freq in f:
+            RFin, ref, LO1_N, LO2_FMN = freq.split()
+            RFin = float(RFin)
+            ref = int(ref)
+            LO1_N = int(LO1_N)
+            LO2_FMN = int(LO2_FMN)
+            full_sweep_dict[RFin] = (ref, LO1_N, LO2_FMN)
+    return full_sweep_dict
 
 
 def update_LO2_fmn_list(freq_step: float=0.25):
@@ -138,8 +141,12 @@ def sweep(start_freq: int=4, stop_freq: int=3000, freq_step: float=0.25, referen
     global sweep_stop
     global x_axis_list
 #~~~~~~~~~~~~~~~~~~~~~~~~~   IMPLEMENT ALL SWEEPS USING THIS METHOD   ~~~~~~~~~~~~~~~~~~~~~~~~~
-        # sweep_start, sweep_stop, and sweep_step_kHz need to be indexes
-    sweep_freq_list = sa_hw_config.RFin_list[sweep_start:sweep_stop:sweep_step]
+    # sweep_start, sweep_stop, and sweep_step_kHz need to be indexes
+    sweep_freq_list = []
+    for RFin in cfg.RFin_array:
+        sweep_freq_list.append(RFin)
+        
+#    sweep_freq_list = cfg.RFin_array[sweep_start:sweep_stop:sweep_step]
     print(name, line(), f'Num frequencies = {len(sweep_freq_list)}')
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     x_axis_list.clear()
@@ -159,21 +166,21 @@ def sweep(start_freq: int=4, stop_freq: int=3000, freq_step: float=0.25, referen
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    step_list = list(LO2_30Fpfd_steps)[::sweep_step]    # sweep_step needs to be index_step
+#    step_list = list(LO2_30Fpfd_steps)[::sweep_step]    # sweep_step needs to be index_step
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    for LO1_N in LO1_N_list:
-        mixer1_freq = LO1_N * Fpfd + 315
-        cmd_proc.set_LO(cmd_proc.LO1_neg4dBm, LO1_N)    # Set LO1 to next frequency
-        cmd_proc.set_LO(cmd_proc.LO2_pos5dBm)           # Select LO2
-        for i, LO2_freq in enumerate(step_list):
-            LO2_fmn = LO2_30Fpfd_steps[LO2_freq]
-            RFin = mixer1_freq - LO2_freq
-            if start_freq < RFin < stop_freq:
-                cmd_proc.set_max2871_freq(LO2_fmn)      # why were you called 1200 times for a single LO1
-                x_axis_list.append(RFin)
-                time.sleep(0.0025)
+#    for LO1_N in LO1_N_list:
+#        mixer1_freq = LO1_N * Fpfd + 315
+#        cmd_proc.set_LO(cmd_proc.LO1_neg4dBm, LO1_N)    # Set LO1 to next frequency
+#        cmd_proc.set_LO(cmd_proc.LO2_pos5dBm)           # Select LO2
+#        for i, LO2_freq in enumerate(step_list):
+#            LO2_fmn = LO2_30Fpfd_steps[LO2_freq]
+#            RFin = mixer1_freq - LO2_freq
+#            if start_freq < RFin < stop_freq:
+#                cmd_proc.set_max2871_freq(LO2_fmn)      # why were you called 1200 times for a single LO1
+#                x_axis_list.append(RFin)
+#                time.sleep(0.0025)
 
     cmd_proc.sweep_done()   # Handshake signal to Arduino
 
@@ -231,62 +238,53 @@ def MHz_to_N(RFout_MHz: float=3600, reference_freq: float=66, R: int=1) -> int:
     return (N)
 
 
-@njit(nogil=True)
-def MHz_to_fmn(LO2_target_freq_MHz: float, reference_freq: float=66.0) -> int:
-    """ Form a 32 bit word containing F, M and N for the MAX2871.
+def toggle_arduino_led(on_off):
+    if on_off == True:
+        cmd_proc.LED_on()
+    else:
+        cmd_proc.LED_off()
 
-        Frac F is the fractional division value (0 to MOD-1)
-        Mod M is the modulus value
-        Int N is the 16-bit N counter value (In Frac-N mode min 19 to 4091)
-    """
-    R = 1
-    max_error = 2**32
-    for div_range in range(8):
-        div = 2**div_range
-        Fvco = div * LO2_target_freq_MHz
-        if Fvco >= 3000:                    # vco fundamental freq = 3000 MHz (numba requires a constant?)
-            break
-    Fpfd = reference_freq / R
-    N = int(Fvco / Fpfd)
-    Fract = Fvco / Fpfd - N
-    for M in range(2, 4096):
-        F = round(Fract * M)
-        Err1 = abs(Fvco - (Fpfd * (N + F/M)))
-        if Err1 < max_error:
-            max_error = Err1
-            best_F = F
-            best_M = M
-    return best_F<<20 | best_M<<8 | N
 
+def get_version_message():
+    print(name, line(), f'Arduino Message = {cmd_proc.get_version_message()}')
+
+
+def set_attenuator(dB):
+    cmd_proc.set_attenuator(dB)
 
 
 if __name__ == '__main__':
     print()
 
-    start_freq = 24.0
-    stop_freq = 3000.0
- 
-    sweep_list = [freq for freq in np.arange(start_freq, stop_freq)]
-    fmn_list = list(map(MHz_to_fmn, sweep_list))
+    start_freq  = 1311.013
+    stop_freq   = 1320.074
+    step_freq   = 0.003
+    sweep_range = np.arange(start_freq, stop_freq, step_freq)
 
-    print(f'fmn[2975] value = {fmn_list[2975]}')
-    print(f'fmn[-1] = {fmn_list[-1]}')
-    print(f'Len fmn list = {len(fmn_list)}')
+    start = perf_counter()
+    sweep_list = [round(freq, 6) for freq in sweep_range]
+    d = load_control_dict('full_control_ref1.csv')
+    stop = perf_counter()
+    print(f'Time to load full_control_ref1.csv = {round(stop-start, 6)} seconds')
+
+    sweep_dict = {}
+    for freq in sweep_list:
+        sweep_dict[freq] = d[freq]
+    
+    print(f'Len sweep dict = {len(sweep_dict)}')
+    print(f'Len of sweep dict = {len(sweep_dict)}')
+    print(f'Len of full control dict = {len(d)}')
+#    print(f'Last record of sweep_dict[{stop_freq-.001}] = {sweep_dict[stop_freq-.001]}')
+    
 
     print("Done")
 
 
-""" Operation:
-    1) Read the file of calibrated frequency tuning values into the sweep_frequency_tuning_dict
-    2) Read the file of calibrated amplitude compensating values into the amplitude_calibration_dict
-    3) User selected sweep range will be limited by the 1 kHz RF_in frequency step size
-    4) Take the user selected frequency start and stop values and slice the sweep_frequency_tuning_dict
-    5) Take the user selected frequency start and stop values and slice the amplitude_calibration_dict
-    
-*** NOTE: All operations within the program will be controlled by the user selected start and stop frequencies ***
 
-    6) The values of the sliced results will then be used for serial transmission and plotting
-"""
+
+
+
+
 
 
 

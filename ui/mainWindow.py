@@ -20,6 +20,7 @@ import command_processor as cmd_proc
 #from serial_port import simple_serial as sp
 import serial_port as sp
 
+
 # Utility to simplify print debugging.
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 name = f'File \"{__name__}.py\",'
@@ -85,20 +86,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def on_btnSendRegisters_clicked(self):
         print(name, line(), f'Reference clock = {sa.reference_freq}')
-#        if sp.ser.is_open:
-#            freq = self.floatStopMHz.value()
-#            if 23.5 < freq < 6000:
-#                fmn = sa.MHz_to_fmn(freq)
-#                cmd_proc.set_max2871_freq(fmn)
-
-
-    def max2871_set_freq(self, RFout):
-        FMN = sa.MHz_to_fmn(RFout)
-        cmd_proc.LO_device_register(FMN)
-
-
-    def __cmd(self, num_points):
-        pass
 
 
     def serial_read_thread(self):
@@ -286,18 +273,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot(bool)
     def on_chkArduinoLED_toggled(self, checked):
-        if checked:
-            cmd_proc.LED_on()
-        else:
-            cmd_proc.LED_off()
+        sa.toggle_arduino_led(checked)
 
     @pyqtSlot()
     def on_btn_get_arduino_msg_clicked(self):
         """
         Request the Arduino message containing version number and date
         """
-        print(name, line(), f'Arduino Message = {cmd_proc.get_message()}')
-
+        sa.get_version_message()
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
@@ -320,8 +303,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         @param 0 to 31.75 dB
         @type double
         """
-        dB = float(self.dbl_attenuator_dB.value())
-        cmd_proc.set_attenuator(dB)
+        dB = float(self.dbl_attenuator_dB.value())      # Read attenuator value from user control
+        sa.set_attenuator(dB)
 
 
     @pyqtSlot()

@@ -133,13 +133,16 @@ def update_LO2_fmn_list(freq_step: float=0.25):
     return fmn_LT
 
 
-def sweep(start_freq: int=4, stop_freq: int=3000, freq_step: float=0.25, reference_freq: int=66):
+def sweep(start_freq: int=4, stop_freq: int=3000, step_freq: float=0.25, reference_freq: int=66):
     """
     Function sweep() : Search the input for any or all RF signals
     """
     global sweep_start
     global sweep_stop
     global x_axis_list
+
+    print(name, line(), f'Start = {start_freq}, Stop = {stop_freq}, Step = {step_freq}')
+    
 #~~~~~~~~~~~~~~~~~~~~~~~~~   IMPLEMENT ALL SWEEPS USING THIS METHOD   ~~~~~~~~~~~~~~~~~~~~~~~~~
     # sweep_start, sweep_stop, and sweep_step_kHz need to be indexes
     sweep_freq_list = []

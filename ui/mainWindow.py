@@ -287,10 +287,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ref_clock = sa.reference_freq
         sweep_start = self.floatStartMHz.value()
         sweep_stop = self.floatStopMHz.value()
-        sweep_step_kHz = sa.sweep_step
+        sweep_step = self.dblStepKHz.value()/1000
         sp.ser.read(sp.ser.in_waiting)                                      # Clear out the serial buffer.
         self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
-        sa.sweep(sweep_start, sweep_stop, sweep_step_kHz, ref_clock)
+        sa.sweep(sweep_start, sweep_stop, sweep_step, ref_clock)
         assert len(sa.x_axis_list) != 0, "sa.x_axis_list was empty"
         self.graphWidget.setXRange(sa.x_axis_list[0], sa.x_axis_list[-1])   # Limit plot to user selected frequency range
 

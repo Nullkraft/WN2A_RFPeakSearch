@@ -39,7 +39,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # When zooming the graph this updates the x-axis start & stop frequencies
         self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
         #
-#        sa.reference_freq = 66
         self.initialized = False        # MAX2871 chip will need to be initialized
         # sa.full_sweep_dict is used to control the unit when sweeping
         sa.full_sweep_dict = sa.load_control_dict('full_control_ref1.csv')
@@ -63,17 +62,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         speed_index = self.cbxSerialSpeedSelection.findData(str(serial_speed))
         if (speed_index >= 0):
             self.cbxSerialSpeedSelection.setCurrentIndex(speed_index)
-        # Populate the 'User RFin step size drop-down selection list'
-        sa.step_size_dict = {"250.0" : 0.250,
-                             "125.0" : 0.125,
-                             " 62.5" : 0.0625,
-                             " 32.0" : 0.03125,
-                             " 16.0" : 0.015625,
-                             "  8.0" : 0.0078125,
-                             "  4.0" : 0.00390625,
-                             "  2.0" : 0.001953125}
-        for str_step in sa.step_size_dict:
-            self.cbx_RFin_step_size.addItem(str_step)
 
 
 
@@ -85,8 +73,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSendRegisters_clicked(self):
-        print(name, line(), f'Reference clock = {sa.reference_freq}')
-
+        print(name, line(), f'Reference clock = {sa.ref_clock_freq}')
 
     def serial_read_thread(self):
         """
@@ -102,23 +89,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.worker.finished.connect(self.plot_ampl_data)
             self.thread.finished.connect(self.thread.deleteLater)
             self.thread.start()                                   # After starting the thread...
-            self.btnTrigger.setEnabled(False)                     # disable the Trigger button until we're done
-            self.thread.finished.connect(lambda: self.btnTrigger.setEnabled(True))
+#            self.btnTrigger.setEnabled(False)                     # disable the Trigger button until we're done
+#            self.thread.finished.connect(lambda: self.btnTrigger.setEnabled(True))
         else:
             print('')
             print('     You have to open the serial port.')
             print('     You must select both a Serial port AND speed.')
-
-    @pyqtSlot(str)
-    def on_cbx_RFin_step_size_activated(self, RFin_step_size_str):
-        """
-        Slot documentation goes here.
-
-        @param RFin_step_size DESCRIPTION
-        @type str
-        """
-        sa.sweep_step = sa.step_size_dict[RFin_step_size_str]
-
 
     @pyqtSlot()
     def on_btnRefreshPortsList_clicked(self):
@@ -142,7 +118,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.amplitude.append(volts)
         assert len(sa.x_axis_list)==len(self.amplitude)
         self.dataLine.setData(sa.x_axis_list, self.amplitude, pen=(155,155,255))
-
 
     @pyqtSlot()
     def on_btnPeakSearch_clicked(self):
@@ -231,11 +206,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.numPlotFloor.value() < self.numPlotCeiling.value():
             self.graphWidget.setYRange(self.numPlotFloor.value(), self.numPlotCeiling.value())
 
-
-
-
-
-
     @pyqtSlot()
     def on_line_edit_cmd_returnPressed(self):
         """ Create command name for disble LO3? """
@@ -243,10 +213,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         cmd_int = int(cmd_str, 16)
         tmp_bytes = cmd_int.to_bytes(4, byteorder='little')
         sp.ser.write(tmp_bytes)     # Leave me alone!  I'm for testing...
-
-
-
-
 
     @pyqtSlot()
     def on_btn_disable_LO2_RFout_clicked(self):
@@ -275,16 +241,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
-        ref_clock = sa.reference_freq
-        sweep_start = self.floatStartMHz.value()
-        sweep_stop = self.floatStopMHz.value()
-        sweep_step = self.dblStepKHz.value()/1000
         sp.ser.read(sp.ser.in_waiting)                                      # Clear out the serial buffer.
         self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
-        sa.sweep(sweep_start, sweep_stop, sweep_step, ref_clock)
+        sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step, sa.ref_clock)
         assert len(sa.x_axis_list) != 0, "sa.x_axis_list was empty"
         self.graphWidget.setXRange(sa.x_axis_list[0], sa.x_axis_list[-1])   # Limit plot to user selected frequency range
-
 
     @pyqtSlot()
     def on_dbl_attenuator_dB_editingFinished(self):
@@ -296,19 +257,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         dB = float(self.dbl_attenuator_dB.value())      # Read attenuator value from user control
         sa.set_attenuator(dB)
-
-
-    @pyqtSlot()
-    def on_dblStepSize_editingFinished(self):
-        """ Load the LO2 fmn list based on the user selected step size
-        """
-        step_size = round(self.dblStepSize.value(), 6)
-        sa.update_LO2_fmn_list(step_size)
-
-
-    def get_freq_step(self):
-        freq_step = round(self.dblStepSize.value(), 6)
-        return freq_step
 
     @pyqtSlot()
     def on_btn_open_serial_port_clicked(self):
@@ -339,6 +287,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         # TODO: not implemented yet
         raise NotImplementedError
+    
+    @pyqtSlot()
+    def on_floatStartMHz_editingFinished(self):
+        start_in_MHz = self.floatStartMHz.value()
+        # Only update sa.sweep_start if the value() has changed
+        if sa.sweep_start != start_in_MHz:
+            sa.sweep_start = round(start_in_MHz, 3)
+    
+    @pyqtSlot()
+    def on_floatStopMHz_editingFinished(self):
+        stop_in_MHz = self.floatStopMHz.value()
+        # Only update sa.sweep_stop if the value() has changed
+        if sa.sweep_stop != stop_in_MHz:
+            sa.sweep_stop = round(stop_in_MHz, 3)
+    
+    @pyqtSlot()
+    def on_intStepKHz_editingFinished(self):
+        step_in_MHz = round(self.intStepKHz.value() / 1000, 3)        # Convert from kHz to MHz
+        # Only update sa.sweep_step if the value() has changed
+        if sa.sweep_step != step_in_MHz:
+            sa.sweep_step = step_in_MHz
+
+
 
 
 

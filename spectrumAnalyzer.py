@@ -39,21 +39,21 @@ class LO1():
         This is done to match the requirement that the chip is
         programmed starting from the highest register first.
     """
-    Reg = list()
-    Reg.append(0x0000000D)  # Reg[13]
-    Reg.append(0x000015FC)  # .
-    Reg.append(0x0061200B)  # .
-    Reg.append(0x00C00EBA)  # .
-    Reg.append(0x0F09FCC9)  # .
-    Reg.append(0x15596568)  # .
-    Reg.append(0x060000F7)  # .
-    Reg.append(0x95012046)  # .
-    Reg.append(0x00800025)  # .
-    Reg.append(0x32008984)  # .
-    Reg.append(0x00000003)  # .
-    Reg.append(0x00000012)  # .
-    Reg.append(0x00000001)  # .
-    Reg.append(0x002007C0)  # Reg[0]
+    Reg = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    Reg[0]  = 0x0000000D  # Reg[13]
+    Reg[1]  = 0x000015FC  # .
+    Reg[2]  = 0x0061200B  # .
+    Reg[3]  = 0x00C00EBA  # .
+    Reg[4]  = 0x0F09FCC9  # .
+    Reg[5]  = 0x15596568  # .
+    Reg[6]  = 0x060000F7  # .
+    Reg[7]  = 0x95012046  # .
+    Reg[8]  = 0x00800025  # .
+    Reg[9]  = 0x32008984  # .
+    Reg[10] = 0x00000003  # .
+    Reg[11] = 0x00000012  # .
+    Reg[12] = 0x00000001  # .
+    Reg[13] = 0x002007C0  # Reg[0]
 
 
 @dataclass
@@ -75,6 +75,7 @@ class LO2():
     Reg[5] = 0x00419550     # Register 0 on the MAX2871 chip
 
 
+@dataclass
 class LO3():
     """
         The LO3 device registers are stored in reverse.  That means
@@ -84,13 +85,13 @@ class LO3():
         This is done so the chip can be programmed starting from
         the highest register first.
     """
-    Reg: hex = [0, 0, 0, 0, 0, 0]
-    Reg[5] = 0x00480000
-    Reg[4] = 0x20008011
-    Reg[3] = 0xD8008042    # Digital Lock detect ON  (if Fpfd > 32 MHz Bit[31] must be 1
-    Reg[2] = 0xF8008003
-    Reg[1] = 0x63CFF104
+    Reg = [0, 0, 0, 0, 0, 0]
     Reg[0] = 0x00400005
+    Reg[1] = 0x63CFF104
+    Reg[2] = 0xF8008003
+    Reg[3] = 0xD8008042    # Digital Lock detect ON  (if Fpfd > 32 MHz Bit[31] must be 1
+    Reg[4] = 0x20008011
+    Reg[5] = 0x00480000
 
 #full_sweep_dict = dict()    # RFin, LO1_N, LO2_FMN
 

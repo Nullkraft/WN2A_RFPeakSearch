@@ -152,20 +152,20 @@ def sweep(start_freq: int=4, stop_freq: int=3000, step_freq: float=0.25, referen
 #    sweep_freq_list = cfg.RFin_array[sweep_start:sweep_stop:sweep_step]
     print(name, line(), f'Num frequencies = {len(sweep_freq_list)}')
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    x_axis_list.clear()
-    intermediate_freq_1 = 3600          # Defined by the Spectrum Analyzer hardware design
-    Fpfd = int(reference_freq / 2)      # Fpfd is equivalent to Fpfd
-    LO1_start_freq = int(intermediate_freq_1 + (start_freq - start_freq % Fpfd))
-    LO1_stop_freq = int(intermediate_freq_1 + (stop_freq - stop_freq % Fpfd) + Fpfd)
-    sweep_start = LO1_start_freq - intermediate_freq_1
-    sweep_stop = LO1_stop_freq - intermediate_freq_1
-    cmd_proc.sel_315MHz_adc()               # Select the ADC for the LO2 output
-    cmd_proc.enable_60MHz_ref_clock()       # Select 60 Mhz reference clock
-
-    LO1_N_list = [MHz_to_N(freq) for freq in range(LO1_start_freq, LO1_stop_freq, Fpfd)]
-
-#    mixer1_freq_list = [(N * Fpfd + 315) for N in LO1_N_list]
-    print(name, line(), f'sweep_step = {sweep_step}, {type(sweep_step)}')
+#    x_axis_list.clear()
+#    intermediate_freq_1 = 3600          # Defined by the Spectrum Analyzer hardware design
+#    Fpfd = int(reference_freq / 2)      # Fpfd is equivalent to Fpfd
+#    LO1_start_freq = int(intermediate_freq_1 + (start_freq - start_freq % Fpfd))
+#    LO1_stop_freq = int(intermediate_freq_1 + (stop_freq - stop_freq % Fpfd) + Fpfd)
+#    sweep_start = LO1_start_freq - intermediate_freq_1
+#    sweep_stop = LO1_stop_freq - intermediate_freq_1
+#    cmd_proc.sel_315MHz_adc()               # Select the ADC for the LO2 output
+#    cmd_proc.enable_ref_clock1()       # Select 60 Mhz reference clock
+#
+#    LO1_N_list = [MHz_to_N(freq) for freq in range(LO1_start_freq, LO1_stop_freq, Fpfd)]
+#
+##    mixer1_freq_list = [(N * Fpfd + 315) for N in LO1_N_list]
+#    print(name, line(), f'sweep_step = {sweep_step}, {type(sweep_step)}')
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -254,6 +254,19 @@ def get_version_message():
 
 def set_attenuator(dB):
     cmd_proc.set_attenuator(dB)
+
+
+def set_reference_clock(clock_id):
+    cmd_proc.disable_all_ref_clocks()       # Stop both ref clocks before enabling one of them
+    if clock_id == 0:
+        reference_freq = None
+    if clock_id == 1:
+        reference_freq = 66.000
+        cmd_proc.enable_ref_clock1()
+    if clock_id == 2:
+        reference_freq = 66.666
+        cmd_proc.enable_ref_clock2()
+    return reference_freq
 
 
 if __name__ == '__main__':

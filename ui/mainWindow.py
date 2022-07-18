@@ -128,18 +128,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.cbxSerialPortSelection.addItems(ports)
 
     @pyqtSlot(int)
-    def on_selectReferenceOscillator_currentIndexChanged(self, index):
-        if index == 0:
-            sa.reference_freq = None
-            cmd_proc.disable_all_ref_clocks()
-        if index == 1:
-            sa.reference_freq = 66.000
-            cmd_proc.enable_60MHz_ref_clock()
-        if index == 2:
-            sa.reference_freq = 66.666
-            cmd_proc.enable_100MHz_ref_clock()
-        return sa.reference_freq
-
+    def on_selectReferenceOscillator_currentIndexChanged(self, selected_ref_clock):
+        sa.set_reference_clock(selected_ref_clock)
+        
     # amplitude was collected as a bunch of linear 16-bit A/D values
     def plot_ampl_data(self, amplBytes):
         self.amplitude = []       # Declare amplitude storage that will allow appending

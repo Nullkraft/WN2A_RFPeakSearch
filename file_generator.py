@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 
 from hardware_cfg import cfg
+import command_processor as cmd
 
 class data_generator():
     """ These files will be used by calibrate_sa.py for creating the
         control dictionaries needed by the calibration scripts.
     """
+    ref1 = cmd.ref_clock1_enable
+    ref2 = cmd.ref_clock2_enable
+
     # RFin_array contains every frequency from 0 to 3000.001 MHz in 1 kHz steps
-    RFin_array = cfg.RFin_array
+    RFin_array = cfg.RFin_array         # Test this redundant line: I think it sped things up
 
     def ref1_mhz_to_fmn(self, LO2_target_freq):
         fmn = cfg.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_1)
@@ -16,6 +20,39 @@ class data_generator():
     def ref2_mhz_to_fmn(self, LO2_target_freq):
         fmn = cfg.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_2)
         return fmn
+
+    def load_list(self, cntl_tuple) -> list:
+        """
+        Function Load the control codes for LO1, LO2 or LO3 into their associated lists.
+        
+        @param cntl_tuple A tuple of 2 values which contains the name of a file and the data type contained in the file.
+        @type <class 'tuple'>
+        @return A list containing the values of 'type'
+        @rtype <class 'list'>
+        """
+        file_name, data_type = cntl_tuple
+        tmp_list = list()
+        with open(file_name, 'r') as f:
+            for x in f:
+                tmp_list.append(data_type(x))
+        return tmp_list
+
+    def write_dict(self, file_name, cntl_dict):
+        """
+        Function Saves the contents of a unit control dictionary to file
+        
+        @param file_name Name of the file to save the dictionary into
+        @type <class 'str'>
+        @param dict A dictionary where (key = RFin) and value = (LO1_n, LO2_fmn)
+        @type <class 'dict'>
+        """
+        with open(file_name, 'w') as f:
+            for freq in cntl_dict:
+                RFin = str(freq)
+                ref = str(cntl_dict[freq][0])
+                LO1_n = str(cntl_dict[freq][1])
+                LO2_fmn = str(cntl_dict[freq][2])
+                f.write(RFin + ' ' + ref + ' ' + LO1_n + ' ' + LO2_fmn + '\n')
 
     def create_data(self):
         # Create the list of LO1 frequencies when using reference clock 1.
@@ -62,6 +99,22 @@ class data_generator():
         with open("LO2_ref2_fmn_steps.csv", 'w') as f:
             [f.write(str(fmn) + '\n') for fmn in self.LO2_ref2_fmn_list]
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def create_ref1_control_file(self):
+        LO1_n = self.load_list(('LO1_ref1_N_steps.csv', int))          # For sweeping. Convert N from a string to int
+        LO2_fmn = self.load_list(('LO2_ref1_fmn_steps.csv', int))      # For sweeping. Convert fmn from string to int
+        full_sweep_step_dict = {freq:(self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(cfg.RFin_array, LO1_n, LO2_fmn)}
+        self.write_dict('full_control_ref1.csv', full_sweep_step_dict)
+
+    def create_ref2_control_file(self):
+        LO1_n = self.load_list(('LO1_ref2_N_steps.csv', int))          # For sweeping. Convert N from a string to int
+        LO2_fmn = self.load_list(('LO2_ref2_fmn_steps.csv', int))      # For sweeping. Convert fmn from string to int
+        full_sweep_step_dict = {freq:(self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(cfg.RFin_array, LO1_n, LO2_fmn)}
+        self.write_dict('full_control_ref2.csv', full_sweep_step_dict)
+
+    #full_sweep_freq_dict = {freq:(self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(RFin, LO1_freq_list, LO2_freq_list)}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 if __name__ == '__main__':
     print()
 
@@ -70,6 +123,8 @@ if __name__ == '__main__':
     dg = data_generator()
     dg.create_data()
     dg.save_data_files()
+    dg.create_ref1_control_file()
+    dg.create_ref2_control_file()
 
 
     print("Generator done")

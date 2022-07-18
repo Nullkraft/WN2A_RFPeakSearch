@@ -19,9 +19,9 @@ from hardware_cfg import cfg
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 name = f'File \"{__name__}.py\",'
 
-reference_freq = 66.0
-sweep_start = 0.0
-sweep_stop = 0.0
+ref_clock_freq = cfg.ref_clock_1
+sweep_start = 4.0
+sweep_stop = 3000.0
 sweep_step = 250.0
 step_size_dict = {}
 
@@ -134,14 +134,10 @@ def update_LO2_fmn_list(freq_step: float=0.25):
     return fmn_LT
 
 
-def sweep(start_freq: int=4, stop_freq: int=3000, step_freq: float=0.25, reference_freq: int=66):
+def sweep(start_freq, stop_freq, step_freq, ref_clock_freq):
     """
     Function sweep() : Search the input for any or all RF signals
     """
-    global sweep_start
-    global sweep_stop
-    global x_axis_list
-
     print(name, line(), f'Start = {start_freq}, Stop = {stop_freq}, Step = {step_freq}')
     
 #~~~~~~~~~~~~~~~~~~~~~~~~~   IMPLEMENT ALL SWEEPS USING THIS METHOD   ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -155,7 +151,7 @@ def sweep(start_freq: int=4, stop_freq: int=3000, step_freq: float=0.25, referen
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #    x_axis_list.clear()
 #    intermediate_freq_1 = 3600          # Defined by the Spectrum Analyzer hardware design
-#    Fpfd = int(reference_freq / 2)      # Fpfd is equivalent to Fpfd
+#    Fpfd = int(ref_clock_freq / 2)      # Fpfd is equivalent to Fpfd
 #    LO1_start_freq = int(intermediate_freq_1 + (start_freq - start_freq % Fpfd))
 #    LO1_stop_freq = int(intermediate_freq_1 + (stop_freq - stop_freq % Fpfd) + Fpfd)
 #    sweep_start = LO1_start_freq - intermediate_freq_1
@@ -234,11 +230,13 @@ def fmn_to_MHz(fmn_word, Fpfd=33.0):
     return Fpfd * (N + F/M)
 
 
-def MHz_to_N(RFout_MHz: float=3600, reference_freq: float=66, R: int=1) -> int:
+def MHz_to_N(RFout_MHz, ref_clock_freq, R: int=1) -> int:
     """ Returns the integer portion of N which is used to program
         the integer step register of the ADF4356 chip.
     """
-    N = int(RFout_MHz * (2/reference_freq))
+    if ref_clock_freq == None:
+        print(name, line(), 'WARNING: ref_clock_freq can not be None when calling MHz_to_N()')
+    N = int(RFout_MHz * (2/ref_clock_freq))
     return (N)
 
 

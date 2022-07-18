@@ -42,7 +42,7 @@ class cfg():
 
 
     @njit(nogil=True)
-    def MHz_to_fmn(LO2_target_freq_MHz: float, reference_freq: float=66.0) -> int:
+    def MHz_to_fmn(LO2_target_freq_MHz, ref_clock_freq) -> int:
         """ Form a 32 bit word containing F, M and N for the MAX2871.
 
             Frac F is the fractional division value (0 to MOD-1)
@@ -56,7 +56,7 @@ class cfg():
             Fvco = div * LO2_target_freq_MHz
             if Fvco >= 3000:                    # vco fundamental freq = 3000 MHz (numba requires a constant?)
                 break
-        Fpfd = reference_freq / R
+        Fpfd = ref_clock_freq / R
         N = int(Fvco / Fpfd)
         Fract = Fvco / Fpfd - N
         for M in range(2, 4096):

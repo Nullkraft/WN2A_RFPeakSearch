@@ -260,14 +260,14 @@ def set_attenuator(dB):
 def set_reference_clock(clock_id):
     cmd_proc.disable_all_ref_clocks()       # Stop both ref clocks before enabling one of them
     if clock_id == 0:
-        reference_freq = None
+        ref_clock_freq = None
     if clock_id == 1:
-        reference_freq = 66.000
+        ref_clock_freq = cfg.ref_clock_1
         cmd_proc.enable_ref_clock1()
     if clock_id == 2:
-        reference_freq = 66.666
+        ref_clock_freq = cfg.ref_clock_2
         cmd_proc.enable_ref_clock2()
-    return reference_freq
+    return ref_clock_freq
 
 
 if __name__ == '__main__':

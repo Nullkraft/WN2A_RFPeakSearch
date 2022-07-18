@@ -116,10 +116,11 @@ def LED_off():
     _send_command(Arduino_LED_off)
 
 def get_version_message():
-    _send_command(version_message)
-    rf_out_status = sp.ser.read(64)
-    time.sleep(0.5)
-    return rf_out_status
+    sp.ser.read(sp.ser.in_waiting)      # Clear out the serial buffer.
+    _send_command(version_message)      # Request software report from controller
+    time.sleep(0.01)
+    software_version = sp.ser.read(64)  # Collect the report(s)
+    return software_version
 
 def disable_all_ref_clocks():
     _send_command(all_ref_disable)

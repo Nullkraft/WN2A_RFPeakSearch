@@ -238,13 +238,13 @@ def fmn_to_MHz(fmn_word, Fpfd=33.0):
     return Fpfd * (N + F/M)
 
 
-def MHz_to_N(RFout_MHz, ref_clock_freq, R: int=1) -> int:
+def MHz_to_N(RFout_MHz, ref_clock, R: int=1) -> int:
     """ Returns the integer portion of N which is used to program
         the integer step register of the ADF4356 chip.
     """
-    if ref_clock_freq == None:
-        print(name, line(), 'WARNING: ref_clock_freq can not be None when calling MHz_to_N()')
-    N = int(RFout_MHz * (2/ref_clock_freq))
+    if ref_clock == None:
+        print(name, line(), 'WARNING: ref_clock can not be None when calling MHz_to_N()')
+    N = int(RFout_MHz * (2/ref_clock))
     return (N)
 
 
@@ -266,14 +266,14 @@ def set_attenuator(dB):
 def set_reference_clock(clock_id):
     cmd_proc.disable_all_ref_clocks()       # Stop both ref clocks before enabling one of them
     if clock_id == 0:
-        ref_clock_freq = None
+        ref_clock = None
     if clock_id == 1:
-        ref_clock_freq = cfg.ref_clock_1
+        ref_clock = cfg.ref_clock_1
         cmd_proc.enable_ref_clock1()
     if clock_id == 2:
-        ref_clock_freq = cfg.ref_clock_2
+        ref_clock = cfg.ref_clock_2
         cmd_proc.enable_ref_clock2()
-    return ref_clock_freq
+    return ref_clock
 
 
 if __name__ == '__main__':

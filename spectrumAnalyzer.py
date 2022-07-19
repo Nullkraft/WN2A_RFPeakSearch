@@ -7,9 +7,9 @@
     
 """
 import sys
-
 import numpy as np
 from dataclasses import dataclass
+from time import perf_counter
 
 import command_processor as cmd_proc
 from hardware_cfg import cfg
@@ -19,11 +19,14 @@ from hardware_cfg import cfg
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 name = f'File \"{__name__}.py\",'
 
-ref_clock_freq = cfg.ref_clock_1
+ref_clock = cfg.ref_clock_1
 sweep_start = 4.0
 sweep_stop = 3000.0
-sweep_step = 250.0
-step_size_dict = {}
+sweep_step = 250
+last_sweep_start = 4.0
+last_sweep_stop = 3000.0
+last_sweep_step = 250
+full_sweep_dict = {}    # Dictionary of ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
 
 
 x_axis_list = list()        # List of frequencies that sychronizes plotting with sweeping.
@@ -93,10 +96,7 @@ class LO3():
     Reg[4] = 0x20008011
     Reg[5] = 0x00480000
 
-#full_sweep_dict = dict()    # RFin, LO1_N, LO2_FMN
 
-from time import perf_counter
-    
 def load_control_dict(file_name) -> dict:
     """
     NOTE: full_sweep_dict has a value that is a tuple of LO1_N and LO2_FMN.
@@ -134,24 +134,32 @@ def update_LO2_fmn_list(freq_step: float=0.25):
     return fmn_LT
 
 
-def sweep(start_freq, stop_freq, step_freq, ref_clock_freq):
+def sweep(start_freq, stop_freq, step_freq, ref_clock):
     """
     Function sweep() : Search the input for any or all RF signals
     """
-    print(name, line(), f'Start = {start_freq}, Stop = {stop_freq}, Step = {step_freq}')
-    
-#~~~~~~~~~~~~~~~~~~~~~~~~~   IMPLEMENT ALL SWEEPS USING THIS METHOD   ~~~~~~~~~~~~~~~~~~~~~~~~~
+    print()
+    global last_sweep_start
+    global last_sweep_stop
+    global last_sweep_step
     # sweep_start, sweep_stop, and sweep_step_kHz need to be indexes
-    sweep_freq_list = []
-    for RFin in cfg.RFin_array:
-        sweep_freq_list.append(RFin)
-        
-#    sweep_freq_list = cfg.RFin_array[sweep_start:sweep_stop:sweep_step]
-    print(name, line(), f'Num frequencies = {len(sweep_freq_list)}')
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if last_sweep_start != start_freq or last_sweep_stop != stop_freq or last_sweep_step != step_freq:
+        print(name, line(), 'last sweep was different!')
+#        step_MHz = round(step_freq / 1000, 3)
+        last_sweep_start = start_freq
+        last_sweep_stop = stop_freq
+        last_sweep_step = step_freq
+
+    cmd_proc.sweep_done()
+#    sweep_list = [round(freq, 3) for freq in np.arange(start_freq, stop_freq, step_MHz)]
+#    print(name, line(), f'Len sweep_list = {len(sweep_list)}')
+#    for freq in sweep_list:
+#        control_data = full_sweep_dict[freq]
+#        print(name, line(), f'Control Data = {control_data} and is type {type(control_data)}')
+    
 #    x_axis_list.clear()
 #    intermediate_freq_1 = 3600          # Defined by the Spectrum Analyzer hardware design
-#    Fpfd = int(ref_clock_freq / 2)      # Fpfd is equivalent to Fpfd
+#    Fpfd = int(ref_clock / 2)      # Fpfd is equivalent to Fpfd
 #    LO1_start_freq = int(intermediate_freq_1 + (start_freq - start_freq % Fpfd))
 #    LO1_stop_freq = int(intermediate_freq_1 + (stop_freq - stop_freq % Fpfd) + Fpfd)
 #    sweep_start = LO1_start_freq - intermediate_freq_1
@@ -182,7 +190,7 @@ def sweep(start_freq, stop_freq, step_freq, ref_clock_freq):
 #                x_axis_list.append(RFin)
 #                time.sleep(0.0025)
 
-    cmd_proc.sweep_done()   # Handshake signal to Arduino
+#    cmd_proc.sweep_done()   # Handshake signal to Arduino
 
 
 # Find the highest signal amplitudes in a spectrum plot.

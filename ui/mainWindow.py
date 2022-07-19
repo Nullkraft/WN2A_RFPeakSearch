@@ -88,7 +88,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.thread.started.connect(self.worker.read_serial)  # Connect to signals...
             self.worker.finished.connect(self.thread.quit)
             self.worker.finished.connect(self.worker.deleteLater)
-            self.worker.finished.connect(self.plot_ampl_data)
+#            self.worker.finished.connect(self.plot_ampl_data)
             self.thread.finished.connect(self.thread.deleteLater)
             self.thread.start()                                   # After starting the thread...
 #            self.btnTrigger.setEnabled(False)                     # disable the Trigger button until we're done
@@ -246,8 +246,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sp.ser.read(sp.ser.in_waiting)                                      # Clear out the serial buffer.
         self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
         sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step, sa.ref_clock)
-        assert len(sa.x_axis_list) != 0, "sa.x_axis_list was empty"
-        self.graphWidget.setXRange(sa.x_axis_list[0], sa.x_axis_list[-1])   # Limit plot to user selected frequency range
+#        assert len(sa.x_axis_list) != 0, "sa.x_axis_list was empty"
+#        self.graphWidget.setXRange(sa.x_axis_list[0], sa.x_axis_list[-1])   # Limit plot to user selected frequency range
 
     @pyqtSlot()
     def on_dbl_attenuator_dB_editingFinished(self):
@@ -295,18 +295,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         start_in_MHz = self.floatStartMHz.value()
         # Only update sa.sweep_start if the value() has changed
         if sa.sweep_start != start_in_MHz:
-            sa.sweep_start = round(start_in_MHz, 3)
-    
+            sa.sweep_start = start_in_MHz
+
     @pyqtSlot()
     def on_floatStopMHz_editingFinished(self):
         stop_in_MHz = self.floatStopMHz.value()
         # Only update sa.sweep_stop if the value() has changed
         if sa.sweep_stop != stop_in_MHz:
-            sa.sweep_stop = round(stop_in_MHz, 3)
+           sa.sweep_stop = stop_in_MHz
     
     @pyqtSlot()
     def on_intStepKHz_editingFinished(self):
-        step_in_MHz = round(self.intStepKHz.value() / 1000, 3)        # Convert from kHz to MHz
+        step_in_MHz = self.intStepKHz.value()
         # Only update sa.sweep_step if the value() has changed
         if sa.sweep_step != step_in_MHz:
             sa.sweep_step = step_in_MHz

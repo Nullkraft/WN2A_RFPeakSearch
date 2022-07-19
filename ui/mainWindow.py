@@ -39,8 +39,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # When zooming the graph this updates the x-axis start & stop frequencies
         self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
         #
-        self.initialized = False        # MAX2871 chip will need to be initialized
-        # sa.full_sweep_dict is used to control the unit when sweeping
+        # MAX2871 chip will need to be initialized
+        self.initialized = False        
+        # sa.full_sweep_dict contains values for ref_clock, LO1, LO2, 
+        # and LO3 used for controlling the hardware.
         sa.full_sweep_dict = sa.load_control_dict('full_control_ref1.csv')
         #
         # Request the list of available serial ports and use it to

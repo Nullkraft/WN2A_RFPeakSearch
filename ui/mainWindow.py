@@ -75,7 +75,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSendRegisters_clicked(self):
-        print(name, line(), f'Reference clock = {sa.ref_clock_freq}')
+        print(name, line(), f'Reference clock = {sa.ref_clock}')
 
     def serial_read_thread(self):
         """

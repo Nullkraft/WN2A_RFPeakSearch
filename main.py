@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
 
 """ NEXT:
-    Perform a sweep using full_sweep_dict_1 and/or full_sweep_dict_2
+    Perform a sweep using full_sweep_dict
     
     1) After gui startup; select the full_sweep_dict file to be used.
     2) Set the sweep freq_start, freq_stop, and freq_step values.

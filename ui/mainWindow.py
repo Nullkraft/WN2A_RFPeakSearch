@@ -90,7 +90,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.worker.finished.connect(self.worker.deleteLater)
 #            self.worker.finished.connect(self.plot_ampl_data)
             self.thread.finished.connect(self.thread.deleteLater)
-            self.thread.start()                                   # After starting the thread...
+#            self.thread.start()                                   # After starting the thread...
 #            self.btnTrigger.setEnabled(False)                     # disable the Trigger button until we're done
 #            self.thread.finished.connect(lambda: self.btnTrigger.setEnabled(True))
         else:

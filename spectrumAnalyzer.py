@@ -142,6 +142,10 @@ def sweep(start_freq, stop_freq, step_freq, ref_clock):
     global last_sweep_start
     global last_sweep_stop
     global last_sweep_step
+    
+#    start_idx = full_sweep_dict.index(start_freq)
+#    print(name, line(), f'Stat freq index = {start_idx}')
+    
     # sweep_start, sweep_stop, and sweep_step_kHz need to be indexes
     if last_sweep_start != start_freq or last_sweep_stop != stop_freq or last_sweep_step != step_freq:
         print(name, line(), 'last sweep was different!')

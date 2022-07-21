@@ -34,11 +34,11 @@ class cfg():
     _RFin_step:  float = 0.001                  #
     
     # RFin_array contains every frequency from 0 to 3000.0 MHz in 1 kHz steps
-    RFin_array = dict()
+    RFin_array = list()
     with open('RFin_steps.csv', 'r') as f:
         for freq in f:
             RFin = float(freq)
-            RFin_array[RFin] = RFin
+            RFin_array.append(RFin)
 
 
     @njit(nogil=True)

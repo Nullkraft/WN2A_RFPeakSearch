@@ -42,8 +42,8 @@ LO3_mux_dig_lock  = 0x000043FF   # Enable digital lock detect on the mux pin
 
 # Reference clock Device Commands
 all_ref_disable   = 0x000004FF
-ref_clock1_enable = 0x00000CFF   # Enables 60 MHz reference and disables 100 MHz reference
-ref_clock2_enable = 0x000014FF   # Enables 100 MHz reference and disables 60 MHz reference
+ref_clock1_enable = 0x00000CFF   # Enables 66.000 MHz reference and disables 66.666 MHz reference
+ref_clock2_enable = 0x000014FF   # Enables 66.666 MHz reference and disables 66.000 MHz reference
 
 # Arduino status
 Arduino_LED_on    = 0x00000FFF   # LED blink test - The 'Hello World' of embedded dev

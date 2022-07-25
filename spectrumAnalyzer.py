@@ -7,9 +7,10 @@
     
 """
 import sys
+from math import ceil
 import numpy as np
 from dataclasses import dataclass
-from time import perf_counter
+import time
 
 import command_processor as cmd_proc
 from hardware_cfg import cfg
@@ -22,7 +23,7 @@ name = f'File \"{__name__}.py\",'
 ref_clock = cfg.ref_clock_1
 sweep_start = 4.0
 sweep_stop = 3000.0
-sweep_step = 250
+sweep_step_size = 250
 last_sweep_start = 4.0
 last_sweep_stop = 3000.0
 last_sweep_step = 250
@@ -124,11 +125,11 @@ def update_LO2_fmn_list(freq_step: float=0.25):
     @param freq_step DESCRIPTION For plotting the amplitude vs. frequencie for each step
     @type float (optional)
     """
-    global sweep_step
+    global sweep_step_size
     fmn_LT = [()]
     file_name = "LO2_1kHz_fmn_steps.csv"
     if 0.001 <= freq_step <= .25:
-        sweep_step = int(freq_step * 1000)
+        sweep_step_size = int(freq_step * 1000)
     with open(file_name) as f:
         fmn_LT = [int(x) for x in f]
     return fmn_LT
@@ -137,64 +138,50 @@ def update_LO2_fmn_list(freq_step: float=0.25):
 def sweep(start_freq, stop_freq, step_freq, ref_clock):
     """
     Function sweep() : Search the input for any or all RF signals
+    sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size, sa.ref_clock)
     """
+#    sweep_start     = round(758 * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
+#    sweep_stop      = round(990 * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
+    sweep_start     = round(start_freq * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
+    sweep_stop      = round(stop_freq * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
+    sweep_num_steps = 401
+
+    sweep_step_size = ceil((sweep_stop - sweep_start) / sweep_num_steps)         # Slightly larger step forces python to go beyond sweep_stop
+    sweep_stop_boundary = ceil(sweep_stop / sweep_step_size) * sweep_step_size   # ceil() ensures ending after sweep_stop
+
+    perf_start = time.perf_counter()
+    #~~~~~~~~~~ PERFORMANCE TESTING ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    prev_ref_clock = 0  # Used for deciding if a new ref_clock code is to be sent
+    prev_LO1_code = 0   # Used for deciding if a new LO1_code is t be sent
+    
+    # Perform the sweep
+    cmd_proc.sel_315MHz_adc()                   # Select for LO2 output data
+    cmd_proc.set_LO2(cmd_proc.LO2_neg4dBm)      # Bring the LO2 online
+    cmd_proc.disable_LO3_RFout()
+    for freq in cfg.RFin_array[sweep_start : sweep_stop_boundary : sweep_step_size]:
+        ref_clock, LO1_code, LO2_code = full_sweep_dict[freq]
+        if ref_clock != prev_ref_clock:
+            print(line(), f'ref clock code = {ref_clock}')
+            cmd_proc.enable_ref_clock(ref_clock)
+            prev_ref_clock = ref_clock
+        if LO1_code != prev_LO1_code:
+            print(line(), f'LO1 code = {LO1_code}')
+            cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, LO1_code)    # Select LO1 with -4 dBm Rfout and frequency = LO1_code
+            prev_LO1_code = LO1_code
+        cmd_proc.set_max2871_freq(LO2_code)
+        print(line(), f'LO2 code = {LO2_code}')
+        time.sleep(0.0011)  # Originally 0.0025
+
+    cmd_proc.sweep_done()   # Handshake signal to Arduino
+
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    perf_stop = time.perf_counter()
+
     print()
-    global last_sweep_start
-    global last_sweep_stop
-    global last_sweep_step
-    
-#    start_idx = full_sweep_dict.index(start_freq)
-#    print(name, line(), f'Stat freq index = {start_idx}')
-    
-    # sweep_start, sweep_stop, and sweep_step_kHz need to be indexes
-    if last_sweep_start != start_freq or last_sweep_stop != stop_freq or last_sweep_step != step_freq:
-        print(name, line(), 'last sweep was different!')
-#        step_MHz = round(step_freq / 1000, 3)
-        last_sweep_start = start_freq
-        last_sweep_stop = stop_freq
-        last_sweep_step = step_freq
-
-    cmd_proc.sweep_done()
-#    sweep_list = [round(freq, 3) for freq in np.arange(start_freq, stop_freq, step_MHz)]
-#    print(name, line(), f'Len sweep_list = {len(sweep_list)}')
-#    for freq in sweep_list:
-#        control_data = full_sweep_dict[freq]
-#        print(name, line(), f'Control Data = {control_data} and is type {type(control_data)}')
-    
-#    x_axis_list.clear()
-#    intermediate_freq_1 = 3600          # Defined by the Spectrum Analyzer hardware design
-#    Fpfd = int(ref_clock / 2)      # Fpfd is equivalent to Fpfd
-#    LO1_start_freq = int(intermediate_freq_1 + (start_freq - start_freq % Fpfd))
-#    LO1_stop_freq = int(intermediate_freq_1 + (stop_freq - stop_freq % Fpfd) + Fpfd)
-#    sweep_start = LO1_start_freq - intermediate_freq_1
-#    sweep_stop = LO1_stop_freq - intermediate_freq_1
-#    cmd_proc.sel_315MHz_adc()               # Select the ADC for the LO2 output
-#    cmd_proc.enable_ref_clock1()       # Select 60 Mhz reference clock
-#
-#    LO1_N_list = [MHz_to_N(freq) for freq in range(LO1_start_freq, LO1_stop_freq, Fpfd)]
-#
-##    mixer1_freq_list = [(N * Fpfd + 315) for N in LO1_N_list]
-#    print(name, line(), f'sweep_step = {sweep_step}, {type(sweep_step)}')
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-#    step_list = list(LO2_30Fpfd_steps)[::sweep_step]    # sweep_step needs to be index_step
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-#    for LO1_N in LO1_N_list:
-#        mixer1_freq = LO1_N * Fpfd + 315
-#        cmd_proc.set_LO(cmd_proc.LO1_neg4dBm, LO1_N)    # Set LO1 to next frequency
-#        cmd_proc.set_LO(cmd_proc.LO2_pos5dBm)           # Select LO2
-#        for i, LO2_freq in enumerate(step_list):
-#            LO2_fmn = LO2_30Fpfd_steps[LO2_freq]
-#            RFin = mixer1_freq - LO2_freq
-#            if start_freq < RFin < stop_freq:
-#                cmd_proc.set_max2871_freq(LO2_fmn)      # why were you called 1200 times for a single LO1
-#                x_axis_list.append(RFin)
-#                time.sleep(0.0025)
-
-#    cmd_proc.sweep_done()   # Handshake signal to Arduino
+    print(line(), f'Processing time = {round((perf_stop-perf_start), 6)}')
+    time.sleep(1)
 
 
 # Find the highest signal amplitudes in a spectrum plot.
@@ -288,10 +275,10 @@ if __name__ == '__main__':
     step_freq   = 0.003
     sweep_range = np.arange(start_freq, stop_freq, step_freq)
 
-    start = perf_counter()
+    start = time.perf_counter()
     sweep_list = [round(freq, 6) for freq in sweep_range]
     d = load_control_dict('full_control_ref1.csv')
-    stop = perf_counter()
+    stop = time.perf_counter()
     print(f'Time to load full_control_ref1.csv = {round(stop-start, 6)} seconds')
 
     sweep_dict = {}

@@ -7,10 +7,10 @@
     
 """
 import sys
-from math import ceil
-import numpy as np
-from dataclasses import dataclass
 import time
+from math import ceil
+
+import numpy as np
 
 import command_processor as cmd_proc
 from hardware_cfg import cfg
@@ -24,78 +24,13 @@ ref_clock = cfg.ref_clock_1
 sweep_start = 4.0
 sweep_stop = 3000.0
 sweep_step_size = 250
+sweep_num_steps = 401
+
 last_sweep_start = 4.0
 last_sweep_stop = 3000.0
 last_sweep_step = 250
 full_sweep_dict = {}    # Dictionary of ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
 
-
-x_axis_list = list()        # List of frequencies that sychronizes plotting with sweeping.
-y_axis_list = list()        # List of amplitudes that are sychronized with plotting.
-
-@dataclass
-class LO1():
-    """
-        The LO1 register values are stored in reverse. That means
-        register value 13 is stored in Reg[0] and register value 0
-        is stored in Reg[13].
-
-        This is done to match the requirement that the chip is
-        programmed starting from the highest register first.
-    """
-    Reg = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    Reg[0]  = 0x0000000D  # Reg[13]
-    Reg[1]  = 0x000015FC  # .
-    Reg[2]  = 0x0061200B  # .
-    Reg[3]  = 0x00C00EBA  # .
-    Reg[4]  = 0x0F09FCC9  # .
-    Reg[5]  = 0x15596568  # .
-    Reg[6]  = 0x060000F7  # .
-    Reg[7]  = 0x95012046  # .
-    Reg[8]  = 0x00800025  # .
-    Reg[9]  = 0x32008984  # .
-    Reg[10] = 0x00000003  # .
-    Reg[11] = 0x00000012  # .
-    Reg[12] = 0x00000001  # .
-    Reg[13] = 0x002007C0  # Reg[0]
-
-
-@dataclass
-class LO2():
-    """
-        The LO2 register values are stored in reverse. That means
-        register value 5 is stored in Reg[0] and register value 0
-        is stored in Reg[5].
-
-        This is done so the chip can be programmed starting from
-        the highest register first.
-    """
-    Reg = [0, 0, 0, 0, 0, 0]
-    Reg[0] = 0x00400005     # Register 5 on the MAX2871 chip
-    Reg[1] = 0x638FF1C4     # .
-    Reg[2] = 0xF8008003     # .
-    Reg[3] = 0xD8008042     # . (Digital Lock detect ON), (if Fpfd > 32 MHz Bit[31] must be 1)
-    Reg[4] = 0x2000FFE9     # .
-    Reg[5] = 0x00419550     # Register 0 on the MAX2871 chip
-
-
-@dataclass
-class LO3():
-    """
-        The LO3 device registers are stored in reverse.  That means
-        device register 5 is stored in Reg[0] and device register 0
-        is stored in Reg[5].
-
-        This is done so the chip can be programmed starting from
-        the highest register first.
-    """
-    Reg = [0, 0, 0, 0, 0, 0]
-    Reg[0] = 0x00400005
-    Reg[1] = 0x63CFF104
-    Reg[2] = 0xF8008003
-    Reg[3] = 0xD8008042    # Digital Lock detect ON  (if Fpfd > 32 MHz Bit[31] must be 1
-    Reg[4] = 0x20008011
-    Reg[5] = 0x00480000
 
 
 def load_control_dict(file_name) -> dict:
@@ -118,43 +53,19 @@ def load_control_dict(file_name) -> dict:
     return full_sweep_dict
 
 
-def update_LO2_fmn_list(freq_step: float=0.25):
-    """
-    @Function Get the MAX2871 fmn values from a file (it's way faster than a for-loop)
-
-    @param freq_step DESCRIPTION For plotting the amplitude vs. frequencie for each step
-    @type float (optional)
-    """
-    global sweep_step_size
-    fmn_LT = [()]
-    file_name = "LO2_1kHz_fmn_steps.csv"
-    if 0.001 <= freq_step <= .25:
-        sweep_step_size = int(freq_step * 1000)
-    with open(file_name) as f:
-        fmn_LT = [int(x) for x in f]
-    return fmn_LT
-
-
 def sweep(start_freq, stop_freq, step_freq, ref_clock):
     """
     Function sweep() : Search the input for any or all RF signals
     sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size, sa.ref_clock)
     """
-#    sweep_start     = round(758 * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
-#    sweep_stop      = round(990 * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
+    prev_ref_clock = 0  # Used to decide if a new ref_clock code is to be sent
+    prev_LO1_code = 0   # Used to decide if a new LO1_code is to be sent
+    
     sweep_start     = round(start_freq * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
     sweep_stop      = round(stop_freq * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
-    sweep_num_steps = 401
-
     sweep_step_size = ceil((sweep_stop - sweep_start) / sweep_num_steps)         # Slightly larger step forces python to go beyond sweep_stop
     sweep_stop_boundary = ceil(sweep_stop / sweep_step_size) * sweep_step_size   # ceil() ensures ending after sweep_stop
 
-    perf_start = time.perf_counter()
-    #~~~~~~~~~~ PERFORMANCE TESTING ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    prev_ref_clock = 0  # Used for deciding if a new ref_clock code is to be sent
-    prev_LO1_code = 0   # Used for deciding if a new LO1_code is t be sent
-    
     # Perform the sweep
     cmd_proc.sel_315MHz_adc()                   # Select for LO2 output data
     cmd_proc.set_LO2(cmd_proc.LO2_neg4dBm)      # Bring the LO2 online
@@ -166,22 +77,16 @@ def sweep(start_freq, stop_freq, step_freq, ref_clock):
             cmd_proc.enable_ref_clock(ref_clock)
             prev_ref_clock = ref_clock
         if LO1_code != prev_LO1_code:
-            print(line(), f'LO1 code = {LO1_code}')
+            print(line(), f'~~~ LO1 ~~~ = {LO1_code}')
             cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, LO1_code)    # Select LO1 with -4 dBm Rfout and frequency = LO1_code
             prev_LO1_code = LO1_code
         cmd_proc.set_max2871_freq(LO2_code)
-        print(line(), f'LO2 code = {LO2_code}')
+        print(line(), f'    LO2     = {LO2_code}')
         time.sleep(0.0011)  # Originally 0.0025
 
-    cmd_proc.sweep_done()   # Handshake signal to Arduino
+    cmd_proc.sweep_done()   # Handshake signal to controller
 
-
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    perf_stop = time.perf_counter()
-
-    print()
-    print(line(), f'Processing time = {round((perf_stop-perf_start), 6)}')
-    time.sleep(1)
+    print('Sweep complete')
 
 
 # Find the highest signal amplitudes in a spectrum plot.

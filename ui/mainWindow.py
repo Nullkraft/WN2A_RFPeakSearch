@@ -245,7 +245,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_btnSweep_clicked(self):
         sp.ser.read(sp.ser.in_waiting)                                      # Clear out the serial buffer.
         self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
-        sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step, sa.ref_clock)
+        sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size, sa.ref_clock)
 #        assert len(sa.x_axis_list) != 0, "sa.x_axis_list was empty"
 #        self.graphWidget.setXRange(sa.x_axis_list[0], sa.x_axis_list[-1])   # Limit plot to user selected frequency range
 
@@ -307,9 +307,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def on_intStepKHz_editingFinished(self):
         step_in_MHz = self.intStepKHz.value()
-        # Only update sa.sweep_step if the value() has changed
-        if sa.sweep_step != step_in_MHz:
-            sa.sweep_step = step_in_MHz
+        # Only update sa.sweep_step_size if the value() has changed
+        if sa.sweep_step_size != step_in_MHz:
+            sa.sweep_step_size = step_in_MHz
 
 
 

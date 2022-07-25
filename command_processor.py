@@ -125,11 +125,8 @@ def get_version_message():
 def disable_all_ref_clocks():
     _send_command(all_ref_disable)
 
-def enable_ref_clock1():
-    _send_command(ref_clock1_enable)
-
-def enable_ref_clock2():
-    _send_command(ref_clock2_enable)
+def enable_ref_clock(ref_clock_command):
+    _send_command(ref_clock_command)
 
 def sel_315MHz_adc():
     _send_command(sel_adc_LO2)

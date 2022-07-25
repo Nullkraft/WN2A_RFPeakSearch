@@ -273,10 +273,10 @@ def set_reference_clock(clock_id):
         ref_clock = None
     if clock_id == 1:
         ref_clock = cfg.ref_clock_1
-        cmd_proc.enable_ref_clock1()
+        cmd_proc.enable_ref_clock(cmd_proc.ref_clock1_enable)
     if clock_id == 2:
         ref_clock = cfg.ref_clock_2
-        cmd_proc.enable_ref_clock2()
+        cmd_proc.enable_ref_clock(cmd_proc.ref_clock2_enable)
     return ref_clock
 
 

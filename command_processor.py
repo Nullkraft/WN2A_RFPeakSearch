@@ -16,7 +16,7 @@ LO1_neg4dBm       = 0x000011FF   # Change power and num freq steps
 LO1_neg1dBm       = 0x000019FF   #         .
 LO1_pos2dBm       = 0x000021FF   #         .
 LO1_pos5dBm       = 0x000029FF   #         .
-LO1_num_steps     = 0x000031FF   # Change num freq steps only
+LO1_no_change     = 0x000031FF   # Select LO1 without changing the RF output power level
 LO1_mux_tristate  = 0x000039FF   # Disable or rather set tristate on the mux pin
 LO1_mux_dig_lock  = 0x000041FF   # Enable digital lock detect on the mux pin
 
@@ -55,7 +55,7 @@ sel_adc_LO2       = 0x000027FF   # Enable 315 MHz LogAmp ADC and disable 45 MHz 
 sel_adc_LO3       = 0x00002FFF   # Enable 45 MHz LogAmp ADC and disable 315 MHz LogAmp ADC
 
 # Serial channel control
-ready_to_send     = 0x000047FF   # Serial communication flow control
+ready_to_send     = 0x00001FFF   # Serial communication flow control
 sweep_complete    = 0x000037FF   # Tell the Arduino that all data has been sent
 
 
@@ -82,7 +82,7 @@ def disable_LO2_RFout():
 def disable_LO3_RFout():
     _send_command(LO3_RF_off)
 
-def set_LO1(LO1_command, int_N: int=None):
+def set_LO1(LO1_command, int_N: int=54):
     """
     Function 
     
@@ -99,6 +99,12 @@ def set_LO1(LO1_command, int_N: int=None):
     else:
         N = 0
     _send_command(LO1_command | N)
+
+def set_LO2(LO2_command):
+    _send_command(LO2_command)
+
+def set_LO3(LO3_command):
+    _send_command(LO3_command)
 
 def LO_device_register(device_command: int):
     """

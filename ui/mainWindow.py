@@ -72,8 +72,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sp.ser.read(sp.ser.in_waiting)                                      # Clear out the serial buffer.
         self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
         sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size, sa.ref_clock)
-#        assert len(sa.x_axis_list) != 0, "sa.x_axis_list was empty"
-#        self.graphWidget.setXRange(sa.x_axis_list[0], sa.x_axis_list[-1])   # Limit plot to user selected frequency range
+#        assert len(sa.swept_frequencies_list) != 0, "sa.swept_frequencies_list was empty"
+#        self.graphWidget.setXRange(sa.swept_frequencies_list[0], sa.swept_frequencies_list[-1])   # Limit plot to user selected frequency range
 
     def serial_read_thread(self):
         """
@@ -86,11 +86,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.thread.started.connect(self.worker.read_serial)  # Connect to signals...
             self.worker.finished.connect(self.thread.quit)
             self.worker.finished.connect(self.worker.deleteLater)
-#            self.worker.finished.connect(self.plot_ampl_data)
+            self.worker.finished.connect(self.plot_ampl_data)
             self.thread.finished.connect(self.thread.deleteLater)
-#            self.thread.start()                                   # After starting the thread...
-#            self.btnTrigger.setEnabled(False)                     # disable the Trigger button until we're done
-#            self.thread.finished.connect(lambda: self.btnTrigger.setEnabled(True))
+            self.thread.start()                                   # After starting the thread...
+            self.btnTrigger.setEnabled(False)                     # disable the Trigger button until we're done
+            self.thread.finished.connect(lambda: self.btnTrigger.setEnabled(True))
         else:
             print('')
             print('     You have to open the serial port.')
@@ -126,8 +126,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             ampl = amplBytes[x] | (amplBytes[x+1] << 8)
             volts = (ampl/1024) * 5
             self.amplitude.append(volts)
-        assert len(sa.x_axis_list)==len(self.amplitude)
-        self.dataLine.setData(sa.x_axis_list, self.amplitude, pen=(155,155,255))
+        assert len(sa.swept_frequencies_list)==len(self.amplitude)
+        self.dataLine.setData(sa.swept_frequencies_list, self.amplitude, pen=(155,155,255))
 
     @pyqtSlot()
     def on_btnPeakSearch_clicked(self):

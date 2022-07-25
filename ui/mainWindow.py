@@ -64,18 +64,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         speed_index = self.cbxSerialSpeedSelection.findData(str(serial_speed))
         if (speed_index >= 0):
             self.cbxSerialSpeedSelection.setCurrentIndex(speed_index)
-
+#
 
 
     @pyqtSlot()
-    def update_start_stop(self):
-        view_range = self.graphWidget.viewRange()
-#        print(name, line(), f'View range = {view_range}')
-        return view_range
-
-    @pyqtSlot()
-    def on_btnSendRegisters_clicked(self):
-        print(name, line(), f'Reference clock = {sa.ref_clock}')
+    def on_btnSweep_clicked(self):
+        sp.ser.read(sp.ser.in_waiting)                                      # Clear out the serial buffer.
+        self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
+        sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size, sa.ref_clock)
+#        assert len(sa.x_axis_list) != 0, "sa.x_axis_list was empty"
+#        self.graphWidget.setXRange(sa.x_axis_list[0], sa.x_axis_list[-1])   # Limit plot to user selected frequency range
 
     def serial_read_thread(self):
         """
@@ -97,6 +95,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print('')
             print('     You have to open the serial port.')
             print('     You must select both a Serial port AND speed.')
+
+    @pyqtSlot()
+    def update_start_stop(self):
+        view_range = self.graphWidget.viewRange()
+#        print(name, line(), f'View range = {view_range}')
+        return view_range
+
+    @pyqtSlot()
+    def on_btnSendRegisters_clicked(self):
+        print(name, line(), f'Reference clock = {sa.ref_clock}')
 
     @pyqtSlot()
     def on_btnRefreshPortsList_clicked(self):
@@ -240,14 +248,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Request the Arduino message containing version number and date
         """
         sa.get_version_message()
-
-    @pyqtSlot()
-    def on_btnSweep_clicked(self):
-        sp.ser.read(sp.ser.in_waiting)                                      # Clear out the serial buffer.
-        self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
-        sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size, sa.ref_clock)
-#        assert len(sa.x_axis_list) != 0, "sa.x_axis_list was empty"
-#        self.graphWidget.setXRange(sa.x_axis_list[0], sa.x_axis_list[-1])   # Limit plot to user selected frequency range
 
     @pyqtSlot()
     def on_dbl_attenuator_dB_editingFinished(self):

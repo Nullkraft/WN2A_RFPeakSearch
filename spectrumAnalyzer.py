@@ -31,7 +31,7 @@ last_sweep_stop = 3000.0
 last_sweep_step = 250
 full_sweep_dict = {}    # Dictionary of ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
 
-
+swept_frequencies_list = []     # The collected list of swept frequencies used for plotting amplitude vs. frequency
 
 def load_control_dict(file_name) -> dict:
     """
@@ -71,6 +71,7 @@ def sweep(start_freq, stop_freq, step_freq, ref_clock):
     cmd_proc.set_LO2(cmd_proc.LO2_neg4dBm)      # Bring the LO2 online
     cmd_proc.disable_LO3_RFout()
     for freq in cfg.RFin_array[sweep_start : sweep_stop_boundary : sweep_step_size]:
+        swept_frequencies_list.append(freq)
         ref_clock, LO1_code, LO2_code = full_sweep_dict[freq]
         if ref_clock != prev_ref_clock:
             print(line(), f'ref clock code = {ref_clock}')
@@ -82,7 +83,7 @@ def sweep(start_freq, stop_freq, step_freq, ref_clock):
             prev_LO1_code = LO1_code
         cmd_proc.set_max2871_freq(LO2_code)
         print(line(), f'    LO2     = {LO2_code}')
-        time.sleep(0.0011)  # Originally 0.0025
+        time.sleep(0.0025)
 
     cmd_proc.sweep_done()   # Handshake signal to controller
 

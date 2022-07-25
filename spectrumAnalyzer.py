@@ -24,7 +24,7 @@ ref_clock = cfg.ref_clock_1
 sweep_start = 4.0
 sweep_stop = 3000.0
 sweep_step_size = 250
-sweep_num_steps = 401
+sweep_num_steps = 801
 
 last_sweep_start = 4.0
 last_sweep_stop = 3000.0
@@ -60,6 +60,7 @@ def sweep(start_freq, stop_freq, step_freq, ref_clock):
     """
     prev_ref_clock = 0  # Used to decide if a new ref_clock code is to be sent
     prev_LO1_code = 0   # Used to decide if a new LO1_code is to be sent
+    swept_frequencies_list.clear()
     
     sweep_start     = round(start_freq * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
     sweep_stop      = round(stop_freq * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
@@ -67,22 +68,19 @@ def sweep(start_freq, stop_freq, step_freq, ref_clock):
     sweep_stop_boundary = ceil(sweep_stop / sweep_step_size) * sweep_step_size   # ceil() ensures ending after sweep_stop
 
     # Perform the sweep
-    cmd_proc.sel_315MHz_adc()                   # Select for LO2 output data
-    cmd_proc.set_LO2(cmd_proc.LO2_neg4dBm)      # Bring the LO2 online
+    cmd_proc.sel_315MHz_adc()                                   # Select for LO2 output data
+    cmd_proc.set_LO2(cmd_proc.LO2_neg4dBm)                      # Bring the LO2 online
     cmd_proc.disable_LO3_RFout()
     for freq in cfg.RFin_array[sweep_start : sweep_stop_boundary : sweep_step_size]:
-        swept_frequencies_list.append(freq)
         ref_clock, LO1_code, LO2_code = full_sweep_dict[freq]
         if ref_clock != prev_ref_clock:
-            print(line(), f'ref clock code = {ref_clock}')
             cmd_proc.enable_ref_clock(ref_clock)
             prev_ref_clock = ref_clock
         if LO1_code != prev_LO1_code:
-            print(line(), f'~~~ LO1 ~~~ = {LO1_code}')
             cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, LO1_code)    # Select LO1 with -4 dBm Rfout and frequency = LO1_code
             prev_LO1_code = LO1_code
         cmd_proc.set_max2871_freq(LO2_code)
-        print(line(), f'    LO2     = {LO2_code}')
+        swept_frequencies_list.append(freq)                     # Frequencies saved for plotting
         time.sleep(0.0025)
 
     cmd_proc.sweep_done()   # Handshake signal to controller

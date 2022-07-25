@@ -24,7 +24,7 @@ ref_clock = cfg.ref_clock_1
 sweep_start = 4.0
 sweep_stop = 3000.0
 sweep_step_size = 250
-sweep_num_steps = 801
+sweep_num_steps = 401
 
 last_sweep_start = 4.0
 last_sweep_stop = 3000.0
@@ -80,7 +80,7 @@ def sweep(start_freq, stop_freq, step_freq, ref_clock):
             cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, LO1_code)    # Select LO1 with -4 dBm Rfout and frequency = LO1_code
             prev_LO1_code = LO1_code
         cmd_proc.set_max2871_freq(LO2_code)
-        swept_frequencies_list.append(freq)                     # Frequencies saved for plotting
+        swept_frequencies_list.append(freq)                     # Frequencies needed for plotting
         time.sleep(0.0025)
 
     cmd_proc.sweep_done()   # Handshake signal to controller

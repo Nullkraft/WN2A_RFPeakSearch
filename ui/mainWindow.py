@@ -110,7 +110,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_btnRefreshPortsList_clicked(self):
         for x in range(10):
             self.cbxSerialPortSelection.removeItem(0)
-        ports = sp.get_serial_port_list()
+        ports = sp.simple_serial().get_serial_port_list()
         self.cbxSerialPortSelection.addItems(ports)
 
     @pyqtSlot(int)

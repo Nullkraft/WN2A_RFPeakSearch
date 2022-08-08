@@ -15,6 +15,17 @@ line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 name = f'File \"{__name__}.py\",'
 
 # Serial port object that can be shared across source files.
+""" NOTE: Investigate to see if we can used Dependency inversion
+    to move this serial object outside the simple_serial class.
+    
+    1. Make simple_serial independent of the comms channel, eg. it
+       could be serial, ethernet or even GPIB.
+    
+    2. Make the code more reasonable/understandable across modules.
+
+    3. YouTube Tutorial - Dependency INVERSION vs dependency INJECTION
+       https://www.youtube.com/watch?v=2ejbLVkCndI
+"""
 ser = serial.Serial()
 
 class simple_serial(QObject):

@@ -13,14 +13,6 @@ class data_generator():
     # RFin_array contains every frequency from 0 to 3000.001 MHz in 1 kHz steps
     RFin_array = cfg.RFin_array         # Test this redundant line: I think it sped things up
 
-    def ref1_mhz_to_fmn(self, LO2_target_freq):
-        fmn = cfg.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_1)
-        return fmn
-
-    def ref2_mhz_to_fmn(self, LO2_target_freq):
-        fmn = cfg.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_2)
-        return fmn
-
     def load_list(self, file_name, data_type) -> list:
         """
         Function Load the control codes for LO1, LO2 or LO3 into their associated lists.

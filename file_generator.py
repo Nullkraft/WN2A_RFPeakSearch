@@ -118,15 +118,17 @@ class data_generator():
 
 if __name__ == '__main__':
     print()
-
+    import time
     print(f'Fpfd values are {cfg.Fpfd1} & {cfg.Fpfd2}')
 
     dg = data_generator()
+
+    start = time.perf_counter()
     dg.create_data()
     dg.save_data_files()
     dg.create_ref1_control_file()
     dg.create_ref2_control_file()
-
+    print(f'Time to generate all the files = {round(time.perf_counter()-start, 6)} seconds')
 
     print("Generator done")
 

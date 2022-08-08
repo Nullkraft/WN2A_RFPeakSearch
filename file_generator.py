@@ -47,11 +47,12 @@ class data_generator():
         @type <class 'dict'>
         """
         with open(file_name, 'w') as f:
-            for freq in cntl_dict:
+            f.write("RFin ref LO1_N LO2_FMN\n")   # Header: what the data is used for.
+            for freq, data in ctrl_dict.items():
                 RFin = str(freq)
-                ref = str(cntl_dict[freq][0])
-                LO1_n = str(cntl_dict[freq][1])
-                LO2_fmn = str(cntl_dict[freq][2])
+                ref = str(data[0])
+                LO1_n = str(data[1])
+                LO2_fmn = str(data[2])
                 f.write(RFin + ' ' + ref + ' ' + LO1_n + ' ' + LO2_fmn + '\n')
 
     def create_data(self):

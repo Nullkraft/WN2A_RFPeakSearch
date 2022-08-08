@@ -21,20 +21,17 @@ class data_generator():
         fmn = cfg.MHz_to_fmn(LO2_target_freq, cfg.ref_clock_2)
         return fmn
 
-    def load_list(self, cntl_tuple) -> list:
+    def load_list(self, file_name, data_type) -> list:
         """
         Function Load the control codes for LO1, LO2 or LO3 into their associated lists.
         
-        @param cntl_tuple A tuple of 2 values which contains the name of a file and the data type contained in the file.
-        @type <class 'tuple'>
-        @return A list containing the values of 'type'
+        @param Name of a file and the data type contained in the file.
+        @type File name as <class 'string'> and data type as <class 'type'> e.g. int, float, etc.
+        @return A list containing the value(s) of 'type'
         @rtype <class 'list'>
         """
-        file_name, data_type = cntl_tuple
-        tmp_list = list()
         with open(file_name, 'r') as f:
-            for x in f:
-                tmp_list.append(data_type(x))
+            tmp_list = [data_type(x) for x in f]
         return tmp_list
 
     def write_dict(self, file_name, cntl_dict):

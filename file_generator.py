@@ -34,13 +34,13 @@ class data_generator():
             tmp_list = [data_type(x) for x in f]
         return tmp_list
 
-    def write_dict(self, file_name, cntl_dict):
+    def write_dict(self, file_name, ctrl_dict):
         """
         Function Saves the contents of a unit control dictionary to file
         
         @param file_name Name of the file to save the dictionary into
         @type <class 'str'>
-        @param dict A dictionary where (key = RFin) and value = (LO1_n, LO2_fmn)
+        @param dict A dictionary where key=RFin and a tuple as value=(ref, LO1_n, LO2_fmn)
         @type <class 'dict'>
         """
         with open(file_name, 'w') as f:

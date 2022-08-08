@@ -55,8 +55,8 @@ sel_adc_LO2       = 0x000027FF   # Enable 315 MHz LogAmp ADC and disable 45 MHz 
 sel_adc_LO3       = 0x00002FFF   # Enable 45 MHz LogAmp ADC and disable 315 MHz LogAmp ADC
 
 # Serial channel control
-ready_to_send     = 0x00001FFF   # Serial communication flow control
-sweep_complete    = 0x000037FF   # Tell the Arduino that all data has been sent
+block_xfer_start  = 0x00003FFF   # Serial communication flow control
+block_xfer_stop   = 0x000047FF   # Tell the Arduino that all data has been sent
 
 
 # Attenuator Command & Control
@@ -100,6 +100,9 @@ def set_LO1(LO1_command, int_N: int=54):
         N = 0
     _send_command(LO1_command | N)
 
+def sel_LO2():
+    _send_command(LO2_device_sel)
+
 def set_LO2(LO2_command):
     _send_command(LO2_command)
 
@@ -140,8 +143,11 @@ def sel_315MHz_adc():
 def sel_45MHz_adc():
     _send_command(sel_adc_LO3)
 
-def sweep_done():
-    _send_command(sweep_complete)
+def sweep_start():
+    _send_command(block_xfer_start)
+
+def sweep_end():
+    _send_command(block_xfer_stop)
 
 
 def _send_command(command):

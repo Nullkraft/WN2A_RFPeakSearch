@@ -43,13 +43,11 @@ def load_control_dict(file_name) -> dict:
     """
     full_sweep_dict = dict()
     with open(file_name, 'r') as f:
+        _ = f.readline()    # Throw away the file header
         for freq in f:
             RFin, ref, LO1_N, LO2_FMN = freq.split()
             RFin = float(RFin)
-            ref = int(ref)
-            LO1_N = int(LO1_N)
-            LO2_FMN = int(LO2_FMN)
-            full_sweep_dict[RFin] = (ref, LO1_N, LO2_FMN)
+            full_sweep_dict[RFin] = (int(ref), int(LO1_N), int(LO2_FMN))
     return full_sweep_dict
 
 
@@ -87,7 +85,7 @@ def sweep(start_freq, stop_freq, step_freq, ref_clock):
         time.sleep(0.0025)
         print(name, line(), '\t', f'RFin {freq} : LO1 {LO1_code*66} MHz : LO2 {round(fmn_to_MHz(LO2_code, ref_clock), 3)} MHz')
 
-    cmd_proc.sweep_done()   # Handshake signal to controller
+    cmd_proc.sweep_end()   # Handshake signal to controller
 
     print('Sweep complete')
 
@@ -178,26 +176,10 @@ def set_reference_clock(clock_id):
 if __name__ == '__main__':
     print()
 
-    start_freq  = 1311.013
-    stop_freq   = 1320.074
-    step_freq   = 0.003
-    sweep_range = np.arange(start_freq, stop_freq, step_freq)
-
     start = time.perf_counter()
-    sweep_list = [round(freq, 6) for freq in sweep_range]
     d = load_control_dict('full_control_ref1.csv')
     stop = time.perf_counter()
     print(f'Time to load full_control_ref1.csv = {round(stop-start, 6)} seconds')
-
-    sweep_dict = {}
-    for freq in sweep_list:
-        sweep_dict[freq] = d[freq]
-    
-    print(f'Len sweep dict = {len(sweep_dict)}')
-    print(f'Len of sweep dict = {len(sweep_dict)}')
-    print(f'Len of full control dict = {len(d)}')
-#    print(f'Last record of sweep_dict[{stop_freq-.001}] = {sweep_dict[stop_freq-.001]}')
-    
 
     print("Done")
 

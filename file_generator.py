@@ -73,43 +73,48 @@ class data_generator():
         self.LO2_ref1_freq_list = [self.LO1_ref1_freq_dict[freq] - freq + cfg.IF2 for freq in self.RFin_array]
         self.LO2_ref2_freq_list = [self.LO1_ref2_freq_dict[freq] - freq + cfg.IF2 for freq in self.RFin_array]
         # Create the LO2 control codes for setting the frequency of the MAX2871 chip for ref clocks 1 and 2
-        self.LO2_ref1_fmn_list = map(self.ref1_mhz_to_fmn, self.LO2_ref1_freq_list)
-        self.LO2_ref2_fmn_list = map(self.ref2_mhz_to_fmn, self.LO2_ref2_freq_list)
+        self.LO2_ref1_fmn_list = [cfg.MHz_to_fmn(freq, cfg.ref_clock_1) for freq in self.LO2_ref1_freq_list]
+        self.LO2_ref2_fmn_list = [cfg.MHz_to_fmn(freq, cfg.ref_clock_2) for freq in self.LO2_ref2_freq_list]
 
     def save_data_files(self):
         """
-        Save LO1 files for ref1 and ref2
+        Save LO1 and LO2 data for ref1 and ref2
         """
-        with open("LO1_ref1_freq_steps.csv", 'w') as f:
-            [f.write(str(freq) + '\n') for freq in self.LO1_ref1_freq_list]
-        with open("LO1_ref2_freq_steps.csv", 'w') as f:
-            [f.write(str(freq) + '\n') for freq in self.LO1_ref2_freq_list]
-        with open("LO1_ref1_N_steps.csv", 'w') as f:
-            [f.write(str(N) + '\n') for N in self.LO1_ref1_N_list]
-        with open("LO1_ref2_N_steps.csv", 'w') as f:
-            [f.write(str(N) + '\n') for N in self.LO1_ref2_N_list]
+        file_list = ["LO1_ref1_freq_steps.csv", "LO1_ref2_freq_steps.csv",
+                    "LO1_ref1_N_steps.csv", "LO1_ref2_N_steps.csv",
+                    "LO2_ref1_fmn_steps.csv", "LO2_ref2_fmn_steps.csv",
+                    ]
+        lists_list = [self.LO1_ref1_freq_list, self.LO1_ref2_freq_list,
+                      self.LO1_ref1_N_list, self.LO1_ref2_N_list,
+                      self.LO2_ref1_fmn_list, self.LO2_ref2_fmn_list,
+                     ]
+        for file_name, data_list in zip(file_list, lists_list):
+            with open(file_name, 'w') as f:
+                for data in data_list:
+                    f.write(str(data) + '\n')
         """
-        Save LO2 files for ref1 and ref2
+        Save LO2 frequency files for ref1 and ref2.
+        The data in these two lists require rounding before storing to file.
         """
-        with open("LO2_ref1_freq_steps.csv", 'w') as f:
-            [f.write(str(round(freq, 9)) + '\n') for freq in self.LO2_ref1_freq_list]
-        with open("LO2_ref2_freq_steps.csv", 'w') as f:
-            [f.write(str(round(freq, 9)) + '\n') for freq in self.LO2_ref2_freq_list]
-        with open("LO2_ref1_fmn_steps.csv", 'w') as f:
-            [f.write(str(fmn) + '\n') for fmn in self.LO2_ref1_fmn_list]
-        with open("LO2_ref2_fmn_steps.csv", 'w') as f:
-            [f.write(str(fmn) + '\n') for fmn in self.LO2_ref2_fmn_list]
+        file_list.clear()
+        lists_list.clear()
+        file_list = ["LO2_ref1_freq_steps.csv", "LO2_ref2_freq_steps.csv"]
+        lists_list = [self.LO2_ref1_freq_list, self.LO2_ref2_freq_list]
+        for file_name, data_list in zip(file_list, lists_list):
+            with open(file_name, 'w') as f:
+                for data in data_list:
+                    f.write(str(round(data, 9)) + '\n')
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def create_ref1_control_file(self):
-        LO1_n = self.load_list(('LO1_ref1_N_steps.csv', int))          # For sweeping. Convert N from a string to int
-        LO2_fmn = self.load_list(('LO2_ref1_fmn_steps.csv', int))      # For sweeping. Convert fmn from string to int
+        LO1_n = self.load_list('LO1_ref1_N_steps.csv', int)          # For sweeping. Convert N from a string to int
+        LO2_fmn = self.load_list('LO2_ref1_fmn_steps.csv', int)      # For sweeping. Convert fmn from string to int
         full_sweep_step_dict = {freq:(self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(cfg.RFin_array, LO1_n, LO2_fmn)}
         self.write_dict('full_control_ref1.csv', full_sweep_step_dict)
 
     def create_ref2_control_file(self):
-        LO1_n = self.load_list(('LO1_ref2_N_steps.csv', int))          # For sweeping. Convert N from a string to int
-        LO2_fmn = self.load_list(('LO2_ref2_fmn_steps.csv', int))      # For sweeping. Convert fmn from string to int
+        LO1_n = self.load_list('LO1_ref2_N_steps.csv', int)          # For sweeping. Convert N from a string to int
+        LO2_fmn = self.load_list('LO2_ref2_fmn_steps.csv', int)      # For sweeping. Convert fmn from string to int
         full_sweep_step_dict = {freq:(self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(cfg.RFin_array, LO1_n, LO2_fmn)}
         self.write_dict('full_control_ref2.csv', full_sweep_step_dict)
 

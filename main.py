@@ -10,6 +10,7 @@ if __name__ == '__main__':
     window = MainWindow()
     window.show()
     sys.exit(app.exec())    # Using sys.exit() provides a return code to the command line.
+                            # app.exec() starts the event loop.
 
 
 """ NEXT:

@@ -20,11 +20,14 @@ import command_processor as cmd_proc
 #from serial_port import simple_serial as sp
 import serial_port as sp
 
+import multiprocessing as mp
 
 # Utility to simplify print debugging.
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 name = f'File \"{__name__}.py\",'
 
+def load_dict():
+    sa.full_sweep_dict = sa.load_control_dict('full_control_ref1.csv')
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -40,10 +43,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
         #
         # MAX2871 chip will need to be initialized
-        self.initialized = False        
+        self.initialized = False
+        #
         # sa.full_sweep_dict contains values for ref_clock, LO1, LO2, 
         # and LO3 used for controlling the hardware.
-        sa.full_sweep_dict = sa.load_control_dict('full_control_ref1.csv')
+        # Loading sa.full_sweep_dict in a separate process speeds up the app load.
+        process = mp.Process(target=load_dict)
+        process.start()
         #
         # Request the list of available serial ports and use it to
         # populate the user 'Serial Port' drop-down selection list.

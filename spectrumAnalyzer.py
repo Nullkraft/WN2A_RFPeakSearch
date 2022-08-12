@@ -33,7 +33,7 @@ full_sweep_dict = {}    # Dictionary of ref_clock, LO1, LO2, and LO3 from 0 to 3
 
 swept_frequencies_list = []     # The collected list of swept frequencies used for plotting amplitude vs. frequency
 
-def load_control_dict(file_name) -> dict:
+def load_control_dict(dict_name, file_name):
     """
     NOTE: full_sweep_dict has a value that is a tuple of LO1_N and LO2_FMN.
           LO3_FMN will be added later. The key, RFin, is a string.
@@ -41,14 +41,13 @@ def load_control_dict(file_name) -> dict:
     EXAMPLE USAGE:  ref, N, FMN = full_sweep_dict[RFin]
                     print(name, line(), f'ref = {ref}, N ={N} and FMN ={FMN}')
     """
-    full_sweep_dict = dict()
+#    full_sweep_dict = dict()
     with open(file_name, 'r') as f:
         _ = f.readline()    # Throw away the file header
         for freq in f:
             RFin, ref, LO1_N, LO2_FMN = freq.split()
             RFin = float(RFin)
-            full_sweep_dict[RFin] = (int(ref), int(LO1_N), int(LO2_FMN))
-    return full_sweep_dict
+            dict_name[RFin] = (int(ref), int(LO1_N), int(LO2_FMN))
 
 
 def sweep(start_freq, stop_freq, step_freq, ref_clock):
@@ -177,7 +176,8 @@ if __name__ == '__main__':
     print()
 
     start = time.perf_counter()
-    d = load_control_dict('full_control_ref1.csv')
+    d = dict()
+    load_control_dict(d, 'full_control_ref1.csv')
     stop = time.perf_counter()
     print(f'Time to load full_control_ref1.csv = {round(stop-start, 6)} seconds')
 

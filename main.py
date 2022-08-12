@@ -9,7 +9,7 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    sys.exit(app.exec())    # Using sys.exit() provides a return code to the command line.
+    sys.exit(app.exec())    # Using sys.exit() takes the return code from app.exec() and sends it to the command line.
                             # app.exec() starts the event loop.
 
 

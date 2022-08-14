@@ -1,30 +1,22 @@
 # -*- coding: utf-8 -*-
 
-from PyQt6 import QtCore
-from PyQt6.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
-from PyQt6.QtWidgets import QMainWindow
-import sys
-#import time
-import pyqtgraph as pg
-import numpy as np
-
-#import concurrent.futures
-
-from .Ui_mainWindow import Ui_MainWindow
-
-# Functions specific to the operation of the WN2A Spectrum Analyzer hardware, hopefully.
-# Including setting up the serial port.
-import spectrumAnalyzer as sa
-import command_processor as cmd_proc
-
-#from serial_port import simple_serial as sp
-import serial_port as sp
-
-from multiprocessing import Process
-
 # Utility to simplify print debugging.
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 name = f'File \"{__name__}.py\",'
+
+import sys
+import numpy as np
+from multiprocessing import Process
+
+from PyQt6 import QtCore
+from PyQt6.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
+from PyQt6.QtWidgets import QMainWindow
+import pyqtgraph as pg
+
+from .Ui_mainWindow import Ui_MainWindow
+import spectrumAnalyzer as sa
+import command_processor as cmd_proc
+import serial_port as sp
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):

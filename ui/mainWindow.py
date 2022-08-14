@@ -34,12 +34,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # MAX2871 chip will need to be initialized
         self.initialized = False
         #
-        # sa.full_sweep_dict contains values for ref_clock, LO1, LO2, 
-        # and LO3 used for controlling the hardware.
-        # Loading sa.full_sweep_dict in a separate process speeds up the app load.
-        process = Process(target=sa.load_control_dict, args=(sa.full_sweep_dict, 'full_control_ref1.csv'))
-        process.start()
-        #
         # Request the list of available serial ports and use it to
         # populate the user 'Serial Port' drop-down selection list.
         serial_ports = sp.simple_serial().get_serial_port_list()
@@ -59,6 +53,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         speed_index = self.cbxSerialSpeedSelection.findData(str(serial_speed))
         if (speed_index >= 0):
             self.cbxSerialSpeedSelection.setCurrentIndex(speed_index)
+        #
+        # sa.full_sweep_dict contains values for ref_clock, LO1, LO2, 
+        # and LO3 used for controlling the hardware.
+        # Loading sa.full_sweep_dict in a separate process speeds up the app load.
+        process = Process(target=sa.load_control_dict, args=(sa.full_sweep_dict, 'full_control_ref1.csv'))
+        process.start()
 #
 
 

@@ -123,22 +123,36 @@ block_xfer_stop   = 0x47FF   # Tell the Arduino that all data has been sent
 
 
 # Attenuator Command & Control
-def set_attenuator(decibels: float=31.75):
+def set_attenuator(decibels: float = 31.75) -> None:
     """
-    The level will be programmed into the deviceRegister and
-    can be found by multiplying the desired attenuation dB by 4.
-    The level is the merged with the 32 bit attenuator_sel
-    command found in the Spectrum Analyzer Interface Standard 3.
+    Function Attenuate the RFin signal from 0 to 31.75 dB.
+
+    @param decibels DESCRIPTION (defaults to 31.75)
+    @type float (optional)
+    @return No return type
+    @rtype None
+
     """
     level = int(decibels * 4) << 16
     _send_command(level | attenuator_sel)
 
-# Set new LO2/3 frequency
-def set_max2871_freq(fmn: int):
+
+def set_max2871_freq(fmn: int) -> None:
+    """
+    Function Set LO2 or LO3 to a new frequency.
+
+    @param fmn is the F, M, and N values used to set the frequency.
+    @type int
+
+    """
     _send_command(fmn)
 
-# LO2 Command & Control
-def disable_LO2_RFout():
+
+def disable_LO2_RFout() -> None:
+    """
+    Function LO2 Command and Control
+
+    """
     _send_command(LO2_RF_off)
 
 # LO3 Command & Control

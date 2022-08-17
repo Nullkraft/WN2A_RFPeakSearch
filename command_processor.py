@@ -1,30 +1,74 @@
 #
 # This file is part of WN2A_RFPeakSearch.
-# 
-# This file is part of the WN2A_RFPeakSearch distribution (https://github.com/Nullkraft/WN2A_RFPeakSearch).
+#
+# This file is part of the WN2A_RFPeakSearch distribution
+# (https://github.com/Nullkraft/WN2A_RFPeakSearch).
 # Copyright (c) 2021 Mark Stanley.
-# 
-# WN2A_RFPeakSearch is free software: you can redistribute it and/or modify  
-# it under the terms of the GNU General Public License as published by  
+#
+# WN2A_RFPeakSearch is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, version 3.
 #
-# WN2A_RFPeakSearch is distributed in the hope that it will be useful, but 
-# WITHOUT ANY WARRANTY; without even the implied warranty of 
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# WN2A_RFPeakSearch is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 # General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License 
+# You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
+
+"""Assign hex values to constants used for controlling the IC's on the spectrum analyzer hardware.
+
+Classes:
+    none
+Functions:
+    set_attenuator(decibels: float=31.75)
+    set_max2871_freq(fmn: int)
+    disable_LO2_RFout()
+    disable_LO3_RFout()
+    set_LO1(LO1_command, int_N: int=54)
+    sel_LO2()
+    set_LO2(LO2_command)
+    set_LO3(LO3_command)
+    LO_device_register(device_command: int)
+    LED_on()
+    LED_off()
+    get_version_message()
+    disable_all_ref_clocks()
+    enable_ref_clock(ref_clock_command)
+    sel_315MHz_adc()
+    sel_45MHz_adc()
+    sweep_start()
+    sweep_end()
+    _send_command(command)
+Misc variables:
+    __version__
+    format_version
+    compatible_formats
+
+"""
+
 
 import serial_port as sp
 import sys
 import time
 import logging
 
-# Utility to simplify print debugging.
-line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+
+def line() -> str:
+    """
+    Function Utility to simplify print debugging.
+
+    @return The line number of the source code file.
+    @rtype str
+
+    """
+    return f'line {str(sys._getframe(1).f_lineno)},'
+
+
 name = f'File \"{__name__}.py\",'
+
 
 # Arduino and Device Commands
 attenuator_sel    = 0x00FF   # Attenuates the RFinput from 0 to 31.75dB

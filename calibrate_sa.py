@@ -19,6 +19,38 @@
 
 # -*- coding: utf-8 -*-
 
+"""Routine to take two sets of sweep readings and combine them into a single, \
+   calbrated, ref_clock, LO1, LO2, and LO3 chip control file.
+Classes:
+    calibrate
+Functions:
+    dump(object, file)
+    dumps(object) -> string
+    load(file) -> object
+    loads(bytes) -> object
+Misc variables:
+    __version__
+    format_version
+    compatible_formats
+"""
+
+import sys
+
+
+def line() -> str:
+    """
+    Function Utility to simplify print debugging.
+
+    @return The line number of the source code file.
+    @rtype str
+
+    """
+    return f'line {str(sys._getframe(1).f_lineno)},'
+
+
+name = f'File \"{__name__}.py\",'
+
+
 class calibrate():
     pass
 

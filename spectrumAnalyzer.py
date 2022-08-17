@@ -35,9 +35,19 @@ import command_processor as cmd_proc
 from hardware_cfg import cfg
 
 
-# Utilities provided for print debugging.
-line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
-name = f"File \'{__name__}.py\',"
+def line() -> str:
+    """
+    Function Utility to simplify print debugging.
+
+    @return The line number of the source code file.
+    @rtype str
+
+    """
+    return f'line {str(sys._getframe(1).f_lineno)},'
+
+
+name = f'File \"{__name__}.py\",'
+
 
 ref_clock = cfg.ref_clock_1
 sweep_start = 4.0

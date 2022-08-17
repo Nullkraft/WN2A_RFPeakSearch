@@ -29,9 +29,19 @@ import configparser
 from PyQt6.QtCore import QObject, pyqtSignal
 
 
-# Utils to print filename and linenumber, print(name, line(), ...), when using print debugging.
-line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+def line() -> str:
+    """
+    Function Utility to simplify print debugging.
+
+    @return The line number of the source code file.
+    @rtype str
+
+    """
+    return f'line {str(sys._getframe(1).f_lineno)},'
+
+
 name = f'File \"{__name__}.py\",'
+
 
 # Serial port object that can be shared across source files.
 """ NOTE: Investigate to see if we can used Dependency inversion

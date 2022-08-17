@@ -21,6 +21,21 @@
 
 from hardware_cfg import cfg
 import command_processor as cmd
+import sys
+
+def line() -> str:
+    """
+    Function Utility to simplify print debugging.
+
+    @return The line number of the source code file.
+    @rtype str
+
+    """
+    return f'line {str(sys._getframe(1).f_lineno)},'
+
+
+name = f'File \"{__name__}.py\",'
+
 
 class data_generator():
     """ These files will be used by calibrate_sa.py for creating the

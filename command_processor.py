@@ -71,7 +71,7 @@ name = f'File \"{__name__}.py\",'
 
 
 # Arduino and Device Commands
-attenuator_sel    = 0x00FF   # Attenuates the RFinput from 0 to 31.75dB
+attenuator_sel = 0x00FF   # Attenuates the RFinput from 0 to 31.75dB
 
 LO1_device_sel    = 0x01FF   # Select device before sending a General Command
 LO1_RF_off        = 0x09FF   # Specific commands
@@ -149,91 +149,122 @@ def set_max2871_freq(fmn: int) -> None:
 
 
 def disable_LO2_RFout() -> None:
-    """
-    Function LO2 Command and Control
-
-    """
+    """Function LO2 Command and Control."""
     _send_command(LO2_RF_off)
 
-# LO3 Command & Control
-def disable_LO3_RFout():
+
+def disable_LO3_RFout() -> None:
+    """LO3 Command & Control."""
     _send_command(LO3_RF_off)
 
-def set_LO1(LO1_command, int_N: int=54):
+
+def set_LO1(LO1_command: int, int_N: int = 54) -> None:
     """
-    Function 
-    
+    Function Set the LO1 chip to a new frequency.
+
     @param LO1_command (Choose one from the list of "Arduino and Device Commands" above)
     @type int_32
     @param int_N LO1, LO2, or LO3 control code (defaults to None)
     @type int (optional)
+
     """
-    if int_N != None:
+    if int_N is not None:
         if (54 <= int_N <= 100):
             N = int_N << 16
         else:
-            logging.error(f'{name}, {line()}, N ({int_N}) is not within the limits of the ADF4356 (LO1)')
+            logging.error(f'{name}, {line()}, N ({int_N}) exceeds the limits of the ADF4356 (LO1)')
     else:
         N = 0
     _send_command(LO1_command | N)
 
-def sel_LO2():
+
+def sel_LO2() -> None:
+    """Send command to select the LO2 chip for programming."""
     _send_command(LO2_device_sel)
 
-def set_LO2(LO2_command):
+
+def set_LO2(LO2_command: int) -> None:
+    """Send the command to set the LO2 chip to a new frequency."""
     _send_command(LO2_command)
 
-def set_LO3(LO3_command):
+
+def set_LO3(LO3_command) -> None:
+    """Send the command to set the LO3 chip to a new frequency."""
     _send_command(LO3_command)
 
-def LO_device_register(device_command: int):
+
+def LO_device_register(device_command: int) -> None:
     """
-    Function LO_device_register
+    Function LO_device_register.
 
     @param device_command FMN data (LO2/LO3) or N data (LO1) for direct device control
     @type TYPE
+
     """
     _send_command(device_command)
 
-def LED_on():
+
+def LED_on() -> None:
+    """Command for testing communication with the controller board."""
     _send_command(Arduino_LED_on)
 
-def LED_off():
+
+def LED_off() -> None:
+    """Command for testing communication with the controller board."""
     _send_command(Arduino_LED_off)
 
-def get_version_message():
-    sp.ser.read(sp.ser.in_waiting)      # Clear out the serial buffer.
-    _send_command(version_message)      # Request software report from controller
-    time.sleep(0.01)
-    software_version = sp.ser.read(64)  # Collect the report(s)
-    return software_version
 
-def disable_all_ref_clocks():
+def get_version_message() -> str:
+    """
+    Get the firmaware version string from the controller.
+
+    @return str
+
+    """
+    sp.ser.read(sp.ser.in_waiting)  # Clear out the serial buffer.
+    _send_command(version_message)  # Request software report from controller
+    time.sleep(0.01)
+    return sp.ser.read(64)          # Collect the report(s)
+
+
+def disable_all_ref_clocks() -> None:
+    """Disable both reference clocks for testing."""
     _send_command(all_ref_disable)
 
-def enable_ref_clock(ref_clock_command):
+
+def enable_ref_clock(ref_clock_command) -> None:
+    """Turn on the selected reference clock. The controller automatically turns off the other."""
     _send_command(ref_clock_command)
 
-def sel_315MHz_adc():
+
+def sel_315MHz_adc() -> None:
+    """Select the 315MHz bandwidth output and selects the A2D for reading the output amplitude."""
     _send_command(sel_adc_LO2)
 
-def sel_45MHz_adc():
+
+def sel_45MHz_adc() -> None:
+    """Select the 45MHz bandwidth output and selects the A2D for reading the output amplitude."""
     _send_command(sel_adc_LO3)
 
-def sweep_start():
+
+def sweep_start() -> None:
+    """Serial data stream start command when sweeping LO2 or LO3."""
     _send_command(block_xfer_start)
 
-def sweep_end():
+
+def sweep_end() -> None:
+    """Serial data stream stop command when done sweeping LO2 or LO3."""
     _send_command(block_xfer_stop)
 
 
-def _send_command(command):
+def _send_command(command) -> None:
+    """Send the selected command to the controller."""
     try:
         if sp.ser.is_open:
             cmd_bytes = command.to_bytes(4, 'little')
             sp.ser.write(cmd_bytes)
     except:
-        print(name, line(), f': The serial port was not opened before sending the command <{command.__name__}>.')
+        print(name, line(), f': Open the serial port before sending a command <{command.__name__}>.')
 
 
 

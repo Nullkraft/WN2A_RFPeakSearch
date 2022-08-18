@@ -20,8 +20,8 @@
 
 # -*- coding: utf-8 -*-
 
-"""Routine to take two sets of sweep readings and combine them into a single, \
-   calbrated, ref_clock, LO1, LO2, and LO3 chip control file.
+"""Combine two sets of sweep readings into a single calbrated chip control file.
+
 Classes:
     calibrate
 Functions:
@@ -33,6 +33,7 @@ Misc variables:
     __version__
     format_version
     compatible_formats
+
 """
 
 import sys
@@ -52,8 +53,51 @@ def line() -> str:
 name = f'File \"{__name__}.py\",'
 
 
-class calibrate():
-    pass
+class Calibrate():
+
+    """
+    Best spurs calibration class combines the best control codes from references 1 and 2.
+
+    ...
+
+    Attributes
+    ----------
+    name : dict
+        calibrated_dict
+    file_1 : str
+        Filename of the ref1 hardware control file.
+    file_2 : str
+        Filename of the ref2 hardware control file.
+    age : int
+        age of the person
+
+    Methods
+    -------
+    info(additional=""):
+        Prints the person's name and age.
+
+    """
+
+
+    def __init__(self, fname):
+        self.calibrated_dict = {}
+        pass
+
+    def combine(self, file_1: str, file_2: str) -> dict:
+        """
+        Public method Combine file_1 and file_2 to create the calibrated hardware control dict.
+
+        @param file_1 Uncalibrated hardware control dict for ref_clock_1.
+        @type str
+        @param file_2 Uncalibrated hardware control dict for ref_clock_2.
+        @type str
+        @return Calibrated hardware control dictionary.
+        @rtype dict
+
+        """
+        return self.calibrated_dict
+
+
 
 """ ********************* This block will move to spectrumAnalyzer.py ************************* """
 #LO1_freq = self.load_list(('LO1_ref1_freq_steps.csv', float))  # For plotting. Convert f from a string to float

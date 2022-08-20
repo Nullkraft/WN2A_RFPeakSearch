@@ -85,8 +85,8 @@ def sweep(start_freq, stop_freq, step_freq, ref_clock):
     Function sweep() : Search the input for any or all RF signals
     sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size, sa.ref_clock)
     """
-    prev_ref_clock = 0  # Used to decide if a new ref_clock code is to be sent
-    prev_LO1_code = 0   # Used to decide if a new LO1_code is to be sent
+    last_ref_clock = 0  # Used to decide if a new ref_clock code is to be sent
+    last_LO1_code = 0   # Used to decide if a new LO1_code is to be sent
     swept_frequencies_list.clear()
     
     sweep_start     = round(start_freq * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
@@ -100,15 +100,15 @@ def sweep(start_freq, stop_freq, step_freq, ref_clock):
     cmd_proc.disable_LO3_RFout()
     for freq in cfg.RFin_array[sweep_start : sweep_stop_boundary : sweep_step_size]:
         reference, LO1_code, LO2_code = full_sweep_dict[freq]
-        if reference != prev_ref_clock:
+        if reference != last_ref_clock:
             cmd_proc.enable_ref_clock(reference)
             time.sleep(0.0025)
-            prev_ref_clock = reference
+            last_ref_clock = reference
             print(name, line(), f'New ref_clock set to {hex(reference)}')
-        if LO1_code != prev_LO1_code:
+        if LO1_code != last_LO1_code:
             cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, LO1_code)    # Select LO1 with -4 dBm Rfout and frequency = LO1_code
             time.sleep(0.0025)
-            prev_LO1_code = LO1_code
+            last_LO1_code = LO1_code
         cmd_proc.set_max2871_freq(LO2_code)
         swept_frequencies_list.append(freq)                     # Frequencies needed for plotting
         time.sleep(0.0025)

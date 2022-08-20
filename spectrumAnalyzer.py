@@ -85,6 +85,8 @@ class sa_control():
     def __init__(self):
         self.last_ref_clock = 0  # Decide if a new ref_clock code is to be sent
         self.last_LO1_code = 0   # Decide if a new LO1_code is to be sent
+        self.last_LO2_code = 0   # Decide if a new LO2_code is to be sent
+        self.last_LO3_code = 0   # Decide if a new LO3_code is to be sent
 
     
     def set_reference(self, ref_clock: float):
@@ -111,23 +113,50 @@ class sa_control():
             cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, control_code) # Set to -4 dBm & freq=control_code
             time.sleep(0.0025)  # Give the slow Arduino time to update the local oscillator, LO1
             return control_code
-        
+
+
+    def set_LO2(self, control_code: int, last_control_code: int=0) -> int:
+        """
+        Public set_LO2 sends the hardware control_code to set LO2's frequency
+
+        @param control_code: FMN sets the frequency of the MAX2871 (LO2)
+        @type int
+        @param last_control_code prevents sending FMN if it's the same as last time (defaults to 0)
+        @type int (optional)
+        @return The new_code in FMN so it can be saved to an external last_code
+        @rtype int
+
+        """
+        if control_code != last_control_code:
+            cmd_proc.set_LO2(control_code)      # Set to freq=control_code
+            time.sleep(0.0025)  # Give the slow Arduino time to update the local oscillator, LO2
+            return control_code
+
     
-    def set_LO2(self, control_code: int):
-        pass
-        
-    
-    def set_LO3(self, control_code: int):
-        pass
+    def set_LO3(self, control_code: int, last_control_code: int=0) -> int:
+        """
+        Public set_LO3 sends the hardware control_code to set LO3's frequency
+
+        @param control_code: FMN sets the frequency of the MAX2871 (LO3)
+        @type int
+        @param last_control_code prevents sending FMN if it's the same as last time (defaults to 0)
+        @type int (optional)
+        @return The new_code in FMN so it can be saved to an external last_code
+        @rtype int
+
+        """
+        if control_code != last_control_code:
+            cmd_proc.set_LO3(control_code)      # Set to freq=control_code
+            time.sleep(0.0025)  # Give the slow Arduino time to update the local oscillator, LO3
+            return control_code
 
 
     # WHAT IF???
     def set_frequency(self, RFin_kHz: int):
         ref, LO1_code, LO2_code = full_sweep_dict[RFin_kHz]
-        cmd_proc.set_max2871_freq(LO2_code)     # Most frequently called so don't bother to check last value
-        time.sleep(0.0025)      # Give the slow Arduino time to update the local oscillator, LO2
         self.set_reference(ref);
         self.last_LO1_code = self.set_LO1(LO1_code, self.last_LO1_code)
+        self.last_LO2_code = self.set_LO2(LO2_code, self.last_LO2_code)
 
 
 def sweep(start_freq, stop_freq, step_freq, ref_clock):

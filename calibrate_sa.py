@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # This file is part of WN2A_RFPeakSearch.
 #
@@ -18,7 +19,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# -*- coding: utf-8 -*-
 
 """Combine two sets of sweep readings into a single calbrated chip control file.
 
@@ -79,6 +79,15 @@ class Calibrate():
     """
 
     def __init__(self, fname: str) -> None:
+        """
+        Constructor.
+
+        @param fname The file to save the calibrated dictionary to.
+        @type str
+        @return DESCRIPTION
+        @rtype None
+
+        """
         self.calibrated_dict = {}
         pass
 

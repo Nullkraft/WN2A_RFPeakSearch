@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # This file is part of WN2A_RFPeakSearch.
 # 
@@ -17,7 +18,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# -*- coding: utf-8 -*-
+
 """ Spectrum Analyzer Notes:
 
     LO1 = int({IF1 + RFin} - [{IF1 + RFin} / Fpfd])

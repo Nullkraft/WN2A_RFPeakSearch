@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # This file is part of WN2A_RFPeakSearch.
 #

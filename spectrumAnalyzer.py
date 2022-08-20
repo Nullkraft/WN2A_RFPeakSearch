@@ -80,43 +80,75 @@ def load_control_dict(dict_name, file_name):
             dict_name[RFin] = (int(ref), int(LO1_N), int(LO2_FMN))
 
 
+class sa_control():
+    
+    def __init__(self):
+        self.last_ref_clock = 0  # Decide if a new ref_clock code is to be sent
+        self.last_LO1_code = 0   # Decide if a new LO1_code is to be sent
+
+    
+    def set_reference(self, ref_clock: float):
+        if ref_clock != self.last_ref_clock:
+            cmd_proc.enable_ref_clock(ref_clock)
+            time.sleep(0.0025)  # Give the slow Arduino time to update the ref_clock selection
+            self.last_ref_clock = ref_clock
+            print(name, line(), f'New ref_clock set to {hex(ref_clock)}')
+        
+    
+    def set_LO1(self, control_code: int, last_control_code: int=0) -> int:
+        """
+        Public set_LO1 sends the hardware control_code to set LO1's frequency
+
+        @param control_code: N (reg[0] from the spec-sheet) sets the frequency of the ADF4356 (LO1)
+        @type int
+        @param last_control_code prevents sending N if it's the same as last time (defaults to 0)
+        @type int (optional)
+        @return The new_code in N so it can be saved to an external last_code
+        @rtype int
+
+        """
+        if control_code != last_control_code:
+            cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, control_code) # Set to -4 dBm & freq=control_code
+            time.sleep(0.0025)  # Give the slow Arduino time to update the local oscillator, LO1
+            return control_code
+        
+    
+    def set_LO2(self, control_code: int):
+        pass
+        
+    
+    def set_LO3(self, control_code: int):
+        pass
+
+
+    # WHAT IF???
+    def set_frequency(self, RFin_kHz: int):
+        ref, LO1_code, LO2_code = full_sweep_dict[RFin_kHz]
+        cmd_proc.set_max2871_freq(LO2_code)     # Most frequently called so don't bother to check last value
+        time.sleep(0.0025)      # Give the slow Arduino time to update the local oscillator, LO2
+        self.set_reference(ref);
+        self.last_LO1_code = self.set_LO1(LO1_code, self.last_LO1_code)
+
+
 def sweep(start_freq, stop_freq, step_freq, ref_clock):
     """
     Function sweep() : Search the input for any or all RF signals
     sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size, sa.ref_clock)
     """
-    last_ref_clock = 0  # Used to decide if a new ref_clock code is to be sent
-    last_LO1_code = 0   # Used to decide if a new LO1_code is to be sent
-    swept_frequencies_list.clear()
     
-    sweep_start     = round(start_freq * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
-    sweep_stop      = round(stop_freq * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
-    sweep_step_size = ceil((sweep_stop - sweep_start) / sweep_num_steps)         # Slightly larger step forces python to go beyond sweep_stop
-    sweep_stop_boundary = ceil(sweep_stop / sweep_step_size) * sweep_step_size   # ceil() ensures ending after sweep_stop
+    sweep_start = round(start_freq * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
+    sweep_stop = round(stop_freq * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
+    sweep_step = ceil((sweep_stop - sweep_start) / sweep_num_steps)         # Slightly larger step forces python to go beyond sweep_stop
+    sweep_stop = ceil(sweep_stop / sweep_step_size) * sweep_step_size   # ceil() ensures ending after sweep_stop
 
     # Perform the sweep
     cmd_proc.sel_315MHz_adc()                                   # Select for LO2 output data
     cmd_proc.set_LO2(cmd_proc.LO2_neg4dBm)                      # Bring the LO2 online
     cmd_proc.disable_LO3_RFout()
-    for freq in cfg.RFin_array[sweep_start : sweep_stop_boundary : sweep_step_size]:
-        reference, LO1_code, LO2_code = full_sweep_dict[freq]
-        if reference != last_ref_clock:
-            cmd_proc.enable_ref_clock(reference)
-            time.sleep(0.0025)
-            last_ref_clock = reference
-            print(name, line(), f'New ref_clock set to {hex(reference)}')
-        if LO1_code != last_LO1_code:
-            cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, LO1_code)    # Select LO1 with -4 dBm Rfout and frequency = LO1_code
-            time.sleep(0.0025)
-            last_LO1_code = LO1_code
-        cmd_proc.set_max2871_freq(LO2_code)
-        swept_frequencies_list.append(freq)                     # Frequencies needed for plotting
-        time.sleep(0.0025)
-        print(name, line(), '\t', f'RFin {freq} : LO1 {LO1_code*66} MHz : LO2 {round(fmn_to_MHz(LO2_code, ref_clock), 3)} MHz')
-
+    
+    plot_freq_list = [sa_control.set_frequency(freq) for freq in cfg.RFin_array[sweep_start : sweep_stop : sweep_step]]
     cmd_proc.sweep_end()   # Handshake signal to controller
-
-    print('Sweep complete')
+    print(f'Sweep complete for {len(plot_freq_list)} frequencies')
 
 
 # Find the highest signal amplitudes in a spectrum plot.

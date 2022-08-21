@@ -36,7 +36,7 @@ name = f'File \"{__name__}.py\",'
 
 import sys
 import numpy as np
-from multiprocessing import Process
+from multiprocessing import Process, freeze_support
 
 from PyQt6 import QtCore
 from PyQt6.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
@@ -341,7 +341,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
 
-
+if __name__ == '__main__':
+    freeze_support()
 
 
 

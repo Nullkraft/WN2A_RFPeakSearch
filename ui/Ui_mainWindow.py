@@ -367,9 +367,9 @@ class Ui_MainWindow(object):
         self.btnSweep = QtWidgets.QPushButton(self.groupBox_6)
         self.btnSweep.setObjectName("btnSweep")
         self.verticalLayout_3.addWidget(self.btnSweep)
-        self.btn_set_frequency = QtWidgets.QPushButton(self.groupBox_6)
-        self.btn_set_frequency.setObjectName("btn_set_frequency")
-        self.verticalLayout_3.addWidget(self.btn_set_frequency)
+        self.btn_test = QtWidgets.QPushButton(self.groupBox_6)
+        self.btn_test.setObjectName("btn_test")
+        self.verticalLayout_3.addWidget(self.btn_test)
         self.line_edit_cmd = QtWidgets.QLineEdit(self.groupBox_6)
         self.line_edit_cmd.setPlaceholderText("")
         self.line_edit_cmd.setObjectName("line_edit_cmd")
@@ -437,7 +437,7 @@ class Ui_MainWindow(object):
         self.btnExit.setText(_translate("MainWindow", "Exit"))
         self.btn_get_arduino_msg.setText(_translate("MainWindow", "Arduino Message"))
         self.btnSweep.setText(_translate("MainWindow", "Sweep"))
-        self.btn_set_frequency.setText(_translate("MainWindow", "Set Frequency"))
+        self.btn_test.setText(_translate("MainWindow", "Test"))
 from pyqtgraph import PlotWidget
 
 

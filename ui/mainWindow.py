@@ -39,11 +39,13 @@ import numpy as np
 from multiprocessing import Process, freeze_support
 
 from PyQt6 import QtCore
+#from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
 from PyQt6.QtWidgets import QMainWindow
 import pyqtgraph as pg
 
 from .Ui_mainWindow import Ui_MainWindow
+from ui.direct_programming import Dialog
 import spectrumAnalyzer as sa
 import command_processor as cmd_proc
 import serial_port as sp
@@ -336,7 +338,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if sa.sweep_step_size != step_in_MHz:
             sa.sweep_step_size = step_in_MHz
 
-
+    
+    @pyqtSlot()
+    def on_btn_test_clicked(self):
+        print('Test button clicked')
+        d = Dialog(self)
+        d.show()
 
 
 

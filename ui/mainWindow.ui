@@ -1099,9 +1099,9 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="btn_set_frequency">
+        <widget class="QPushButton" name="btn_test">
          <property name="text">
-          <string>Set Frequency</string>
+          <string>Test</string>
          </property>
         </widget>
        </item>

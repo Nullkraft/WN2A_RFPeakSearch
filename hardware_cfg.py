@@ -86,7 +86,7 @@ class cfg():
                 break
         Fpfd = ref_clock / R
         N = int(Fvco / Fpfd)
-        Fract = Fvco / Fpfd - N
+        Fract = round(Fvco / Fpfd - N, 9)
         for M in range(2, 4096):
             F = round(Fract * M)
             Err1 = abs(Fvco - (Fpfd * (N + F/M)))
@@ -94,6 +94,7 @@ class cfg():
                 max_error = Err1
                 best_F = F
                 best_M = M
+#        print(f'{LO2_target_freq_MHz} MHz : \t{N}, \t{best_F}, \t{best_M}')
         return best_F<<20 | best_M<<8 | N
 
 

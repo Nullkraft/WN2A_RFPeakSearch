@@ -99,7 +99,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_btnSweep_clicked(self):
         sp.ser.read(sp.ser.in_waiting)                                      # Clear out the serial buffer.
         self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
-        sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size, sa.ref_clock)
+        sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size)
 #        assert len(sa.swept_frequencies_list) != 0, "sa.swept_frequencies_list was empty"
 #        self.graphWidget.setXRange(sa.swept_frequencies_list[0], sa.swept_frequencies_list[-1])   # Limit plot to user selected frequency range
 

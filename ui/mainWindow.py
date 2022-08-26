@@ -342,9 +342,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     @pyqtSlot()
     def on_btn_test_clicked(self):
-        print('Test button clicked')
         d = Dialog(self)
         d.show()
+        print(name, line(), f'Len of control dict = {len(sa.full_sweep_dict)}')
+
 
 
 

@@ -28,13 +28,14 @@
 """
 import sys
 import time
-from math import ceil
 
 import numpy as np
 
 import command_processor as cmd_proc
 from hardware_cfg import cfg
 
+
+name = f'File \"{__name__}.py\",'
 
 def line() -> str:
     """
@@ -45,9 +46,6 @@ def line() -> str:
 
     """
     return f'line {str(sys._getframe(1).f_lineno)},'
-
-
-name = f'File \"{__name__}.py\",'
 
 
 ref_clock = cfg.ref_clock_1

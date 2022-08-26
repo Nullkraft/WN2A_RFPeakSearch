@@ -79,20 +79,28 @@ def load_control_dict(dict_name, file_name):
 
 
 class sa_control():
-    
+
     def __init__(self):
-        self.last_ref_clock = 0  # Decide if a new ref_clock code is to be sent
+        self.last_ref_code = 0  # Decide if a new ref_code is to be sent
         self.last_LO1_code = 0   # Decide if a new LO1_code is to be sent
         self.last_LO2_code = 0   # Decide if a new LO2_code is to be sent
         self.last_LO3_code = 0   # Decide if a new LO3_code is to be sent
 
-    
-    def set_reference(self, ref_clock: float):
-        if ref_clock != self.last_ref_clock:
-            cmd_proc.enable_ref_clock(ref_clock)
-            time.sleep(0.0025)  # Give the slow Arduino time to update the ref_clock selection
-            self.last_ref_clock = ref_clock
-            print(name, line(), f'New ref_clock set to {hex(ref_clock)}')
+
+    def set_reference(self, ref_code: int, last_ref_code: int=0) -> int:
+        """
+        Public set_reference send the hardware ref_code to select a reference oscillator
+        
+        @param ref_code The Command Code found in the Instruction List document
+        @type int
+        @param last_ref_code prevents sending ref_code if it's the same as last time (defaults to 0)
+        @type int (optional)
+        @return The new_code in ref_code so it can be saved to an external last_code
+        @rtype int
+        """
+        if ref_code != self.last_ref_code:
+            cmd_proc.enable_ref_clock(ref_code)
+        return ref_code
         
     
     def set_LO1(self, control_code: int, last_control_code: int=0) -> int:
@@ -109,8 +117,7 @@ class sa_control():
         """
         if control_code != last_control_code:
             cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, control_code) # Set to -4 dBm & freq=control_code
-            time.sleep(0.0025)  # Give the slow Arduino time to update the local oscillator, LO1
-            return control_code
+        return control_code
 
 
     def set_LO2(self, control_code: int, last_control_code: int=0) -> int:
@@ -127,8 +134,7 @@ class sa_control():
         """
         if control_code != last_control_code:
             cmd_proc.set_LO2(control_code)      # Set to freq=control_code
-            time.sleep(0.0025)  # Give the slow Arduino time to update the local oscillator, LO2
-            return control_code
+        return control_code
 
     
     def set_LO3(self, control_code: int, last_control_code: int=0) -> int:
@@ -145,34 +151,25 @@ class sa_control():
         """
         if control_code != last_control_code:
             cmd_proc.set_LO3(control_code)      # Set to freq=control_code
-            time.sleep(0.0025)  # Give the slow Arduino time to update the local oscillator, LO3
-            return control_code
+        return control_code
 
 
     # WHAT IF???
     def set_frequency(self, RFin_kHz: int):
-        ref, LO1_code, LO2_code = full_sweep_dict[RFin_kHz]
-        self.set_reference(ref);
+        ref_code, LO1_code, LO2_code = full_sweep_dict[RFin_kHz]    # Get new hardware control codes
+        self.last_ref_code = self.set_reference(ref_code);
         self.last_LO1_code = self.set_LO1(LO1_code, self.last_LO1_code)
         self.last_LO2_code = self.set_LO2(LO2_code, self.last_LO2_code)
 
 
-def sweep(start_freq, stop_freq, step_freq, ref_clock):
+def sweep(sweep_start, sweep_stop, sweep_step):
     """
-    Function sweep() : Search the input for any or all RF signals
-    sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size, sa.ref_clock)
+    Function sweep() : Search the RF input for any or all RF signals
     """
-    
-    sweep_start = round(start_freq * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
-    sweep_stop = round(stop_freq * 1000)  # kHz - Needs to be integer for slicing the RFin_array (list)
-    sweep_step = ceil((sweep_stop - sweep_start) / sweep_num_steps)         # Slightly larger step forces python to go beyond sweep_stop
-    sweep_stop = ceil(sweep_stop / sweep_step_size) * sweep_step_size   # ceil() ensures ending after sweep_stop
-
-    # Perform the sweep
+    cmd_proc.disable_LO3_RFout()
     cmd_proc.sel_315MHz_adc()                                   # Select for LO2 output data
     cmd_proc.set_LO2(cmd_proc.LO2_neg4dBm)                      # Bring the LO2 online
-    cmd_proc.disable_LO3_RFout()
-    
+
     plot_freq_list = [sa_control.set_frequency(freq) for freq in cfg.RFin_array[sweep_start : sweep_stop : sweep_step]]
     cmd_proc.sweep_end()   # Handshake signal to controller
     print(f'Sweep complete for {len(plot_freq_list)} frequencies')

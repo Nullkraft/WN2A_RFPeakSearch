@@ -89,8 +89,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # sa.full_sweep_dict contains values for ref_clock, LO1, LO2, 
         # and LO3 used for controlling the hardware.
         # Loading sa.full_sweep_dict in a separate process speeds up the app load.
-        process = Process(target=sa.load_control_dict, args=(sa.full_sweep_dict, 'full_control_ref1.csv'))
-        process.start()
+        sa.load_control_dict(sa.full_sweep_dict, 'full_control_ref1.csv')
+##        process = Process(target=sa.load_control_dict, args=(sa.full_sweep_dict, 'full_control_ref1.csv'))
+##        process.start()
 #
 
 

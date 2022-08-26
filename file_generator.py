@@ -81,24 +81,25 @@ class data_generator():
 
     def create_data(self) -> None:
         # Create the list of LO1 frequencies when using reference clock 1.
-        self.LO1_ref1_freq_list = [int((cfg.IF1 + freq) / cfg.Fpfd1) * cfg.Fpfd1 for freq in self.RFin_array]
+        hw = cfg()  # WTF??? Why?
+        self.LO1_ref1_freq_list = [cfg.LO1_frequency(hw, RFin, cfg.Fpfd1) for RFin in self.RFin_array]
         self.LO1_ref1_freq_list = [round(x, 9) for x in self.LO1_ref1_freq_list]
         # Create the list of LO1 frequencies when using reference clock 2.
-        self.LO1_ref2_freq_list = [int((cfg.IF1 + freq) / cfg.Fpfd2) * cfg.Fpfd2 for freq in self.RFin_array]
+        self.LO1_ref2_freq_list = [cfg.LO1_frequency(hw, RFin, cfg.Fpfd2) for RFin in self.RFin_array]
         self.LO1_ref2_freq_list = [round(x, 9) for x in self.LO1_ref2_freq_list]
         # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 1
-        self.LO1_ref1_N_list = [int(n/cfg.Fpfd1) for n in self.LO1_ref1_freq_list]
+        self.LO1_ref1_N_list = [int(LO1_freq/cfg.Fpfd1) for LO1_freq in self.LO1_ref1_freq_list]
         # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 2
-        self.LO1_ref2_N_list = [int(n/cfg.Fpfd2) for n in self.LO1_ref2_freq_list]
+        self.LO1_ref2_N_list = [int(LO1_freq/cfg.Fpfd2) for LO1_freq in self.LO1_ref2_freq_list]
         # Create the frequency lookup tables for LO1
         self.LO1_ref1_freq_dict = dict(zip(self.RFin_array, self.LO1_ref1_freq_list))
         self.LO1_ref2_freq_dict = dict(zip(self.RFin_array, self.LO1_ref2_freq_list))
         # Create the frequency lookup tables for LO2. (LO2_freq = LO1 - freq + cfg.IF2)
-        self.LO2_ref1_freq_list = [self.LO1_ref1_freq_dict[freq] - freq + cfg.IF2 for freq in self.RFin_array]
-        self.LO2_ref2_freq_list = [self.LO1_ref2_freq_dict[freq] - freq + cfg.IF2 for freq in self.RFin_array]
+        self.LO2_ref1_freq_list = [self.LO1_ref1_freq_dict[RFin] - RFin + cfg.IF2 for RFin in self.RFin_array]
+        self.LO2_ref2_freq_list = [self.LO1_ref2_freq_dict[RFin] - RFin + cfg.IF2 for RFin in self.RFin_array]
         # Create the LO2 control codes for setting the frequency of the MAX2871 chip for ref clocks 1 and 2
-        self.LO2_ref1_fmn_list = [cfg.MHz_to_fmn(freq, cfg.ref_clock_1) for freq in self.LO2_ref1_freq_list]
-        self.LO2_ref2_fmn_list = [cfg.MHz_to_fmn(freq, cfg.ref_clock_2) for freq in self.LO2_ref2_freq_list]
+        self.LO2_ref1_fmn_list = [cfg.MHz_to_fmn(LO2_freq, cfg.ref_clock_1) for LO2_freq in self.LO2_ref1_freq_list]
+        self.LO2_ref2_fmn_list = [cfg.MHz_to_fmn(LO2_freq, cfg.ref_clock_2) for LO2_freq in self.LO2_ref2_freq_list]
 
     def save_data_files(self) -> None:
         """Save LO1 and LO2 data for ref1 and ref2."""

@@ -69,6 +69,12 @@ class cfg():
             RFin_array.append(RFin)
 
 
+    def LO1_frequency(self, RFin, Fref) -> int:
+        Fpfd = Fref     # Fpfd1 = 66.0 and Fpfd2 = 66.666 MHz
+        LO1_freq = int((cfg.IF1 + RFin) / Fpfd) * Fpfd
+        return LO1_freq
+
+
     @njit(nogil=True)
     def MHz_to_fmn(LO2_target_freq_MHz, ref_clock) -> int:
         """ Form a 32 bit word containing F, M and N for the MAX2871.

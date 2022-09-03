@@ -2,7 +2,7 @@
   "header": {
     "comment": "eric project file for project WN2A_RFPeakSearch",
     "copyright": "Copyright (C) 2022 , ",
-    "saved": "2022-08-20, 12:42:53"
+    "saved": "2022-09-03, 13:47:58"
   },
   "project": {
     "AUTHOR": "",
@@ -143,6 +143,7 @@
       "makefile": "OTHERS"
     },
     "FORMS": [
+      "ui/direct_programming.ui",
       "ui/mainWindow.ui"
     ],
     "HASH": "cc314ccb2d527422dc963ea5c87fed29f1ba2837",
@@ -185,7 +186,9 @@
       "main.py",
       "serial_port.py",
       "spectrumAnalyzer.py",
+      "ui/Ui_direct_programming.py",
       "ui/Ui_mainWindow.py",
+      "ui/direct_programming.py",
       "ui/mainWindow.py",
       "z_scratch.py"
     ],

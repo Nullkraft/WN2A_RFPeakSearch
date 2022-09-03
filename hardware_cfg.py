@@ -61,12 +61,12 @@ class cfg():
     _RFin_stop:  float = 3000.001               # Maximum hardware bandwidth 
     _RFin_step:  float = 0.001                  #
     
-    # RFin_array contains every frequency from 0 to 3000.0 MHz in 1 kHz steps
-    RFin_array = list()
+    # RFin_list contains every frequency from 0 to 3000.0 MHz in 1 kHz steps
+    RFin_list = list()
     with open('RFin_steps.csv', 'r') as f:
         for freq in f:
             RFin = float(freq)
-            RFin_array.append(RFin)
+            RFin_list.append(RFin)
 
 
     def LO1_frequency(self, RFin, Fref) -> int:
@@ -96,11 +96,11 @@ class cfg():
         for M in range(2, 4096):
             F = round(Fract * M)
             Err1 = abs(Fvco - (Fpfd * (N + F/M)))
-            if Err1 < max_error:
+            if Err1 <= max_error:   # <= selects highest value of Best_M, more accurate target freq
                 max_error = Err1
                 best_F = F
                 best_M = M
-#        print(f'{LO2_target_freq_MHz} MHz : \t{N}, \t{best_F}, \t{best_M}')
+#        print(f'{LO2_target_freq_MHz} MHz : \tN:{N}, \tF:{best_F}, \tM:{best_M}')
         return best_F<<20 | best_M<<8 | N
 
 

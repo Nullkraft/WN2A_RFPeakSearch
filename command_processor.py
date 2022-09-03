@@ -40,7 +40,6 @@ Functions:
     enable_ref_clock(ref_clock_command)
     sel_315MHz_adc()
     sel_45MHz_adc()
-    sweep_start()
     sweep_end()
     _send_command(command)
 Misc variables:
@@ -246,11 +245,6 @@ def sel_315MHz_adc() -> None:
 def sel_45MHz_adc() -> None:
     """Select the 45MHz bandwidth output and selects the A2D for reading the output amplitude."""
     _send_command(sel_adc_LO3)
-
-
-def sweep_start() -> None:
-    """Serial data stream start command when sweeping LO2 or LO3."""
-    _send_command(block_xfer_start)
 
 
 def sweep_end() -> None:

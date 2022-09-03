@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1533</width>
-    <height>1352</height>
+    <height>1140</height>
    </rect>
   </property>
   <property name="palette">
@@ -1026,7 +1026,7 @@
           <bool>true</bool>
          </property>
          <property name="text">
-          <string>Trigger</string>
+          <string>Serial End Msg</string>
          </property>
         </widget>
        </item>

@@ -12,7 +12,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1533, 1352)
+        MainWindow.resize(1533, 1140)
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
@@ -433,7 +433,7 @@ class Ui_MainWindow(object):
         self.chkFracOpt.setText(_translate("MainWindow", "Fractional Optimization"))
         self.selectSweepFrequency.setText(_translate("MainWindow", "Sweep"))
         self.selectFixedFrequency.setText(_translate("MainWindow", "Fixed"))
-        self.btnTrigger.setText(_translate("MainWindow", "Trigger"))
+        self.btnTrigger.setText(_translate("MainWindow", "Serial End Msg"))
         self.btnExit.setText(_translate("MainWindow", "Exit"))
         self.btn_get_arduino_msg.setText(_translate("MainWindow", "Arduino Message"))
         self.btnSweep.setText(_translate("MainWindow", "Sweep"))

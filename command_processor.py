@@ -90,8 +90,9 @@ LO2_neg1dBm       = 0x1AFF   #         .
 LO2_pos2dBm       = 0x22FF   #         .
 LO2_pos5dBm       = 0x2AFF   #         .
 LO2_num_steps     = 0x32FF   # Change num freq steps only
-LO2_mux_tristate  = 0x3AFF   # Disable or rather set tristate on the mux pin
+LO2_mux_tristate  = 0x3AFF   # Set tristate on the mux pin
 LO2_mux_dig_lock  = 0x42FF   # Enable digital lock detect on the mux pin
+LO2_divider_mode  = 0x4AFF   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 16, 32, 64, or 128
 
 LO3_device_sel    = 0x03FF   # Select device before sending a General Command
 LO3_RF_off        = 0x0BFF   # Specific commands
@@ -100,8 +101,9 @@ LO3_neg1dBm       = 0x1BFF   #         .
 LO3_pos2dBm       = 0x23FF   #         .
 LO3_pos5dBm       = 0x2BFF   #         .
 LO3_num_steps     = 0x33FF   # Change num freq steps only
-LO3_mux_tristate  = 0x3BFF   # Disable or rather set tristate on the mux pin
+LO3_mux_tristate  = 0x3BFF   # Set tristate on the mux pin
 LO3_mux_dig_lock  = 0x43FF   # Enable digital lock detect on the mux pin
+LO3_divider_mode  = 0x4BFF   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 16, 32, 64, or 128
 
 # Reference clock Device Commands
 all_ref_disable   = 0x04FF

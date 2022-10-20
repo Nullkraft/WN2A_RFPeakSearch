@@ -36,7 +36,6 @@ name = f'File \"{__name__}.py\",'
 
 import sys
 import numpy as np
-from multiprocessing import Process, freeze_support
 
 from PyQt6 import QtCore
 #from PyQt6 import QtCore, QtWidgets
@@ -49,6 +48,9 @@ from ui.direct_programming import Dialog
 import spectrumAnalyzer as sa
 import command_processor as cmd_proc
 import serial_port as sp
+
+
+last_center_MHz_value = 0
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -97,11 +99,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
+        print()
         sp.ser.read(sp.ser.in_waiting)                                      # Clear out the serial buffer.
         self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
-        sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size)
-#        assert len(sa.swept_frequencies_list) != 0, "sa.swept_frequencies_list was empty"
-#        self.graphWidget.setXRange(sa.swept_frequencies_list[0], sa.swept_frequencies_list[-1])   # Limit plot to user selected frequency range
+        sa.sa_control().sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size)
 
     def serial_read_thread(self):
         """
@@ -117,8 +118,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.worker.finished.connect(self.plot_ampl_data)
             self.thread.finished.connect(self.thread.deleteLater)
             self.thread.start()                                   # After starting the thread...
-            self.btnTrigger.setEnabled(False)                     # disable the Trigger button until we're done
-            self.thread.finished.connect(lambda: self.btnTrigger.setEnabled(True))
+#            self.btnSweep.setEnabled(False)                       # disable the sweep button until we're done
+#            self.thread.finished.connect(lambda: self.btnSweep.setEnabled(True))
         else:
             print('')
             print('     You have to open the serial port.')
@@ -145,17 +146,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_selectReferenceOscillator_currentIndexChanged(self, selected_ref_clock):
         sa.set_reference_clock(selected_ref_clock)
         
-    # amplitude was collected as a bunch of linear 16-bit A/D values
+    # amplitude is collected as a bunch of linear 16-bit A/D values
     def plot_ampl_data(self, amplBytes):
         self.amplitude = []       # Declare amplitude storage that will allow appending
+        self.amplitude.clear()
         nBytes = len(amplBytes)
         # Convert two 8-bit serial bytes into one 16 bit amplitude.
         for x in range(0, nBytes, 2):
             ampl = amplBytes[x] | (amplBytes[x+1] << 8)
             volts = (ampl/1024) * 5
             self.amplitude.append(volts)
-        assert len(sa.swept_frequencies_list)==len(self.amplitude)
-        self.dataLine.setData(sa.swept_frequencies_list, self.amplitude, pen=(155,155,255))
+        bytes_list = amplBytes
+        bytes_list = list(bytes_list)
+        sz_freq_list = len(sa.swept_freq_list)
+        sz_ampl_list = len(self.amplitude)
+##        assert(sz_freq_list == sz_ampl_list)
+        if sz_freq_list > sz_ampl_list:
+            sa.swept_freq_list = sa.swept_freq_list[0:sz_ampl_list]
+        if sz_ampl_list > sz_freq_list:
+            self.amplitude = self.amplitude[0:sz_freq_list]
+        self.graphWidget.setXRange(sa.swept_freq_list[0], sa.swept_freq_list[-1])   # Limit plot to user selected frequency range
+        self.dataLine.setData(sa.swept_freq_list, self.amplitude, pen=(155,155,255))
+        self.amplitude.clear()
 
     @pyqtSlot()
     def on_btnPeakSearch_clicked(self):
@@ -320,24 +332,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     @pyqtSlot()
     def on_floatStartMHz_editingFinished(self):
-        start_in_MHz = self.floatStartMHz.value()
-        # Only update sa.sweep_start if the value() has changed
-        if sa.sweep_start != start_in_MHz:
-            sa.sweep_start = start_in_MHz
+        sa.sweep_start = self.floatStartMHz.value()
+        num_steps = (sa.sweep_stop - sa.sweep_start) / sa.sweep_step_size
+        self.numFrequencySteps.setValue(num_steps)
+
 
     @pyqtSlot()
     def on_floatStopMHz_editingFinished(self):
-        stop_in_MHz = self.floatStopMHz.value()
-        # Only update sa.sweep_stop if the value() has changed
-        if sa.sweep_stop != stop_in_MHz:
-           sa.sweep_stop = stop_in_MHz
+        sa.sweep_stop = self.floatStopMHz.value()
+        num_steps = (sa.sweep_stop - sa.sweep_start) / sa.sweep_step_size
+        self.numFrequencySteps.setValue(num_steps)
+
     
     @pyqtSlot()
     def on_intStepKHz_editingFinished(self):
-        step_in_MHz = self.intStepKHz.value()
-        # Only update sa.sweep_step_size if the value() has changed
-        if sa.sweep_step_size != step_in_MHz:
-            sa.sweep_step_size = step_in_MHz
+        MHz = 1000
+        sa.sweep_step_size = round(self.intStepKHz.value() / MHz, 3)
+        num_steps = (sa.sweep_stop - sa.sweep_start) / sa.sweep_step_size
+        self.numFrequencySteps.setValue(num_steps)
 
     
     @pyqtSlot()
@@ -345,13 +357,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         d = Dialog(self)
         d.show()
         print(name, line(), f'Len of control dict = {len(sa.full_sweep_dict)}')
+    
+
+    @pyqtSlot()
+    def on_dblCenterMHz_editingFinished(self):
+        """
+        Public slot What happens if I try to run it a second time.
+        """
+        global last_center_MHz_value
+        if self.dblCenterMHz.value() != last_center_MHz_value:
+            sa.sa_control().set_center_freq(self.dblCenterMHz.value())
+            last_center_MHz_value = self.dblCenterMHz.value()
+        else:
+            pass
 
 
 
 
 
 if __name__ == '__main__':
-    freeze_support()
+    print()
+#    freeze_support()
 
 
 

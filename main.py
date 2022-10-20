@@ -22,16 +22,24 @@
 from ui.mainWindow import MainWindow
 from PyQt6 import QtWidgets             # requires 'pip install pyqtgraph'
 import sys
+from loguru import logger   # https://pypi.org/project/loguru/
+
+
+@logger.catch
+def main():
+    logger.add(sys.stdout, colorize=True, format="{level} {message}", filter="my_module", level="INFO")
+    app = QtWidgets.QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    logger.info("That's it, logger seems to be working.")
+    sys.exit(app.exec())    # Using sys.exit() takes the return code from app.exec() and sends it to the command line.
+                            # app.exec() starts the event loop.
+
 
 # Start Qt event loop unless running in interactive mode or using pyside.
 if __name__ == '__main__':
     print()
-    app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())    # Using sys.exit() takes the return code from app.exec() and sends it to the command line.
-                            # app.exec() starts the event loop.
-
+    main()
 
 """ NEXT:
     Perform a sweep using full_sweep_dict

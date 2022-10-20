@@ -49,17 +49,20 @@ def line() -> str:
 
 
 ref_clock = cfg.ref_clock_1
+sweep_step_size = 0.25
 sweep_start = 4.0
-sweep_stop = 3000.0
-sweep_step_size = 250
+sweep_stop = 3000.0 + sweep_step_size
 sweep_num_steps = 1601
 
-last_sweep_start = 4.0
-last_sweep_stop = 3000.0
-last_sweep_step = 250
+last_sweep_start = 0.0
+last_sweep_stop = 9999.0
+last_sweep_step = 0.0
 full_sweep_dict = {}    # Dictionary of ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
 
-swept_frequencies_list = []     # The collected list of swept frequencies used for plotting amplitude vs. frequency
+amplitude_list = []     # The collected list of swept frequencies used for plotting amplitude vs. frequency
+swept_freq_list = []    # The list of frequencies that the user requested to be swept
+
+    
 
 def load_control_dict(dict_name, file_name):
     """
@@ -81,13 +84,12 @@ def load_control_dict(dict_name, file_name):
 class sa_control():
 
     def __init__(self):
-        self.last_ref_code = 0  # Decide if a new ref_code is to be sent
+        self.last_ref_code = 0   # Decide if a new ref_code is to be sent
         self.last_LO1_code = 0   # Decide if a new LO1_code is to be sent
         self.last_LO2_code = 0   # Decide if a new LO2_code is to be sent
         self.last_LO3_code = 0   # Decide if a new LO3_code is to be sent
 
-
-    def set_reference(self, ref_code: int, last_ref_code: int=0) -> int:
+    def set_reference(self, ref_code: int, last_ref_code: int=0):
         """
         Public set_reference send the hardware ref_code to select a reference oscillator
         
@@ -96,14 +98,13 @@ class sa_control():
         @param last_ref_code prevents sending ref_code if it's the same as last time (defaults to 0)
         @type int (optional)
         @return The new_code in ref_code so it can be saved to an external last_code
-        @rtype int
         """
-        if ref_code != self.last_ref_code:
+        if ref_code != last_ref_code:
             cmd_proc.enable_ref_clock(ref_code)
-        return ref_code
+            self.last_ref_code = ref_code
         
     
-    def set_LO1(self, control_code: int, last_control_code: int=0) -> int:
+    def set_LO1(self, control_code: int, last_control_code: int=0):
         """
         Public set_LO1 sends the hardware control_code to set LO1's frequency
 
@@ -112,15 +113,13 @@ class sa_control():
         @param last_control_code prevents sending N if it's the same as last time (defaults to 0)
         @type int (optional)
         @return The new_code in N so it can be saved to an external last_code
-        @rtype int
-
         """
         if control_code != last_control_code:
             cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, control_code) # Set to -4 dBm & freq=control_code
-        return control_code
+            self.last_LO1_code = control_code
 
 
-    def set_LO2(self, control_code: int, last_control_code: int=0) -> int:
+    def set_LO2(self, control_code: int, last_control_code: int=0):
         """
         Public set_LO2 sends the hardware control_code to set LO2's frequency
 
@@ -129,12 +128,11 @@ class sa_control():
         @param last_control_code prevents sending FMN if it's the same as last time (defaults to 0)
         @type int (optional)
         @return The new_code in FMN so it can be saved to an external last_code
-        @rtype int
-
         """
-        if control_code != last_control_code:
-            cmd_proc.set_LO2(control_code)      # Set to freq=control_code
-        return control_code
+        cmd_proc.set_LO2(control_code)      # Set to freq=control_code
+##        if control_code != last_control_code:
+##            cmd_proc.set_LO2(control_code)      # Set to freq=control_code
+##            self.last_LO2_code = control_code
 
     
     def set_LO3(self, control_code: int, last_control_code: int=0) -> int:
@@ -146,33 +144,46 @@ class sa_control():
         @param last_control_code prevents sending FMN if it's the same as last time (defaults to 0)
         @type int (optional)
         @return The new_code in FMN so it can be saved to an external last_code
-        @rtype int
-
         """
         if control_code != last_control_code:
             cmd_proc.set_LO3(control_code)      # Set to freq=control_code
         return control_code
 
 
-    # WHAT IF???
-    def set_frequency(self, RFin_kHz: int):
-        ref_code, LO1_code, LO2_code = full_sweep_dict[RFin_kHz]    # Get new hardware control codes
-        self.last_ref_code = self.set_reference(ref_code);
-        self.last_LO1_code = self.set_LO1(LO1_code, self.last_LO1_code)
-        self.last_LO2_code = self.set_LO2(LO2_code, self.last_LO2_code)
+    def sweep(self, sweep_start, sweep_stop, sweep_step):
+        """
+        Function sweep() : Search the RF input for any or all RF signals
+        """
+        global swept_freq_list
+        swept_freq_list = np.around(np.arange(sweep_start, sweep_stop, sweep_step), 3)
+##        cmd_proc.disable_LO3_RFout()
+        cmd_proc.sel_315MHz_adc()                                   # Also selects ADC for LO2 output
+        time.sleep(.004)
+        self.set_LO2(cmd_proc.LO2_mux_dig_lock)
+        time.sleep(.004)
+        for freq in swept_freq_list:
+            ref_code, LO1_N_code, LO2_fmn_code = full_sweep_dict[freq]    # Get hardware control codes
+            self.set_reference(ref_code, self.last_ref_code);
+            self.set_LO1(LO1_N_code, self.last_LO1_code)
+            cmd_proc.sel_LO2()
+            self.set_LO2(LO2_fmn_code, self.last_LO2_code)
+            time.sleep(.002)
+        print(name, line(), 'Sweep complete')
+        cmd_proc.sweep_end()   # Handshake signal to controller
 
 
-def sweep(sweep_start, sweep_stop, sweep_step):
-    """
-    Function sweep() : Search the RF input for any or all RF signals
-    """
-    cmd_proc.disable_LO3_RFout()
-    cmd_proc.sel_315MHz_adc()                                   # Select for LO2 output data
-    cmd_proc.set_LO2(cmd_proc.LO2_neg4dBm)                      # Bring the LO2 online
+    def set_center_freq(self, freq: float):
+        """
+        Function set_center_freq() : Set SpecAnn to a given RFin.
+        """
+#        cmd_proc.disable_LO3_RFout()
+        cmd_proc.enable_ref_clock(cmd_proc.ref_clock1_enable)
+        cmd_proc.sel_315MHz_adc()   # Selects LO2 path
+        ref_code, LO1_N_code, LO2_fmn_code = full_sweep_dict[freq]    # Get hardware control codes
+        self.set_LO1(LO1_N_code, self.last_LO1_code)
+        cmd_proc.sel_LO2()
+        self.set_LO2(LO2_fmn_code, self.last_LO2_code)
 
-    plot_freq_list = [sa_control.set_frequency(freq) for freq in cfg.RFin_array[sweep_start : sweep_stop : sweep_step]]
-    cmd_proc.sweep_end()   # Handshake signal to controller
-    print(f'Sweep complete for {len(plot_freq_list)} frequencies')
 
 
 # Find the highest signal amplitudes in a spectrum plot.
@@ -200,7 +211,7 @@ def is_peak(amplitude_list, idx):
         return (amplitude_list[idx-1] + plus_delta) < amplitude_list[idx] > (amplitude_list[idx+1] + plus_delta)
 
 
-def fmn_to_MHz(fmn_word, Fpfd=33.0):
+def fmn_to_MHz(fmn_word, Fpfd=66.0):
     """
     Function: fmn_to_freq is a utility for verifying that your fmn value
               correctly matches the frequency that you think it does.
@@ -214,9 +225,9 @@ def fmn_to_MHz(fmn_word, Fpfd=33.0):
     F = fmn_word >> 20
     M = (fmn_word & 0xFFFFF) >> 8
     if M == 0:
-        print(fmn_word)
+        print(name, line(), fmn_word)
     N = fmn_word & 0xFF
-    print(name, line(), '\t', f'F = {F} : M = {M} : N = {N}')
+#    print(name, line(), '\t', f'F = {F} : M = {M} : N = {N}')
     return Fpfd * (N + F/M)
 
 
@@ -238,7 +249,7 @@ def toggle_arduino_led(on_off):
 
 
 def get_version_message():
-    print(name, line(), f'Arduino Message = {cmd_proc.get_version_message()}')
+    print(name, line(), f'Packets rcvd = {cmd_proc.get_version_message()}')
 
 
 def set_attenuator(dB):

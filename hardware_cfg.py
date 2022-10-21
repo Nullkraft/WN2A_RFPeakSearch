@@ -38,11 +38,6 @@ def line() -> str:
 name = f'File \"{__name__}.py\",'
 
 
-@njit(nogil=True)
-def round9(freq):
-    return round(freq, 9)
-
-
 @dataclass
 class cfg():
     ref_clock_1 = 66.000

@@ -298,7 +298,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         @type double
         """
         dB = float(self.dbl_attenuator_dB.value())      # Read attenuator value from user control
-        sa.set_attenuator(dB)
+        sa.sa_control().set_attenuator(dB)
 
     @pyqtSlot()
     def on_btn_open_serial_port_clicked(self):

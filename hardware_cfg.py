@@ -22,7 +22,7 @@
 import sys
 from numba import njit
 from dataclasses import dataclass
-
+from enum import Enum
 
 def line() -> str:
     """
@@ -36,6 +36,13 @@ def line() -> str:
 
 
 name = f'File \"{__name__}.py\",'
+
+class device(Enum):
+    """ Which of the SPI capable chips is selected"""
+    ATTENUATOR = 0
+    LO1 = 1
+    LO2 = 2
+    LO3 = 3
 
 
 @dataclass

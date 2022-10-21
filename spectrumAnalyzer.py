@@ -18,13 +18,10 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-
 """ Spectrum Analyzer Notes:
-
-    LO1 = int({IF1 + RFin} - [{IF1 + RFin} / Fpfd])
-    LO2 = LO1 - RFin + IF2
-    RFin = LO1 + IF2 - LO2
-    
+    LO1_freq = int({IF1 + RFin} - [{IF1 + RFin} / Fpfd])
+    LO2_freq = LO1_freq - RFin + IF2
+    RFin = LO1_freq + IF2 - LO2_freq
 """
 import sys
 import time
@@ -32,7 +29,7 @@ import time
 import numpy as np
 
 import command_processor as cmd_proc
-from hardware_cfg import cfg
+from hardware_cfg import cfg, device
 
 
 name = f'File \"{__name__}.py\",'
@@ -62,7 +59,6 @@ full_sweep_dict = {}    # Dictionary of ref_clock, LO1, LO2, and LO3 from 0 to 3
 amplitude_list = []     # The collected list of swept frequencies used for plotting amplitude vs. frequency
 swept_freq_list = []    # The list of frequencies that the user requested to be swept
 
-LO2_selected = False
 
 def load_control_dict(dict_name, file_name):
     """
@@ -84,10 +80,9 @@ def load_control_dict(dict_name, file_name):
 class sa_control():
 
     def __init__(self):
+        self.selected_device = device.LO2
         self.last_ref_code = 0   # Decide if a new ref_code is to be sent
         self.last_LO1_code = 0   # Decide if a new LO1_code is to be sent
-        self.last_LO2_code = 0   # Decide if a new LO2_code is to be sent
-        self.last_LO3_code = 0   # Decide if a new LO3_code is to be sent
 
     def set_reference(self, ref_code: int, last_ref_code: int=0):
         """
@@ -103,6 +98,11 @@ class sa_control():
             cmd_proc.enable_ref_clock(ref_code)
             self.last_ref_code = ref_code
         
+
+    def set_attenuator(self, dB):
+        cmd_proc.set_attenuator(dB)
+        self.selected_device = device.ATTENUATOR   # Update currently selected device to Attenuator
+
     
     def set_LO1(self, control_code: int, last_control_code: int=0):
         """
@@ -114,14 +114,13 @@ class sa_control():
         @type int (optional)
         @return The new_code in N so it can be saved to an external last_code
         """
-        global LO2_selected
         if control_code != last_control_code:
             cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, control_code) # Set to -4 dBm & freq=control_code
             self.last_LO1_code = control_code
-            LO2_selected = False
+            self.selected_device = device.LO1   # Update currently selected device to LO1
 
 
-    def set_LO2(self, control_code: int, last_control_code: int=0):
+    def set_LO2(self, control_code: int):
         """
         Public set_LO2 sends the hardware control_code to set LO2's frequency
 
@@ -129,14 +128,14 @@ class sa_control():
         @type int
         @param last_control_code prevents sending FMN if it's the same as last time (defaults to 0)
         @type int (optional)
-        @return The new_code in FMN so it can be saved to an external last_code
         """
-        global LO2_selected
+        if self.selected_device is not device.LO2:
+            cmd_proc.sel_LO2()
+            self.selected_device = device.LO2   # Update currently selected device to LO2
         cmd_proc.set_LO2(control_code)      # Set to freq=control_code
-        LO2_selected = True
 
     
-    def set_LO3(self, control_code: int, last_control_code: int=0) -> int:
+    def set_LO3(self, control_code: int, last_control_code: int=0):
         """
         Public set_LO3 sends the hardware control_code to set LO3's frequency
 
@@ -144,11 +143,11 @@ class sa_control():
         @type int
         @param last_control_code prevents sending FMN if it's the same as last time (defaults to 0)
         @type int (optional)
-        @return The new_code in FMN so it can be saved to an external last_code
         """
-        if control_code != last_control_code:
-            cmd_proc.set_LO3(control_code)      # Set to freq=control_code
-        return control_code
+        if self.selected_device is not device.LO3:
+            cmd_proc.sel_LO3()
+            self.selected_device = device.LO3   # Update currently selected device to LO3
+        cmd_proc.set_LO3(control_code)      # Set to freq=control_code
 
 
     def sweep(self, sweep_start, sweep_stop, sweep_step):
@@ -160,18 +159,18 @@ class sa_control():
         
         swept_freq_list = np.around(np.arange(sweep_start, sweep_stop, sweep_step), 3)
 ##        cmd_proc.disable_LO3_RFout()
-        cmd_proc.sel_315MHz_adc()                                   # Also selects ADC for LO2 output
+        cmd_proc.sel_315MHz_adc()
         time.sleep(.004)
+        cmd_proc.sel_LO2()
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
         time.sleep(.004)
         for freq in swept_freq_list:
             ref_code, LO1_N_code, LO2_fmn_code = full_sweep_dict[freq]    # Get hardware control codes
             self.set_reference(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
-            if LO2_selected == False:
-                cmd_proc.sel_LO2()
-            self.set_LO2(LO2_fmn_code, self.last_LO2_code)
+            self.set_LO2(LO2_fmn_code)
             time.sleep(.002)
+        self.set_LO2(cmd_proc.LO2_mux_tristate)
         print(name, line(), 'Sweep complete')
         cmd_proc.sweep_end()   # Handshake signal to controller
 
@@ -256,8 +255,6 @@ def get_version_message():
     print(name, line(), f'Packets rcvd = {cmd_proc.get_version_message()}')
 
 
-def set_attenuator(dB):
-    cmd_proc.set_attenuator(dB)
 
 
 def set_reference_clock(clock_id):

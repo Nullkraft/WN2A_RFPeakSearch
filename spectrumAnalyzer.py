@@ -62,7 +62,7 @@ full_sweep_dict = {}    # Dictionary of ref_clock, LO1, LO2, and LO3 from 0 to 3
 amplitude_list = []     # The collected list of swept frequencies used for plotting amplitude vs. frequency
 swept_freq_list = []    # The list of frequencies that the user requested to be swept
 
-    
+LO2_selected = False
 
 def load_control_dict(dict_name, file_name):
     """
@@ -114,9 +114,11 @@ class sa_control():
         @type int (optional)
         @return The new_code in N so it can be saved to an external last_code
         """
+        global LO2_selected
         if control_code != last_control_code:
             cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, control_code) # Set to -4 dBm & freq=control_code
             self.last_LO1_code = control_code
+            LO2_selected = False
 
 
     def set_LO2(self, control_code: int, last_control_code: int=0):
@@ -129,10 +131,9 @@ class sa_control():
         @type int (optional)
         @return The new_code in FMN so it can be saved to an external last_code
         """
+        global LO2_selected
         cmd_proc.set_LO2(control_code)      # Set to freq=control_code
-##        if control_code != last_control_code:
-##            cmd_proc.set_LO2(control_code)      # Set to freq=control_code
-##            self.last_LO2_code = control_code
+        LO2_selected = True
 
     
     def set_LO3(self, control_code: int, last_control_code: int=0) -> int:
@@ -155,6 +156,8 @@ class sa_control():
         Function sweep() : Search the RF input for any or all RF signals
         """
         global swept_freq_list
+        global LO2_selected
+        
         swept_freq_list = np.around(np.arange(sweep_start, sweep_stop, sweep_step), 3)
 ##        cmd_proc.disable_LO3_RFout()
         cmd_proc.sel_315MHz_adc()                                   # Also selects ADC for LO2 output
@@ -165,7 +168,8 @@ class sa_control():
             ref_code, LO1_N_code, LO2_fmn_code = full_sweep_dict[freq]    # Get hardware control codes
             self.set_reference(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
-            cmd_proc.sel_LO2()
+            if LO2_selected == False:
+                cmd_proc.sel_LO2()
             self.set_LO2(LO2_fmn_code, self.last_LO2_code)
             time.sleep(.002)
         print(name, line(), 'Sweep complete')

@@ -36,15 +36,14 @@ name = f'File \"{__name__}.py\",'
 
 import sys
 import numpy as np
+import keyboard
 
-from PyQt6 import QtCore
-#from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
 from PyQt6.QtWidgets import QMainWindow
 import pyqtgraph as pg
 
 from .Ui_mainWindow import Ui_MainWindow
-from ui.direct_programming import Dialog
 import spectrumAnalyzer as sa
 import command_processor as cmd_proc
 import serial_port as sp
@@ -99,10 +98,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
-        print()
-        sp.ser.read(sp.ser.in_waiting)                                      # Clear out the serial buffer.
+        self.label_sweep_status.setText("Sweep in progress...")
+        QtGui.QGuiApplication.processEvents()
+        sp.ser.read(sp.ser.in_waiting)         # Clear out the serial buffer.
         self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
         sa.sa_control().sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size)
+        self.label_sweep_status.setText("Sweep complete")
+        QtGui.QGuiApplication.processEvents()
+
 
     def serial_read_thread(self):
         """
@@ -118,8 +121,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.worker.finished.connect(self.plot_ampl_data)
             self.thread.finished.connect(self.thread.deleteLater)
             self.thread.start()                                   # After starting the thread...
-#            self.btnSweep.setEnabled(False)                       # disable the sweep button until we're done
-#            self.thread.finished.connect(lambda: self.btnSweep.setEnabled(True))
+            self.btnSweep.setEnabled(False)                       # disable the sweep button until we're done
+            self.thread.finished.connect(lambda: self.btnSweep.setEnabled(True))
         else:
             print('')
             print('     You have to open the serial port.')
@@ -353,13 +356,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     
     @pyqtSlot()
-    def on_btn_test_clicked(self):
-        d = Dialog(self)
-        d.show()
-        print(name, line(), f'Len of control dict = {len(sa.full_sweep_dict)}')
-    
-
-    @pyqtSlot()
     def on_dblCenterMHz_editingFinished(self):
         """
         Public slot What happens if I try to run it a second time.
@@ -370,7 +366,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             last_center_MHz_value = self.dblCenterMHz.value()
         else:
             pass
-
+    
+    @pyqtSlot()
+    def on_btn_stop_sweep_clicked(self):
+        """
+        Terminate an in progress sweep
+        """
+        sa.sweep_stop = True
 
 
 

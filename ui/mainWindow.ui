@@ -421,19 +421,6 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
-        <widget class="QSpinBox" name="numPlotFloor">
-         <property name="minimum">
-          <number>-200</number>
-         </property>
-         <property name="maximum">
-          <number>30</number>
-         </property>
-         <property name="value">
-          <number>-90</number>
-         </property>
-        </widget>
-       </item>
        <item row="23" column="0">
         <widget class="QComboBox" name="cbxSerialSpeedSelection">
          <property name="minimumSize">
@@ -488,19 +475,6 @@
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QSpinBox" name="numPlotCeiling">
-         <property name="minimum">
-          <number>-190</number>
-         </property>
-         <property name="maximum">
-          <number>30</number>
-         </property>
-         <property name="value">
-          <number>-40</number>
          </property>
         </widget>
        </item>
@@ -567,6 +541,29 @@
          </property>
         </spacer>
        </item>
+       <item row="5" column="0">
+        <widget class="QDoubleSpinBox" name="numPlotCeiling">
+         <property name="minimum">
+          <double>-5.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>5.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>3.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QDoubleSpinBox" name="numPlotFloor">
+         <property name="minimum">
+          <double>-5.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>5.000000000000000</double>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </item>
@@ -598,20 +595,7 @@
        <string>Frequency Controls</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="0" column="3">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Stop (MHz)</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="buddy">
-          <cstring>floatStopMHz</cstring>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="3">
+       <item row="4" column="4">
         <widget class="QLabel" name="label">
          <property name="text">
           <string>Span (Mhz)</string>
@@ -624,20 +608,49 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="label_1">
-         <property name="text">
-          <string>Start (MHz)</string>
+       <item row="3" column="3">
+        <spacer name="horizontalSpacer_6">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="3" column="5">
+        <spacer name="horizontalSpacer_9">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="4" column="6">
+        <widget class="QLabel" name="label_10">
+         <property name="text">
+          <string>Number of Steps</string>
          </property>
          <property name="buddy">
-          <cstring>floatStartMHz</cstring>
+          <cstring>numFrequencySteps</cstring>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
+       <item row="3" column="2">
         <widget class="QDoubleSpinBox" name="floatStartMHz">
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -659,29 +672,23 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="5">
-        <widget class="QSpinBox" name="intStepKHz">
+       <item row="5" column="6">
+        <widget class="QSpinBox" name="numFrequencySteps">
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
          <property name="minimum">
-          <number>1</number>
+          <number>2</number>
          </property>
          <property name="maximum">
-          <number>3000</number>
-         </property>
-         <property name="value">
-          <number>250</number>
+          <number>3100000</number>
          </property>
         </widget>
        </item>
-       <item row="3" column="2">
-        <spacer name="horizontalSpacer_6">
+       <item row="3" column="7">
+        <spacer name="horizontalSpacer_2">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -691,65 +698,7 @@
          </property>
         </spacer>
        </item>
-       <item row="3" column="3">
-        <widget class="QDoubleSpinBox" name="floatStopMHz">
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="decimals">
-          <number>3</number>
-         </property>
-         <property name="maximum">
-          <double>6000.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.001000000000000</double>
-         </property>
-         <property name="value">
-          <double>3000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Center (MHz)</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="buddy">
-          <cstring>dblCenterMHz</cstring>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="4">
-        <spacer name="horizontalSpacer_9">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="5" column="3">
-        <widget class="QDoubleSpinBox" name="dblSpanMHz">
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="decimals">
-          <number>3</number>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
+       <item row="5" column="2">
         <widget class="QDoubleSpinBox" name="dblCenterMHz">
          <property name="minimumSize">
           <size>
@@ -768,7 +717,7 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
+       <item row="3" column="1">
         <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -781,30 +730,46 @@
          </property>
         </spacer>
        </item>
-       <item row="5" column="5">
-        <widget class="QSpinBox" name="numFrequencySteps">
+       <item row="3" column="6">
+        <widget class="QSpinBox" name="intStepKHz">
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
          <property name="minimum">
-          <number>2</number>
+          <number>1</number>
          </property>
          <property name="maximum">
-          <number>3100000</number>
+          <number>3000</number>
+         </property>
+         <property name="value">
+          <number>250</number>
          </property>
         </widget>
        </item>
-       <item row="4" column="5">
-        <widget class="QLabel" name="label_10">
+       <item row="4" column="2">
+        <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>Number of Steps</string>
+          <string>Center (MHz)</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
          <property name="buddy">
-          <cstring>numFrequencySteps</cstring>
+          <cstring>dblCenterMHz</cstring>
          </property>
         </widget>
        </item>
-       <item row="0" column="5">
+       <item row="5" column="4">
+        <widget class="QDoubleSpinBox" name="dblSpanMHz">
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="decimals">
+          <number>3</number>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="6">
         <widget class="QLabel" name="label_4">
          <property name="text">
           <string>Step  Size (kHz)</string>
@@ -814,18 +779,57 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="6">
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+       <item row="0" column="2">
+        <widget class="QLabel" name="label_1">
+         <property name="text">
+          <string>Start (MHz)</string>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
-        </spacer>
+         <property name="buddy">
+          <cstring>floatStartMHz</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="4">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Stop (MHz)</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="buddy">
+          <cstring>floatStopMHz</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="4">
+        <widget class="QDoubleSpinBox" name="floatStopMHz">
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="decimals">
+          <number>3</number>
+         </property>
+         <property name="maximum">
+          <double>6000.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.001000000000000</double>
+         </property>
+         <property name="value">
+          <double>3000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QPushButton" name="btn_stop_sweep">
+         <property name="text">
+          <string>PushButton</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -1099,9 +1103,9 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="btn_test">
+        <widget class="QLabel" name="label_sweep_status">
          <property name="text">
-          <string>Test</string>
+          <string/>
          </property>
         </widget>
        </item>
@@ -1139,6 +1143,45 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>btnSweep</tabstop>
+  <tabstop>floatStartMHz</tabstop>
+  <tabstop>floatStopMHz</tabstop>
+  <tabstop>intStepKHz</tabstop>
+  <tabstop>btnLastSpan</tabstop>
+  <tabstop>minGraphWidth</tabstop>
+  <tabstop>minGraphHeight</tabstop>
+  <tabstop>btn_disable_LO3_RFout</tabstop>
+  <tabstop>cbxSerialPortSelection</tabstop>
+  <tabstop>btnPeakSearch</tabstop>
+  <tabstop>dbl_attenuator_dB</tabstop>
+  <tabstop>numPeakMarkers</tabstop>
+  <tabstop>chkArduinoLED</tabstop>
+  <tabstop>numPlotFloor</tabstop>
+  <tabstop>cbxSerialSpeedSelection</tabstop>
+  <tabstop>chkShowGrid</tabstop>
+  <tabstop>btn_disable_LO2_RFout</tabstop>
+  <tabstop>numPlotCeiling</tabstop>
+  <tabstop>btn_open_serial_port</tabstop>
+  <tabstop>btnRefreshPortsList</tabstop>
+  <tabstop>btnClearPeakSearch</tabstop>
+  <tabstop>floatSweepStartFreq</tabstop>
+  <tabstop>btnZeroSpan</tabstop>
+  <tabstop>floatSweepStopFreq</tabstop>
+  <tabstop>dblSpanMHz</tabstop>
+  <tabstop>dblCenterMHz</tabstop>
+  <tabstop>numFrequencySteps</tabstop>
+  <tabstop>btnCalibrate</tabstop>
+  <tabstop>selectReferenceOscillator</tabstop>
+  <tabstop>chkFracOpt</tabstop>
+  <tabstop>selectSweepFrequency</tabstop>
+  <tabstop>selectFixedFrequency</tabstop>
+  <tabstop>btnTrigger</tabstop>
+  <tabstop>btnExit</tabstop>
+  <tabstop>btn_get_arduino_msg</tabstop>
+  <tabstop>btnFullSpan</tabstop>
+  <tabstop>line_edit_cmd</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

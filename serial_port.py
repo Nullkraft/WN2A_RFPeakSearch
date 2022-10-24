@@ -86,8 +86,8 @@ class simple_serial(QObject):
         @return List of available serial ports for the local system.
         @rtype List
         """
-        port_list = [port.device for port in list_ports.comports()]
-        return port_list
+        serial_port_list = [serial_port.device for serial_port in list_ports.comports()]
+        return serial_port_list
 
     @staticmethod
     def get_baud_rate_list(minimum_baud_rate=9600):
@@ -184,6 +184,7 @@ class simple_serial(QObject):
             if end_of_data > 0:                                     # The end of the list was found...
                 self.finished.emit(data_buffer_in[:end_of_data])    # so slice off any excess data bytes
                 break
+            time.sleep(1e-09)       # Prevents CPU from going to 100% utilization
 
 
 # End simple_serial() class

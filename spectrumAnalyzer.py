@@ -29,7 +29,8 @@ import time
 import numpy as np
 
 import command_processor as cmd_proc
-from hardware_cfg import cfg, device
+from hardware_cfg import cfg, spi_device
+
 
 
 name = f'File \"{__name__}.py\",'
@@ -80,9 +81,10 @@ def load_control_dict(dict_name, file_name):
 class sa_control():
 
     def __init__(self):
-        self.selected_device = device.LO2
+        self.selected_device = spi_device.LO2
         self.last_ref_code = 0   # Decide if a new ref_code is to be sent
         self.last_LO1_code = 0   # Decide if a new LO1_code is to be sent
+        self.stop_sweep = False
 
     def set_reference(self, ref_code: int, last_ref_code: int=0):
         """
@@ -101,7 +103,7 @@ class sa_control():
 
     def set_attenuator(self, dB):
         cmd_proc.set_attenuator(dB)
-        self.selected_device = device.ATTENUATOR   # Update currently selected device to Attenuator
+        self.selected_device = spi_device.ATTENUATOR   # Update currently selected device to Attenuator
 
     
     def set_LO1(self, control_code: int, last_control_code: int=0):
@@ -117,7 +119,7 @@ class sa_control():
         if control_code != last_control_code:
             cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, control_code) # Set to -4 dBm & freq=control_code
             self.last_LO1_code = control_code
-            self.selected_device = device.LO1   # Update currently selected device to LO1
+            self.selected_device = spi_device.LO1   # Update currently selected device to LO1
 
 
     def set_LO2(self, control_code: int):
@@ -129,9 +131,9 @@ class sa_control():
         @param last_control_code prevents sending FMN if it's the same as last time (defaults to 0)
         @type int (optional)
         """
-        if self.selected_device is not device.LO2:
+        if self.selected_device is not spi_device.LO2:
             cmd_proc.sel_LO2()
-            self.selected_device = device.LO2   # Update currently selected device to LO2
+            self.selected_device = spi_device.LO2   # Update currently selected device to LO2
         cmd_proc.set_LO2(control_code)      # Set to freq=control_code
 
     
@@ -144,9 +146,9 @@ class sa_control():
         @param last_control_code prevents sending FMN if it's the same as last time (defaults to 0)
         @type int (optional)
         """
-        if self.selected_device is not device.LO3:
+        if self.selected_device is not spi_device.LO3:
             cmd_proc.sel_LO3()
-            self.selected_device = device.LO3   # Update currently selected device to LO3
+            self.selected_device = spi_device.LO3   # Update currently selected device to LO3
         cmd_proc.set_LO3(control_code)      # Set to freq=control_code
 
 
@@ -155,7 +157,6 @@ class sa_control():
         Function sweep() : Search the RF input for any or all RF signals
         """
         global swept_freq_list
-        global LO2_selected
         
         swept_freq_list = np.around(np.arange(sweep_start, sweep_stop, sweep_step), 3)
 ##        cmd_proc.disable_LO3_RFout()
@@ -164,15 +165,21 @@ class sa_control():
         cmd_proc.sel_LO2()
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
         time.sleep(.004)
+        start = time.perf_counter()
         for freq in swept_freq_list:
             ref_code, LO1_N_code, LO2_fmn_code = full_sweep_dict[freq]    # Get hardware control codes
             self.set_reference(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
             time.sleep(.002)
+            if self.stop_sweep is True:
+                break
+        stop = time.perf_counter()
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         print(name, line(), 'Sweep complete')
         cmd_proc.sweep_end()   # Handshake signal to controller
+        self.stop_sweep = False
+        print(name, line(), f'{len(swept_freq_list)} freqs took {round(stop-start, 6)} seconds ')
 
 
     def set_center_freq(self, freq: float):

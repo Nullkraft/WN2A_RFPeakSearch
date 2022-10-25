@@ -55,7 +55,9 @@ sweep_num_steps = 1601
 last_sweep_start = 0.0
 last_sweep_stop = 9999.0
 last_sweep_step = 0.0
-full_sweep_dict = {}    # Dictionary of ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
+full_sweep_dict = {} # Dictionary of ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
+ref1_full_sweep_dict = {}
+ref2_full_sweep_dict = {}
 
 amplitude_list = []     # The collected list of swept frequencies used for plotting amplitude vs. frequency
 swept_freq_list = []    # The list of frequencies that the user requested to be swept
@@ -176,10 +178,9 @@ class sa_control():
                 break
         stop = time.perf_counter()
         self.set_LO2(cmd_proc.LO2_mux_tristate)
-        print(name, line(), 'Sweep complete')
-        cmd_proc.sweep_end()   # Handshake signal to controller
+        cmd_proc.sweep_end()   # Send handshake signal to controller
         self.stop_sweep = False
-        print(name, line(), f'{len(swept_freq_list)} freqs took {round(stop-start, 6)} seconds ')
+        print(name, line(), f'Sweep of {len(swept_freq_list)} freqs took {round(stop-start, 6)} seconds ')
 
 
     def set_center_freq(self, freq: float):
@@ -279,14 +280,6 @@ def set_reference_clock(clock_id):
 
 if __name__ == '__main__':
     print()
-
-    start = time.perf_counter()
-    d = dict()
-    load_control_dict(d, 'full_control_ref1.csv')
-    stop = time.perf_counter()
-    print(f'Time to load full_control_ref1.csv = {round(stop-start, 6)} seconds')
-
-    print("Done")
 
 
 

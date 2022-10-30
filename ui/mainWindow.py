@@ -36,7 +36,6 @@ name = f'File \"{__name__}.py\",'
 
 import sys
 import numpy as np
-import keyboard
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
@@ -66,6 +65,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #
         # MAX2871 chip will need to be initialized
         self.initialized = False
+        self.amplitude = []       # Declare amplitude storage that will allow appending
         #
         # Request the list of available serial ports and use it to
         # populate the user 'Serial Port' drop-down selection list.
@@ -90,7 +90,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # sa.full_sweep_dict contains values for ref_clock, LO1, LO2, 
         # and LO3 used for controlling the hardware.
         # Loading sa.full_sweep_dict in a separate process speeds up the app load.
-        sa.load_control_dict(sa.full_sweep_dict, 'full_control_ref1.csv')
+        sa.load_control_dict(sa.ref1_full_sweep_dict, 'full_control_ref1.csv')
+##        sa.load_control_dict(sa.ref2_full_sweep_dict, 'full_control_ref2.csv')
+        sa.full_sweep_dict = sa.ref1_full_sweep_dict
 ##        process = Process(target=sa.load_control_dict, args=(sa.full_sweep_dict, 'full_control_ref1.csv'))
 ##        process.start()
 #
@@ -151,7 +153,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     # amplitude is collected as a bunch of linear 16-bit A/D values
     def plot_ampl_data(self, amplBytes):
-        self.amplitude = []       # Declare amplitude storage that will allow appending
+#        self.amplitude = []       # Declare amplitude storage that will allow appending
         self.amplitude.clear()
         nBytes = len(amplBytes)
         # Convert two 8-bit serial bytes into one 16 bit amplitude.
@@ -336,22 +338,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def on_floatStartMHz_editingFinished(self):
         sa.sweep_start = self.floatStartMHz.value()
-        num_steps = (sa.sweep_stop - sa.sweep_start) / sa.sweep_step_size
-        self.numFrequencySteps.setValue(num_steps)
+        self.set_steps()
 
 
     @pyqtSlot()
     def on_floatStopMHz_editingFinished(self):
         sa.sweep_stop = self.floatStopMHz.value()
-        num_steps = (sa.sweep_stop - sa.sweep_start) / sa.sweep_step_size
-        self.numFrequencySteps.setValue(num_steps)
+        self.set_steps()
 
     
     @pyqtSlot()
     def on_intStepKHz_editingFinished(self):
         MHz = 1000
         sa.sweep_step_size = round(self.intStepKHz.value() / MHz, 3)
-        num_steps = (sa.sweep_stop - sa.sweep_start) / sa.sweep_step_size
+        self.set_steps()
+
+        
+    def set_steps(self):
+        sa.sweep_start = self.floatStartMHz.value()
+        num_steps = round((sa.sweep_stop - sa.sweep_start) / sa.sweep_step_size, 3)
         self.numFrequencySteps.setValue(num_steps)
 
     

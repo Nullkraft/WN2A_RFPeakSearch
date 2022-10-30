@@ -173,7 +173,7 @@ class sa_control():
             self.set_reference(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
-            time.sleep(.002)
+            time.sleep(.001)    # This _wait_ allows the controller (Arduino) some processing time
             if self.stop_sweep is True:
                 break
         stop = time.perf_counter()
@@ -181,7 +181,6 @@ class sa_control():
         cmd_proc.sweep_end()   # Send handshake signal to controller
         self.stop_sweep = False
         print(name, line(), f'Sweep of {len(swept_freq_list)} freqs took {round(stop-start, 6)} seconds ')
-
 
     def set_center_freq(self, freq: float):
         """

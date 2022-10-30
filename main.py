@@ -31,7 +31,7 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    logger.info("That's it, logger seems to be working.")
+    logger.info("Logging is working.")
     sys.exit(app.exec())    # Using sys.exit() takes the return code from app.exec() and sends it to the command line.
                             # app.exec() starts the event loop.
 

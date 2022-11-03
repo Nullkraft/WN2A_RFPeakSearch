@@ -19,7 +19,7 @@
 #
 
 
-from hardware_cfg import cfg
+import hardware_cfg as hw
 import command_processor as cmd
 import sys
 
@@ -44,8 +44,52 @@ class data_generator():
     ref1 = cmd.ref_clock1_enable
     ref2 = cmd.ref_clock2_enable
 
-    # RFin_list contains every frequency from 0 to 3000.001 MHz in 1 kHz steps
-    RFin_list = cfg.RFin_list         # Test this redundant line: I think it sped things up
+    ''' RFin_list contains every frequency from 0 to 3000.0 MHz in 1 kHz steps '''
+    RFin_list = list()
+    with open('RFin_steps.csv', 'r') as f:
+        for freq in f:
+            RFin = float(freq)
+            RFin_list.append(RFin)
+
+    def _LO1_frequency(self, RFin: float, Fref: float, R: int=1) -> float:
+        """
+        Protected method calculates the frequency for LO1 from RFin, Fpfd, and R
+        where the Phase Frequency Detector frequency is Fpfd=Fref/R
+
+        @param RFin is the Spectrum Anaylzer input frequency
+        @type float
+        @param Fref is the frequency of the selected reference clock
+        @type float
+        @param R is from the manufacturer's specsheet (defaults to 1)
+        @type int (optional)
+        @return The LO1 frequency that steps by the Fpfd value
+        @rtype float
+        """
+        Fpfd = Fref/R     # Fpfd1 = 66.0 and Fpfd2 = 66.666 MHz
+        LO1_freq = int((hw.cfg.IF1 + RFin) / Fpfd) * Fpfd
+        return LO1_freq
+
+    def _LO2_frequency(self, RFin: float, ref_clock: str) -> float:
+        """
+        Protected method calculates the frequency for LO2 from LO1, RFin, and
+        the selected reference clock
+        
+        @param RFin is the Spectrum Anaylzer input frequency
+        @type float
+        @param ref_clock is the name of the reference clock 'ref1' or 'ref2'
+        @type str
+        @return LO2 frequency
+        @rtype float
+        """
+        if ref_clock == "ref1":
+            LO1_freq = self.LO1_ref1_freq_dict[RFin]
+        elif ref_clock == "ref2":
+            LO1_freq = self.LO1_ref2_freq_dict[RFin]
+        if RFin < 2500:
+            LO2_freq = LO1_freq - RFin - hw.cfg.IF2   # Low-side
+        else:
+            LO2_freq = LO1_freq - RFin + hw.cfg.IF2   # High-side
+        return LO2_freq
 
     def load_list(self, file_name, data_type) -> list:
         """
@@ -55,7 +99,6 @@ class data_generator():
         @type File name as <class 'string'> and data type as <class 'type'> e.g. int, float, etc.
         @return A list containing the value(s) of 'type'
         @rtype <class 'list'>
-
         """
         with open(file_name, 'r') as f:
             tmp_list = [data_type(x) for x in f]
@@ -81,25 +124,24 @@ class data_generator():
 
     def create_data(self) -> None:
         # Create the list of LO1 frequencies when using reference clock 1.
-        hw = cfg()  # WTF??? Why?
-        self.LO1_ref1_freq_list = [cfg.LO1_frequency(hw, RFin, cfg.Fpfd1) for RFin in self.RFin_list]
+        self.LO1_ref1_freq_list = [self._LO1_frequency(RFin, hw.cfg.Fpfd1) for RFin in self.RFin_list]
         self.LO1_ref1_freq_list = [round(x, 9) for x in self.LO1_ref1_freq_list]
         # Create the list of LO1 frequencies when using reference clock 2.
-        self.LO1_ref2_freq_list = [cfg.LO1_frequency(hw, RFin, cfg.Fpfd2) for RFin in self.RFin_list]
+        self.LO1_ref2_freq_list = [self._LO1_frequency(RFin, hw.cfg.Fpfd2) for RFin in self.RFin_list]
         self.LO1_ref2_freq_list = [round(x, 9) for x in self.LO1_ref2_freq_list]
         # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 1
-        self.LO1_ref1_N_list = [int(LO1_freq/cfg.Fpfd1) for LO1_freq in self.LO1_ref1_freq_list]
+        self.LO1_ref1_N_list = [int(LO1_freq/hw.cfg.Fpfd1) for LO1_freq in self.LO1_ref1_freq_list]
         # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 2
-        self.LO1_ref2_N_list = [int(LO1_freq/cfg.Fpfd2) for LO1_freq in self.LO1_ref2_freq_list]
+        self.LO1_ref2_N_list = [int(LO1_freq/hw.cfg.Fpfd2) for LO1_freq in self.LO1_ref2_freq_list]
         # Create the frequency lookup tables for LO1
         self.LO1_ref1_freq_dict = dict(zip(self.RFin_list, self.LO1_ref1_freq_list))
         self.LO1_ref2_freq_dict = dict(zip(self.RFin_list, self.LO1_ref2_freq_list))
-        # Create the frequency lookup tables for LO2. (LO2_freq = LO1 - freq + cfg.IF2)
-        self.LO2_ref1_freq_list = [self.LO1_ref1_freq_dict[RFin] - RFin + cfg.IF2 for RFin in self.RFin_list]
-        self.LO2_ref2_freq_list = [self.LO1_ref2_freq_dict[RFin] - RFin + cfg.IF2 for RFin in self.RFin_list]
+        # Create the frequency lookup tables for LO2. (LO2_freq = LO1 - freq + hw.cfg.IF2)
+        self.LO2_ref1_freq_list = [self._LO2_frequency(freq, "ref1") for freq in self.RFin_list]
+        self.LO2_ref2_freq_list = [self._LO2_frequency(freq, "ref2") for freq in self.RFin_list]
         # Create the LO2 control codes for setting the frequency of the MAX2871 chip for ref clocks 1 and 2
-        self.LO2_ref1_fmn_list = [cfg.MHz_to_fmn(LO2_freq, cfg.ref_clock_1) for LO2_freq in self.LO2_ref1_freq_list]
-        self.LO2_ref2_fmn_list = [cfg.MHz_to_fmn(LO2_freq, cfg.ref_clock_2) for LO2_freq in self.LO2_ref2_freq_list]
+        self.LO2_ref1_fmn_list = [hw.MHz_to_fmn(frequency, hw.cfg.ref_clock_1) for frequency in self.LO2_ref1_freq_list]
+        self.LO2_ref2_fmn_list = [hw.MHz_to_fmn(frequency, hw.cfg.ref_clock_2) for frequency in self.LO2_ref2_freq_list]
 
     def save_data_files(self) -> None:
         """Save LO1 and LO2 data for ref1 and ref2."""
@@ -132,23 +174,21 @@ class data_generator():
     def create_ref1_control_file(self) -> None:
         LO1_n = self.load_list('LO1_ref1_N_steps.csv', int)          # For sweeping. Convert N from a string to int
         LO2_fmn = self.load_list('LO2_ref1_fmn_steps.csv', int)      # For sweeping. Convert fmn from string to int
-        full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(cfg.RFin_list, LO1_n, LO2_fmn)}
+        full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
         self.write_dict('full_control_ref1.csv', full_sweep_step_dict)
 
     def create_ref2_control_file(self):
         LO1_n = self.load_list('LO1_ref2_N_steps.csv', int)          # For sweeping. Convert N from a string to int
         LO2_fmn = self.load_list('LO2_ref2_fmn_steps.csv', int)      # For sweeping. Convert fmn from string to int
-        full_sweep_step_dict = {freq: (self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(cfg.RFin_list, LO1_n, LO2_fmn)}
+        full_sweep_step_dict = {freq: (self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
         self.write_dict('full_control_ref2.csv', full_sweep_step_dict)
-
-#    full_sweep_freq_dict = {freq:(self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(RFin, LO1_freq_list, LO2_freq_list)}
     """~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
 
 
 if __name__ == '__main__':
     print()
     import time
-    print(f'Fpfd values are {cfg.Fpfd1} & {cfg.Fpfd2}')
+    print(f'Fpfd values are {hw.cfg.Fpfd1} & {hw.cfg.Fpfd2}')
 
     dg = data_generator()
 

@@ -184,7 +184,7 @@ class simple_serial(QObject):
             if end_of_data > 0:                                     # The end of the list was found...
                 self.finished.emit(data_buffer_in[:end_of_data])    # so slice off any excess data bytes
                 break
-            time.sleep(1e-09)       # Prevents CPU from going to 100% utilization
+            time.sleep(0)       # Prevents CPU from going to 100% utilization
 
 
 # End simple_serial() class

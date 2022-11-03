@@ -119,11 +119,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.worker.moveToThread(self.thread)                 # Serial reads happen inside its own thread
             self.thread.started.connect(self.worker.read_serial)  # Connect to signals...
             self.worker.finished.connect(self.thread.quit)
-            self.worker.finished.connect(self.worker.deleteLater)
             self.worker.finished.connect(self.plot_ampl_data)
+            self.worker.finished.connect(self.worker.deleteLater)
             self.thread.finished.connect(self.thread.deleteLater)
             self.thread.start()                                   # After starting the thread...
-            self.btnSweep.setEnabled(False)                       # disable the sweep button until we're done
+#            self.btnSweep.setEnabled(False)                       # disable the sweep button until we're done
             self.thread.finished.connect(lambda: self.btnSweep.setEnabled(True))
         else:
             print('')

@@ -35,6 +35,7 @@ name = f'File \"{__name__}.py\",'
 
 
 import sys
+#from time import perf_counter
 import numpy as np
 
 from PyQt6 import QtCore, QtGui
@@ -44,6 +45,7 @@ import pyqtgraph as pg
 
 from .Ui_mainWindow import Ui_MainWindow
 import spectrumAnalyzer as sa
+from spectrumAnalyzer import sa_control
 import command_processor as cmd_proc
 import serial_port as sp
 
@@ -52,6 +54,7 @@ last_center_MHz_value = 0
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
+    last_N = -1     # for monitoring the amount of data from serial_read()
 
     def __init__(self):
         super().__init__()
@@ -95,7 +98,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sa.full_sweep_dict = sa.ref1_full_sweep_dict
 ##        process = Process(target=sa.load_control_dict, args=(sa.full_sweep_dict, 'full_control_ref1.csv'))
 ##        process.start()
-#
+
 
 
     @pyqtSlot()
@@ -103,10 +106,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
         sp.ser.read(sp.ser.in_waiting)         # Clear out the serial buffer.
-        self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
-        sa.sa_control().sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size)
+        self.serial_read_thread()              # Start the serial read thread to accept sweep data
+        sa.sa_control().sweep()
         self.label_sweep_status.setText("Sweep complete")
         QtGui.QGuiApplication.processEvents()
+
+    last_n = -1
+    def progress_report(self, n):
+        if n != self.last_n:
+            self.last_n = n
+#            print(name, line(), f'Len in_buff = {n}')
+    
+    
+    def clear_last_N(self):
+        self.last_n = -1
 
 
     def serial_read_thread(self):
@@ -118,6 +131,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.worker = sp.simple_serial()                      # Function for reading from the serial port
             self.worker.moveToThread(self.thread)                 # Serial reads happen inside its own thread
             self.thread.started.connect(self.worker.read_serial)  # Connect to signals...
+            self.worker.progress.connect(self.progress_report)
+            self.worker.finished.connect(self.clear_last_N)
             self.worker.finished.connect(self.thread.quit)
             self.worker.finished.connect(self.plot_ampl_data)
             self.worker.finished.connect(self.worker.deleteLater)
@@ -163,15 +178,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.amplitude.append(volts)
         bytes_list = amplBytes
         bytes_list = list(bytes_list)
-        sz_freq_list = len(sa.swept_freq_list)
+        sz_freq_list = len(sa_control.swept_freq_list)
         sz_ampl_list = len(self.amplitude)
 ##        assert(sz_freq_list == sz_ampl_list)
         if sz_freq_list > sz_ampl_list:
-            sa.swept_freq_list = sa.swept_freq_list[0:sz_ampl_list]
+            sa_control.swept_freq_list = sa_control.swept_freq_list[0:sz_ampl_list]
         if sz_ampl_list > sz_freq_list:
             self.amplitude = self.amplitude[0:sz_freq_list]
-        self.graphWidget.setXRange(sa.swept_freq_list[0], sa.swept_freq_list[-1])   # Limit plot to user selected frequency range
-        self.dataLine.setData(sa.swept_freq_list, self.amplitude, pen=(155,155,255))
+        self.graphWidget.setXRange(sa_control.swept_freq_list[0], sa_control.swept_freq_list[-1])   # Limit plot to user selected frequency range
+        self.dataLine.setData(sa_control.swept_freq_list, self.amplitude, pen=(155,155,255))
         self.amplitude.clear()
 
     @pyqtSlot()
@@ -337,26 +352,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     @pyqtSlot()
     def on_floatStartMHz_editingFinished(self):
-        sa.sweep_start = self.floatStartMHz.value()
         self.set_steps()
 
 
     @pyqtSlot()
     def on_floatStopMHz_editingFinished(self):
-        sa.sweep_stop = self.floatStopMHz.value()
         self.set_steps()
 
     
     @pyqtSlot()
     def on_intStepKHz_editingFinished(self):
-        MHz = 1000
-        sa.sweep_step_size = round(self.intStepKHz.value() / MHz, 3)
         self.set_steps()
 
         
     def set_steps(self):
-        sa.sweep_start = self.floatStartMHz.value()
-        num_steps = round((sa.sweep_stop - sa.sweep_start) / sa.sweep_step_size, 3)
+        MHz = 1000
+        sa_control.swept_freq_list.clear()                              # Restart the sweep list
+        sa.sweep_step_size = round(self.intStepKHz.value() / MHz, 3)    # frequency step
+        sa.sweep_start_freq = self.floatStartMHz.value()                     # frequency start
+        sa.sweep_stop_freq = self.floatStopMHz.value() + sa.sweep_step_size  # frequency stop
+        sa_control.swept_freq_list = [round(step, 3) for step in np.arange(sa.sweep_start_freq, sa.sweep_stop_freq, sa.sweep_step_size)]
+        num_steps = len(sa_control.swept_freq_list)
         self.numFrequencySteps.setValue(num_steps)
 
     
@@ -371,14 +387,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             last_center_MHz_value = self.dblCenterMHz.value()
         else:
             pass
-    
-    @pyqtSlot()
-    def on_btn_stop_sweep_clicked(self):
-        """
-        Terminate an in progress sweep
-        """
-        sa.sweep_stop = True
-
 
 
 

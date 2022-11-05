@@ -48,8 +48,8 @@ def line() -> str:
 
 ref_clock = cfg.ref_clock_1
 sweep_step_size = 0.25
-sweep_start = 4.0
-sweep_stop = 3000.0 + sweep_step_size
+sweep_start_freq = 4.0
+sweep_stop_freq = 3000.0 + sweep_step_size
 sweep_num_steps = 1601
 
 last_sweep_start = 0.0
@@ -60,7 +60,6 @@ ref1_full_sweep_dict = {}
 ref2_full_sweep_dict = {}
 
 amplitude_list = []     # The collected list of swept frequencies used for plotting amplitude vs. frequency
-swept_freq_list = []    # The list of frequencies that the user requested to be swept
 
 
 def load_control_dict(dict_name, file_name):
@@ -81,12 +80,12 @@ def load_control_dict(dict_name, file_name):
 
 
 class sa_control():
+    swept_freq_list = []    # The list of frequencies that the user requested to be swept
 
     def __init__(self):
         self.selected_device = spi_device.LO2
         self.last_ref_code = 0   # Decide if a new ref_code is to be sent
         self.last_LO1_code = 0   # Decide if a new LO1_code is to be sent
-        self.stop_sweep = False
 
     def set_reference(self, ref_code: int, last_ref_code: int=0):
         """
@@ -101,6 +100,7 @@ class sa_control():
         if ref_code != last_ref_code:
             cmd_proc.enable_ref_clock(ref_code)
             self.last_ref_code = ref_code
+            time.sleep(0.02)  # Wait for the new reference clock to warm up
         
 
     def set_attenuator(self, dB):
@@ -154,46 +154,30 @@ class sa_control():
         cmd_proc.set_LO3(control_code)      # Set to freq=control_code
 
 
-    def sweep(self, sweep_start, sweep_stop, sweep_step):
+    def sweep(self):
         """
         Function sweep() : Search the RF input for any or all RF signals
         """
-        global swept_freq_list
-        
-        swept_freq_list = np.around(np.arange(sweep_start, sweep_stop, sweep_step), 3)
 ##        cmd_proc.disable_LO3_RFout()
         cmd_proc.sel_315MHz_adc()
         time.sleep(.004)
         cmd_proc.sel_LO2()
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
         time.sleep(.004)
-        start = time.perf_counter()
-        for freq in swept_freq_list:
+        for freq in self.swept_freq_list:
             ref_code, LO1_N_code, LO2_fmn_code = full_sweep_dict[freq]    # Get hardware control codes
             self.set_reference(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
-            time.sleep(.001)    # This _wait_ allows the controller (Arduino) some processing time
-            if self.stop_sweep is True:
-                break
-        stop = time.perf_counter()
+            time.sleep(.002)    # Allow the controller (Arduino) some processing time
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.sweep_end()   # Send handshake signal to controller
-        self.stop_sweep = False
-        print(name, line(), f'Sweep of {len(swept_freq_list)} freqs took {round(stop-start, 6)} seconds ')
 
     def set_center_freq(self, freq: float):
         """
-        Function set_center_freq() : Set SpecAnn to a given RFin.
+        Function
         """
-#        cmd_proc.disable_LO3_RFout()
-        cmd_proc.enable_ref_clock(cmd_proc.ref_clock1_enable)
-        cmd_proc.sel_315MHz_adc()   # Selects LO2 path
-        ref_code, LO1_N_code, LO2_fmn_code = full_sweep_dict[freq]    # Get hardware control codes
-        self.set_LO1(LO1_N_code, self.last_LO1_code)
-        cmd_proc.sel_LO2()
-        self.set_LO2(LO2_fmn_code, self.last_LO2_code)
-
+        pass
 
 
 # Find the highest signal amplitudes in a spectrum plot.

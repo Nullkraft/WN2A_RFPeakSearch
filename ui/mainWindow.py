@@ -178,12 +178,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.amplitude.append(volts)
         bytes_list = amplBytes
         bytes_list = list(bytes_list)
+        ''' It's not perfect but we need to check for different size sweep and amplitude lists' '''
         sz_freq_list = len(sa_ctl.swept_freq_list)
         sz_ampl_list = len(self.amplitude)
-##        assert(sz_freq_list == sz_ampl_list)
+        assert sz_freq_list == sz_ampl_list, f'Sweep list ({sz_freq_list}) and Amplitude list ({sz_ampl_list}) should be the same size.'
         if sz_freq_list > sz_ampl_list:
             sa_ctl.swept_freq_list = sa_ctl.swept_freq_list[0:sz_ampl_list]
-        if sz_ampl_list > sz_freq_list:
+        if sz_freq_list < sz_ampl_list:
             self.amplitude = self.amplitude[0:sz_freq_list]
         self.graphWidget.setXRange(sa_ctl.swept_freq_list[0], sa_ctl.swept_freq_list[-1])   # Limit plot to user selected frequency range
         self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=(155,155,255))

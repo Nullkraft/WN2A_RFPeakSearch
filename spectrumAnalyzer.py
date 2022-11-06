@@ -87,6 +87,11 @@ class sa_control():
         self.last_ref_code = 0   # Decide if a new ref_code is to be sent
         self.last_LO1_code = 0   # Decide if a new LO1_code is to be sent
 
+
+    def get_RFmax_freq(self) -> float:
+        return cfg.RFin_max_freq
+
+
     def set_reference(self, ref_code: int, last_ref_code: int=0):
         """
         Public set_reference send the hardware ref_code to select a reference oscillator

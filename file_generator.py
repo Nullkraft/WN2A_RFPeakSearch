@@ -93,15 +93,17 @@ class data_generator():
 
     def load_list(self, file_name, data_type) -> list:
         """
-        Function Load the control codes for LO1, LO2 or LO3 into their associated lists.
+        Read the control codes for LO1, LO2 and LO3 from their associated lists.
 
-        @param Name of a file and the data type contained in the file.
-        @type File name as <class 'string'> and data type as <class 'type'> e.g. int, float, etc.
+        @param file_name The name of an ASCII file that contains int's or float's
+        @type <class 'string'>
+        @param data_type <class 'type'>, int or float, that you want your data converted to.
+        @type <class 'int'> OR <class 'float'> depending on file contents
         @return A list containing the value(s) of 'type'
         @rtype <class 'list'>
         """
         with open(file_name, 'r') as f:
-            tmp_list = [data_type(x) for x in f]
+            tmp_list = [data_type(x) for x in f]    # Convert the string from the file to the appropriate data type
         return tmp_list
 
     def write_dict(self, file_name: str, ctrl_dict: dict) -> None:

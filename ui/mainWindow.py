@@ -170,9 +170,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def plot_ampl_data(self, amplBytes):
 #        self.amplitude = []       # Declare amplitude storage that will allow appending
         self.amplitude.clear()
-        nBytes = len(amplBytes)
+        num_bytes = len(amplBytes)
         # Convert two 8-bit serial bytes into one 16 bit amplitude.
-        for x in range(0, nBytes, 2):
+        for x in range(0, num_bytes, 2):
             ampl = amplBytes[x] | (amplBytes[x+1] << 8)
             volts = (ampl/1024) * 5
             self.amplitude.append(volts)

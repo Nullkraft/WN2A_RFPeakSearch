@@ -48,22 +48,23 @@ class spi_device(Enum):
 @dataclass
 class cfg():
     max_error = 2**32
+    Vref = 5.0                          # Analog reference voltage
 
     ref_clock_1 = 66.000
     ref_clock_2 = 66.666
-    ref_divider: int = 1                        # R from the MAX2871 spec sheet
+    ref_divider: int = 1                # R from the MAX2871 spec sheet
 
-    Fpfd1 = ref_clock_1 / ref_divider    # LO1 step size when using ref_clock 1
-    Fpfd2 = ref_clock_2 / ref_divider    # LO1 step size when using ref_clock 2
+    Fpfd1 = ref_clock_1 / ref_divider   # LO1 step size when using ref_clock 1
+    Fpfd2 = ref_clock_2 / ref_divider   # LO1 step size when using ref_clock 2
 
-    IF1: float = 3600.0                         # First intermediate frequency in MHz
-    IF2: float = 315.0                          # Second intermediate frequency in MHz
+    IF1: float = 3600.0                 # First intermediate frequency in MHz
+    IF2: float = 315.0                  # Second intermediate frequency in MHz
 
-    RFin_max_freq = 3000                        # No control codes available beyond this frequency
+    RFin_max_freq = 3000                # No control codes available beyond this frequency
 
-    _RFin_start: float = 0.0                    #
-    _RFin_stop:  float = 3000.001               # Maximum hardware bandwidth 
-    _RFin_step:  float = 0.001                  #
+    _RFin_start: float = 0.0            #
+    _RFin_stop:  float = 3000.001       # Maximum hardware bandwidth 
+    _RFin_step:  float = 0.001          #
 
 
 

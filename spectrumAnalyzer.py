@@ -86,10 +86,10 @@ class sa_control():
         self.selected_device = spi_device.LO2
         self.last_ref_code = 0   # Decide if a new ref_code is to be sent
         self.last_LO1_code = 0   # Decide if a new LO1_code is to be sent
-
-
-    def get_RFmax_freq(self) -> float:
-        return cfg.RFin_max_freq
+        
+    
+    def analog_ref(self):
+        return cfg.Vref
 
 
     def set_reference(self, ref_code: int, last_ref_code: int=0):

@@ -166,29 +166,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_selectReferenceOscillator_currentIndexChanged(self, selected_ref_clock):
         sa.set_reference_clock(selected_ref_clock)
         
-    # amplitude is collected as a bunch of linear 16-bit A/D values
     def plot_ampl_data(self, amplBytes):
-#        self.amplitude = []       # Declare amplitude storage that will allow appending
         self.amplitude.clear()
-        num_bytes = len(amplBytes)
-        # Convert two 8-bit serial bytes into one 16 bit amplitude.
-        for x in range(0, num_bytes, 2):
-            ampl = amplBytes[x] | (amplBytes[x+1] << 8)
-            volts = (ampl/1024) * 5
+        # Convert two 8-bit serial bytes into one 16 bit amplitude
+        hi_byte_list = amplBytes[::2]
+        lo_byte_list = amplBytes[1::2]
+        for hi_byte, lo_byte in zip(hi_byte_list, lo_byte_list):
+            ampl = hi_byte | (lo_byte << 8)                         # Combine MSByte/LSByte into an amplitude word
+            volts = (ampl/2**10) * sa.sa_control().analog_ref()     # Convert 10 bit ADC counts to Voltage
             self.amplitude.append(volts)
+        """ It's not a perfect check but the sweep and amplitude lists need to be the same size """
         bytes_list = amplBytes
         bytes_list = list(bytes_list)
-        ''' It's not perfect but we need to check for different size sweep and amplitude lists' '''
         sz_freq_list = len(sa_ctl.swept_freq_list)
         sz_ampl_list = len(self.amplitude)
         assert sz_freq_list == sz_ampl_list, f'Sweep list ({sz_freq_list}) and Amplitude list ({sz_ampl_list}) should be the same size.'
+        ''' Correct the size of the list for some kind of output so you can maybe guess at what is broken '''
         if sz_freq_list > sz_ampl_list:
             sa_ctl.swept_freq_list = sa_ctl.swept_freq_list[0:sz_ampl_list]
         if sz_freq_list < sz_ampl_list:
             self.amplitude = self.amplitude[0:sz_freq_list]
         self.graphWidget.setXRange(sa_ctl.swept_freq_list[0], sa_ctl.swept_freq_list[-1])   # Limit plot to user selected frequency range
-        self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=(155,155,255))
-        self.amplitude.clear()
+        purple = (75, 50, 255)
+        self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=purple)
 
     @pyqtSlot()
     def on_btnPeakSearch_clicked(self):
@@ -379,7 +379,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sa_ctl.swept_freq_list.append(np.float64(self.floatStopMHz.value()))    # Include the stop frequency in the sweep list
         num_steps = len(sa_ctl.swept_freq_list)
         self.numFrequencySteps.setValue(num_steps)
-        print(name, line(), f'swept_freq_list[Last 2 values] = {sa_ctl.swept_freq_list[-2:]}')
 
     
     @pyqtSlot()

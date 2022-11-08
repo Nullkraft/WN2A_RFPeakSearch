@@ -88,7 +88,7 @@ class sa_control():
         self.last_LO1_code = 0   # Decide if a new LO1_code is to be sent
         
     
-    def analog_ref(self):
+    def A2D_Vref(self):
         return cfg.Vref
 
 

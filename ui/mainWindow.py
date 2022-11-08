@@ -173,7 +173,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         lo_byte_list = amplBytes[1::2]
         for hi_byte, lo_byte in zip(hi_byte_list, lo_byte_list):
             ampl = hi_byte | (lo_byte << 8)                         # Combine MSByte/LSByte into an amplitude word
-            volts = (ampl/2**10) * sa.sa_control().analog_ref()     # Convert 10 bit ADC counts to Voltage
+            volts = (ampl/2**10) * sa.sa_control().A2D_Vref()       # Convert 10 bit ADC counts to Voltage
             self.amplitude.append(volts)
         """ It's not a perfect check but the sweep and amplitude lists need to be the same size """
         sz_freq_list = len(sa_ctl.swept_freq_list)

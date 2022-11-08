@@ -176,8 +176,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             volts = (ampl/2**10) * sa.sa_control().analog_ref()     # Convert 10 bit ADC counts to Voltage
             self.amplitude.append(volts)
         """ It's not a perfect check but the sweep and amplitude lists need to be the same size """
-        bytes_list = amplBytes
-        bytes_list = list(bytes_list)
         sz_freq_list = len(sa_ctl.swept_freq_list)
         sz_ampl_list = len(self.amplitude)
         assert sz_freq_list == sz_ampl_list, f'Sweep list ({sz_freq_list}) and Amplitude list ({sz_ampl_list}) should be the same size.'

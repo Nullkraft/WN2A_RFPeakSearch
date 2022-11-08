@@ -92,7 +92,7 @@ class sa_control():
         return cfg.Vref
 
 
-    def set_reference(self, ref_code: int, last_ref_code: int=0):
+    def set_reference_clock(self, ref_code: int, last_ref_code: int=0):
         """
         Public set_reference send the hardware ref_code to select a reference oscillator
         
@@ -171,7 +171,7 @@ class sa_control():
         time.sleep(.004)
         for freq in self.swept_freq_list:
             ref_code, LO1_N_code, LO2_fmn_code = full_sweep_dict[freq]    # Get hardware control codes
-            self.set_reference(ref_code, self.last_ref_code);
+            self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
             time.sleep(.002)    # Allow the controller (Arduino) some processing time

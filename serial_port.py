@@ -67,6 +67,7 @@ class simple_serial(QObject):
 
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
+        self.data_buffer_in = bytearray()           # Incoming serial buffer
         self.end_of_stream = bytearray([255, 255])  # Arduino A2D is only 10 bits so we can safely use 0xffff
         self.config_fname = 'serial.conf'
         self.default_serial_speed = '9600'
@@ -177,13 +178,12 @@ class simple_serial(QObject):
         """
         Worker thread for collecting incoming serial data
         """
-        data_buffer_in = bytearray()    # Incoming serial buffer
         while True:
-            data_buffer_in += ser.read(ser.in_waiting)              # Accumulate the data bytes
-            end_of_data = data_buffer_in.find(self.end_of_stream)   # Location for the end of the list
-            self.progress.emit(len(data_buffer_in))
-            if end_of_data > 0:                                     # The end of the list was found...
-                self.finished.emit(data_buffer_in[:end_of_data])    # so slice off any excess data bytes
+            self.data_buffer_in += ser.read(ser.in_waiting)             # Accumulate the data bytes
+            end_of_data = self.data_buffer_in.find(self.end_of_stream)  # Location for the end of the list
+            self.progress.emit(len(self.data_buffer_in))
+            if end_of_data > 0:                                         # The end of the list was found...
+                self.finished.emit(self.data_buffer_in[:end_of_data])   # so slice off any excess data bytes
                 break
             time.sleep(.000001)       # Prevents CPU from going to 100% utilization
 

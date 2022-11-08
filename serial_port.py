@@ -177,8 +177,6 @@ class simple_serial(QObject):
         """
         Worker thread for collecting incoming serial data
         """
-#        garbage = ser.read(ser.in_waiting)        # Clear out the serial buffer.
-#        print(name, line(), f'Size garbage = {len(garbage)}')
         data_buffer_in = bytearray()    # Incoming serial buffer
         while True:
             data_buffer_in += ser.read(ser.in_waiting)              # Accumulate the data bytes

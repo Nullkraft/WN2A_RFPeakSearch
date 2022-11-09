@@ -178,7 +178,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """ It's not a perfect check but the sweep and amplitude lists need to be the same size """
         sz_freq_list = len(sa_ctl.swept_freq_list)
         sz_ampl_list = len(self.amplitude)
-        assert sz_freq_list == sz_ampl_list, f'Sweep list ({sz_freq_list}) and Amplitude list ({sz_ampl_list}) should be the same size.'
+#        assert sz_freq_list == sz_ampl_list, f'Sweep list ({sz_freq_list}) and Amplitude list ({sz_ampl_list}) should be the same size.'
         ''' Correct the size of the list for some kind of output so you can maybe guess at what is broken '''
         if sz_freq_list > sz_ampl_list:
             sa_ctl.swept_freq_list = sa_ctl.swept_freq_list[0:sz_ampl_list]

@@ -30,6 +30,7 @@ import numpy as np
 
 import command_processor as cmd_proc
 from hardware_cfg import cfg, spi_device
+import serial_port as sp
 
 
 
@@ -174,9 +175,12 @@ class sa_control():
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
-            time.sleep(.002)    # Allow the controller (Arduino) some processing time
+            time.sleep(.001)    # Allow the controller (Arduino) some processing time
+            sp.simple_serial().get_ampl_data()
+        raw_ampl_data_list = sp.simple_serial().data_buffer_in
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.sweep_end()   # Send handshake signal to controller
+        
 
     def set_center_freq(self, freq: float):
         """

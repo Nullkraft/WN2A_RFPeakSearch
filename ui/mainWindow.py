@@ -106,9 +106,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
         sp.ser.read(sp.ser.in_waiting)         # Clear out the serial buffer.
-        self.serial_read_thread()              # Start the serial read thread to accept sweep data
+#        self.serial_read_thread()              # Start the serial read thread to accept sweep data
         sa.sa_control().sweep()
         self.label_sweep_status.setText("Sweep complete")
+##        plot_ampl_data()
         QtGui.QGuiApplication.processEvents()
 
     last_n = -1

@@ -49,25 +49,17 @@ Misc variables:
 
 """
 
+# Utility functions used for displaying the name and the line number
+# of the source file. Requires: import sys
+name = lambda: f'File \"{__name__}.py\",'
+line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+dbg_print = lambda message: print(name(), line(), message)
+
 
 import serial_port as sp
 import sys
 import time
 import logging
-
-
-def line() -> str:
-    """
-    Function Utility to simplify print debugging.
-
-    @return The line number of the source code file.
-    @rtype str
-
-    """
-    return f'line {str(sys._getframe(1).f_lineno)},'
-
-
-name = f'File \"{__name__}.py\",'
 
 
 # Arduino and Device Commands
@@ -261,7 +253,7 @@ def _send_command(command) -> None:
             cmd_bytes = command.to_bytes(4, 'little')
             sp.ser.write(cmd_bytes)
     except:
-        print(name, line(), f': Open the serial port before sending a command <{command.__name__}>.')
+        print(name(), line(), f': Open the serial port before sending a command <{command.__name__}>.')
 
 
 

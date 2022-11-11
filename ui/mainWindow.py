@@ -19,19 +19,11 @@
 
 # -*- coding: utf-8 -*-
 
-
-def line() -> str:
-    """
-    Function Utility to simplify print debugging.
-
-    @return The line number of the source code file.
-    @rtype str
-
-    """
-    return f'line {str(sys._getframe(1).f_lineno)},'
-
-
-name = f'File \"{__name__}.py\",'
+# Utility functions used for displaying the name and the line number
+# of the source file. Requires: import sys
+name = lambda: f'File \"{__name__}.py\",'
+line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+dbg_print = lambda message: print(name(), line(), message)
 
 
 import sys
@@ -116,7 +108,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def progress_report(self, n):
         if n != self.last_n:
             self.last_n = n
-#            print(name, line(), f'Len in_buff = {n}')
+#            print(name(), line(), f'Len in_buff = {n}')
     
     
     def clear_last_N(self):
@@ -149,12 +141,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def update_start_stop(self):
         view_range = self.graphWidget.viewRange()
-#        print(name, line(), f'View range = {view_range}')
+#        dbg_print(f'View range = {view_range}')
         return view_range
-
-    @pyqtSlot()
-    def on_btnSendRegisters_clicked(self):
-        print(name, line(), f'Reference clock = {sa.ref_clock}')
 
     @pyqtSlot()
     def on_btnRefreshPortsList_clicked(self):
@@ -401,7 +389,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         @type float
         """
         # TODO: not implemented yet
-        print(name, line(), f'LO1 freq = {self.label_LO1_freq.text()}')
+        dbg_print(f'LO1 freq = {self.label_LO1_freq.text()}')
 
 
 if __name__ == '__main__':

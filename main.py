@@ -18,6 +18,12 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
+# Utility functions used for displaying the name and the line number
+# of the source file. Requires: import sys
+name = lambda: f'File \"{__name__}.py\",'
+line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+dbg_print = lambda message: print(name(), line(), message)
+
 
 from ui.mainWindow import MainWindow
 from PyQt6 import QtWidgets             # requires 'pip install pyqtgraph'
@@ -30,7 +36,7 @@ def main():
     start = perf_counter()
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
-    print('"main.py"', f'line 33: Startup took {round(perf_counter()-start, 6)} seconds')
+    print(name(), line(), f'Startup took {round(perf_counter()-start, 6)} seconds')
     window.show()
     sys.exit(app.exec())    # Using sys.exit() takes the return code from app.exec() and sends
                             # it to the command line while app.exec() starts the event loop.

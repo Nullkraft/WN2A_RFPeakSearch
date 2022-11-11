@@ -18,6 +18,12 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
+# Utility functions used for displaying the name and the line number
+# of the source file. Requires: import sys
+name = lambda: f'File \"{__name__}.py\",'
+line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+dbg_print = lambda message: print(name(), line(), message)
+
 
 import time
 import errno as error
@@ -27,20 +33,6 @@ import serial       # requires 'pip3 install pyserial'
 from serial.tools import list_ports
 import configparser
 from PyQt6.QtCore import QObject, pyqtSignal
-
-
-def line() -> str:
-    """
-    Function Utility to simplify print debugging.
-
-    @return The line number of the source code file.
-    @rtype str
-
-    """
-    return f'line {str(sys._getframe(1).f_lineno)},'
-
-
-name = f'File \"{__name__}.py\",'
 
 
 # Serial port object that can be shared across source files.
@@ -129,18 +121,18 @@ class simple_serial(QObject):
                 ser_port = serial.Serial(self.port, self.baud, timeout=100/int(self.baud))
             except OSError as e:
                 if e.errno == error.EBUSY:
-                    print(name, line(), f': {self.port} has already been opened by another program. Arduino?')
+                    print(name(), line(), f': {self.port} has already been opened by another program. Arduino?')
             except TypeError:
-                print(name, line(), f': {self.config_fname} is corrupt. New default file created.')
+                print(name(), line(), f': {self.config_fname} is corrupt. New default file created.')
                 self._write_config(self.default_serial_speed, self.default_serial_port)     # Corrupted file contents so recreate a default.
             else:
                 time.sleep(0.2)                                 # Give the port a moment to finish opening.
-                print(name, line(), f'{ser_port.port} opened at {ser_port.baudrate} baud.')
+                print(name(), line(), f'{ser_port.port} opened at {ser_port.baudrate} baud.')
             finally:
                 ser = ser_port
                 self._write_config(current_speed=self.baud, current_port=self.port)
         else:
-            print(name, line(), 'No serial ports found')
+            print(name(), line(), 'No serial ports found')
 
 
     def _write_config(self, current_speed=None, current_port=None):
@@ -153,9 +145,9 @@ class simple_serial(QObject):
             with open(self.config_fname, 'w') as config_file:
                 config.write(config_file)
         except PermissionError as err:
-            print(name, line(), f': Can\'t write to {err.filename}')
+            print(name(), line(), f': Can\'t write to {err.filename}')
         except AttributeError as err:
-            print(name, line(), f': Unable to open one of the keys in {err.filename}')
+            print(name(), line(), f': Unable to open one of the keys in {err.filename}')
 
 
     def read_config(self):
@@ -167,11 +159,11 @@ class simple_serial(QObject):
                 port = config['Last.opened']['serial_port']
                 baud = config['Last.opened'].getint('port_speed')
             except KeyError as err:
-                print(name, line(), f': Missing key {err} from {self.config_fname}.')
+                print(name(), line(), f': Missing key {err} from {self.config_fname}.')
             else:
                 return [port, baud]
         else:
-            print(name, line(), f': Unable to read {self.config_fname}, file not found.')
+            print(name(), line(), f': Unable to read {self.config_fname}, file not found.')
 
 
     def read_serial(self):

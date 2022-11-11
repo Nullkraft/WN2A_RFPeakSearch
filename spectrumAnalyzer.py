@@ -23,29 +23,21 @@
     LO2_freq = LO1_freq - RFin + IF2
     RFin = LO1_freq + IF2 - LO2_freq
 """
+
+# Utility functions used for displaying the name and the line number
+# of the source file. Requires: import sys
+name = lambda: f'File \"{__name__}.py\",'
+line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+dbg_print = lambda message: print(name(), line(), message)
+
+
 import sys
 import time
 
 import numpy as np
-import pickle
 
 import command_processor as cmd_proc
 from hardware_cfg import cfg, spi_device
-import serial_port as sp
-
-
-
-name = f'File \"{__name__}.py\",'
-
-def line() -> str:
-    """
-    Function Utility to simplify print debugging.
-
-    @return The line number of the source code file.
-    @rtype str
-
-    """
-    return f'line {str(sys._getframe(1).f_lineno)},'
 
 
 ref_clock = cfg.ref_clock_1
@@ -212,9 +204,9 @@ def fmn_to_MHz(fmn_word, Fpfd=66.0):
     F = fmn_word >> 20
     M = (fmn_word & 0xFFFFF) >> 8
     if M == 0:
-        print(name, line(), fmn_word)
+        print(name(), line(), fmn_word)
     N = fmn_word & 0xFF
-#    print(name, line(), '\t', f'F = {F} : M = {M} : N = {N}')
+#    print(name(), line(), '\t', f'F = {F} : M = {M} : N = {N}')
     return Fpfd * (N + F/M)
 
 
@@ -223,7 +215,7 @@ def MHz_to_N(RFout_MHz, ref_clock, R: int=1) -> int:
         the integer step register of the ADF4356 chip.
     """
     if ref_clock == None:
-        print(name, line(), 'WARNING: ref_clock can not be None when calling MHz_to_N()')
+        print(name(), line(), 'WARNING: ref_clock can not be None when calling MHz_to_N()')
     N = int(RFout_MHz * (2/ref_clock))
     return (N)
 
@@ -236,7 +228,7 @@ def toggle_arduino_led(on_off):
 
 
 def get_version_message():
-    print(name, line(), f'Packets rcvd = {cmd_proc.get_version_message()}')
+    print(name(), line(), f'Packets rcvd = {cmd_proc.get_version_message()}')
 
 
 

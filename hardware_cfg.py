@@ -18,24 +18,18 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
+# Utility functions used for displaying the name and the line number
+# of the source file. Requires: import sys
+name = lambda: f'File \"{__name__}.py\",'
+line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+dbg_print = lambda message: print(name(), line(), message)
+
 
 import sys
 from dataclasses import dataclass
 from numba import njit
 from enum import Enum, auto
 
-def line() -> str:
-    """
-    Function Utility to simplify print debugging.
-
-    @return The line number of the source code file.
-    @rtype str
-
-    """
-    return f'line {str(sys._getframe(1).f_lineno)},'
-
-
-name = f'File \"{__name__}.py\",'
 
 class spi_device(Enum):
     """ Tracks which of the SPI capable chips is selected """

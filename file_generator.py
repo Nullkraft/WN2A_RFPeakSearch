@@ -18,24 +18,17 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
+# Utility functions used for displaying the name and the line number
+# of the source file. Requires: import sys
+name = lambda: f'File \"{__name__}.py\",'
+line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
+dbg_print = lambda message: print(name(), line(), message)
+
 
 import hardware_cfg as hw
 import command_processor as cmd
 import sys
 import pickle
-
-def line() -> str:
-    """
-    Function Utility to simplify print debugging.
-
-    @return The line number of the source code file.
-    @rtype str
-
-    """
-    return f'line {str(sys._getframe(1).f_lineno)},'
-
-
-name = f'File \"{__name__}.py\",'
 
 
 class data_generator():

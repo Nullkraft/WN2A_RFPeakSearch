@@ -82,10 +82,9 @@ class data_generator():
         @return LO2 frequency
         @rtype float
         """
-        if ref_clock == "ref1":
-            LO1_freq = self.LO1_ref1_freq_dict[RFin]
-        elif ref_clock == "ref2":
-            LO1_freq = self.LO1_ref2_freq_dict[RFin]
+        select_dict = {"ref1": self.LO1_ref1_freq_dict, "ref2": self.LO1_ref2_freq_dict}
+        LO1_ref_dict = select_dict[ref_clock]
+        LO1_freq = LO1_ref_dict[RFin]
         if RFin < 2500:
             LO2_freq = LO1_freq - RFin - hw.cfg.IF2   # Low-side
         else:

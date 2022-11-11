@@ -141,15 +141,15 @@ class data_generator():
 
     """~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
     def create_ref1_control_file(self) -> None:
-        LO1_n = self.load_list('LO1_ref1_N_steps.pickle')          # For sweeping. Convert N from a string to int
-        LO2_fmn = self.load_list('LO2_ref1_fmn_steps.pickle')      # For sweeping. Convert fmn from string to int
+        LO1_n = self.load_list('LO1_ref1_N_steps.pickle')
+        LO2_fmn = self.load_list('LO2_ref1_fmn_steps.pickle')
         full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
         with open('full_control_ref1.pickle', 'wb') as f:
             pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def create_ref2_control_file(self):
-        LO1_n = self.load_list('LO1_ref2_N_steps.pickle')          # For sweeping. Convert N from a string to int
-        LO2_fmn = self.load_list('LO2_ref2_fmn_steps.pickle')      # For sweeping. Convert fmn from string to int
+        LO1_n = self.load_list('LO1_ref2_N_steps.pickle')
+        LO2_fmn = self.load_list('LO2_ref2_fmn_steps.pickle')
         full_sweep_step_dict = {freq: (self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
         with open('full_control_ref2.pickle', 'wb') as f:
             pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)

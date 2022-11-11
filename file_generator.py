@@ -22,6 +22,7 @@
 import hardware_cfg as hw
 import command_processor as cmd
 import sys
+import pickle
 
 def line() -> str:
     """
@@ -91,7 +92,7 @@ class data_generator():
             LO2_freq = LO1_freq - RFin + hw.cfg.IF2   # High-side
         return LO2_freq
 
-    def load_list(self, file_name, data_type) -> list:
+    def load_list(self, file_name) -> list:
         """
         Read the control codes for LO1, LO2 and LO3 from their associated lists.
 
@@ -102,8 +103,8 @@ class data_generator():
         @return A list containing the value(s) of 'type'
         @rtype <class 'list'>
         """
-        with open(file_name, 'r') as f:
-            tmp_list = [data_type(x) for x in f]    # Convert the string from the file to the appropriate data type
+        with open(file_name, 'rb') as f:
+            tmp_list = pickle.load(f)
         return tmp_list
 
     def write_dict(self, file_name: str, ctrl_dict: dict) -> None:
@@ -115,14 +116,9 @@ class data_generator():
         @param dict A dictionary where key=RFin and a tuple as value=(ref, LO1_n, LO2_fmn)
         @type <class 'dict'>
         """
-        with open(file_name, 'w') as f:
-            f.write("RFin ref LO1_N LO2_FMN\n")   # Header: what the data is used for.
-            for freq, data in ctrl_dict.items():
-                RFin = str(freq)
-                ref = str(data[0])
-                LO1_n = str(data[1])
-                LO2_fmn = str(data[2])
-                f.write(RFin + ' ' + ref + ' ' + LO1_n + ' ' + LO2_fmn + '\n')
+        with open(file_name, 'wb') as f:
+            pickle.dump(ctrl_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+
 
     def create_data(self) -> None:
         # Create the list of LO1 frequencies when using reference clock 1.
@@ -139,51 +135,55 @@ class data_generator():
         self.LO1_ref1_freq_dict = dict(zip(self.RFin_list, self.LO1_ref1_freq_list))
         self.LO1_ref2_freq_dict = dict(zip(self.RFin_list, self.LO1_ref2_freq_list))
         # Create the frequency lookup tables for LO2. (LO2_freq = LO1 - freq + hw.cfg.IF2)
-        self.LO2_ref1_freq_list = [self._LO2_frequency(freq, "ref1") for freq in self.RFin_list]
-        self.LO2_ref2_freq_list = [self._LO2_frequency(freq, "ref2") for freq in self.RFin_list]
+        self.LO2_ref1_freq_list = [round(self._LO2_frequency(freq, "ref1"), 9) for freq in self.RFin_list]
+        self.LO2_ref2_freq_list = [round(self._LO2_frequency(freq, "ref2"), 9) for freq in self.RFin_list]
         # Create the LO2 control codes for setting the frequency of the MAX2871 chip for ref clocks 1 and 2
-        self.LO2_ref1_fmn_list = [hw.MHz_to_fmn(frequency, hw.cfg.ref_clock_1) for frequency in self.LO2_ref1_freq_list]
-        self.LO2_ref2_fmn_list = [hw.MHz_to_fmn(frequency, hw.cfg.ref_clock_2) for frequency in self.LO2_ref2_freq_list]
+        self.LO2_ref1_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_1) for freq in self.LO2_ref1_freq_list]
+        self.LO2_ref2_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_2) for freq in self.LO2_ref2_freq_list]
+        pass
 
     def save_data_files(self) -> None:
         """Save LO1 and LO2 data for ref1 and ref2."""
-        file_list = ["LO1_ref1_freq_steps.csv", "LO1_ref2_freq_steps.csv",
-                     "LO1_ref1_N_steps.csv", "LO1_ref2_N_steps.csv",
-                     "LO2_ref1_fmn_steps.csv", "LO2_ref2_fmn_steps.csv",
+        file_list = ["LO1_ref1_freq_steps.pickle", "LO1_ref2_freq_steps.pickle",
+                     "LO1_ref1_N_steps.pickle", "LO1_ref2_N_steps.pickle",
+                     "LO2_ref1_fmn_steps.pickle", "LO2_ref2_fmn_steps.pickle",
+                     "LO2_ref1_freq_steps.pickle", "LO2_ref2_freq_steps.pickle",
                      ]
         lists_list = [self.LO1_ref1_freq_list, self.LO1_ref2_freq_list,
                       self.LO1_ref1_N_list, self.LO1_ref2_N_list,
                       self.LO2_ref1_fmn_list, self.LO2_ref2_fmn_list,
+                      self.LO2_ref1_freq_list, self.LO2_ref2_freq_list,
                       ]
         for file_name, data_list in zip(file_list, lists_list):
-            with open(file_name, 'w') as f:
-                for data in data_list:
-                    f.write(str(data) + '\n')
-        """
-        Save LO2 frequency files for ref1 and ref2.
-        The data in these two lists require rounding before storing to file.
-        """
-        file_list.clear()
-        lists_list.clear()
-        file_list = ["LO2_ref1_freq_steps.csv", "LO2_ref2_freq_steps.csv"]
-        lists_list = [self.LO2_ref1_freq_list, self.LO2_ref2_freq_list]
-        for file_name, data_list in zip(file_list, lists_list):
-            with open(file_name, 'w') as f:
-                for data in data_list:
-                    f.write(str(round(data, 9)) + '\n')
+            with open(file_name, 'wb') as f:
+                pickle.dump(data_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+##        """
+##        Save LO2 frequency files for ref1 and ref2.
+##        The data in these two lists require rounding before storing to file.
+##        """
+##        file_list.clear()
+##        lists_list.clear()
+##        file_list = ["LO2_ref1_freq_steps.pickle", "LO2_ref2_freq_steps.pickle"]
+##        lists_list = [self.LO2_ref1_freq_list, self.LO2_ref2_freq_list]
+##        for file_name, data_list in zip(file_list, lists_list):
+##            with open(file_name, 'wb') as f:
+##                pickle.dump(data_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+##            with open(file_name, 'w') as f:
+##                for data in data_list:
+##                    f.write(str(round(data, 9)) + '\n')
 
     """~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
     def create_ref1_control_file(self) -> None:
-        LO1_n = self.load_list('LO1_ref1_N_steps.csv', int)          # For sweeping. Convert N from a string to int
-        LO2_fmn = self.load_list('LO2_ref1_fmn_steps.csv', int)      # For sweeping. Convert fmn from string to int
+        LO1_n = self.load_list('LO1_ref1_N_steps.pickle')          # For sweeping. Convert N from a string to int
+        LO2_fmn = self.load_list('LO2_ref1_fmn_steps.pickle')      # For sweeping. Convert fmn from string to int
         full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
-        self.write_dict('full_control_ref1.csv', full_sweep_step_dict)
+        self.write_dict('full_control_ref1.pickle', full_sweep_step_dict)
 
     def create_ref2_control_file(self):
-        LO1_n = self.load_list('LO1_ref2_N_steps.csv', int)          # For sweeping. Convert N from a string to int
-        LO2_fmn = self.load_list('LO2_ref2_fmn_steps.csv', int)      # For sweeping. Convert fmn from string to int
+        LO1_n = self.load_list('LO1_ref2_N_steps.pickle')          # For sweeping. Convert N from a string to int
+        LO2_fmn = self.load_list('LO2_ref2_fmn_steps.pickle')      # For sweeping. Convert fmn from string to int
         full_sweep_step_dict = {freq: (self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
-        self.write_dict('full_control_ref2.csv', full_sweep_step_dict)
+        self.write_dict('full_control_ref2.pickle', full_sweep_step_dict)
     """~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
 
 

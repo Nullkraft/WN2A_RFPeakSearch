@@ -27,6 +27,7 @@ import sys
 import time
 
 import numpy as np
+import pickle
 
 import command_processor as cmd_proc
 from hardware_cfg import cfg, spi_device
@@ -61,23 +62,6 @@ ref1_full_sweep_dict = {}
 ref2_full_sweep_dict = {}
 
 amplitude_list = []     # The collected list of swept frequencies used for plotting amplitude vs. frequency
-
-
-def load_control_dict(dict_name, file_name):
-    """
-    NOTE: full_sweep_dict has a value that is a tuple of LO1_N and LO2_FMN.
-          LO3_FMN will be added later. The key, RFin, is a string.
-
-    EXAMPLE USAGE:  ref, N, FMN = full_sweep_dict[RFin]
-                    print(name, line(), f'ref = {ref}, N ={N} and FMN ={FMN}')
-    """
-#    full_sweep_dict = dict()
-    with open(file_name, 'r') as f:
-        _ = f.readline()    # Throw away the file header
-        for freq in f:
-            RFin, ref, LO1_N, LO2_FMN = freq.split()
-            RFin = float(RFin)
-            dict_name[RFin] = (int(ref), int(LO1_N), int(LO2_FMN))
 
 
 class sa_control():
@@ -175,9 +159,9 @@ class sa_control():
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
-            time.sleep(.001)    # Allow the controller (Arduino) some processing time
-            sp.simple_serial().get_ampl_data()
-        raw_ampl_data_list = sp.simple_serial().data_buffer_in
+            time.sleep(.002)    # Allow the controller (Arduino) some processing time
+#            sp.simple_serial().get_ampl_data()
+#        raw_ampl_data_list = sp.simple_serial().data_buffer_in
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.sweep_end()   # Send handshake signal to controller
         

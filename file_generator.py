@@ -107,17 +107,6 @@ class data_generator():
             tmp_list = pickle.load(f)
         return tmp_list
 
-    def write_dict(self, file_name: str, ctrl_dict: dict) -> None:
-        """
-        Function Saves the contents of a unit control dictionary to file
-        
-        @param file_name Name of the file to save the dictionary into
-        @type <class 'str'>
-        @param dict A dictionary where key=RFin and a tuple as value=(ref, LO1_n, LO2_fmn)
-        @type <class 'dict'>
-        """
-        with open(file_name, 'wb') as f:
-            pickle.dump(ctrl_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
     def create_data(self) -> None:
@@ -163,13 +152,15 @@ class data_generator():
         LO1_n = self.load_list('LO1_ref1_N_steps.pickle')          # For sweeping. Convert N from a string to int
         LO2_fmn = self.load_list('LO2_ref1_fmn_steps.pickle')      # For sweeping. Convert fmn from string to int
         full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
-        self.write_dict('full_control_ref1.pickle', full_sweep_step_dict)
+        with open('full_control_ref1.pickle', 'wb') as f:
+            pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def create_ref2_control_file(self):
         LO1_n = self.load_list('LO1_ref2_N_steps.pickle')          # For sweeping. Convert N from a string to int
         LO2_fmn = self.load_list('LO2_ref2_fmn_steps.pickle')      # For sweeping. Convert fmn from string to int
         full_sweep_step_dict = {freq: (self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
-        self.write_dict('full_control_ref2.pickle', full_sweep_step_dict)
+        with open('full_control_ref2.pickle', 'wb') as f:
+            pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
     """~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
 
 

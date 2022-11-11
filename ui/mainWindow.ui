@@ -181,9 +181,51 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="btnZeroSpan">
+        <widget class="QLabel" name="label_RFin_freq">
          <property name="text">
-          <string>Zero Span</string>
+          <string>RFin</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QDoubleSpinBox" name="dbl_rfin_frequency">
+         <property name="decimals">
+          <number>3</number>
+         </property>
+         <property name="maximum">
+          <double>3000.000000000000000</double>
+         </property>
+         <property name="stepType">
+          <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+         </property>
+         <property name="value">
+          <double>3000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_8">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_LO1_freq">
+         <property name="text">
+          <string>LO1: </string>
          </property>
         </widget>
        </item>
@@ -204,9 +246,9 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="btnFullSpan">
+        <widget class="QLabel" name="label_LO2_freq">
          <property name="text">
-          <string>Full Span</string>
+          <string>LO2: </string>
          </property>
         </widget>
        </item>
@@ -227,9 +269,9 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="btnLastSpan">
+        <widget class="QLabel" name="label_LO3_freq">
          <property name="text">
-          <string>Last Span</string>
+          <string>LO3: </string>
          </property>
         </widget>
        </item>
@@ -1141,7 +1183,6 @@
   <tabstop>floatStartMHz</tabstop>
   <tabstop>floatStopMHz</tabstop>
   <tabstop>intStepKHz</tabstop>
-  <tabstop>btnLastSpan</tabstop>
   <tabstop>minGraphWidth</tabstop>
   <tabstop>minGraphHeight</tabstop>
   <tabstop>btn_disable_LO3_RFout</tabstop>
@@ -1159,7 +1200,6 @@
   <tabstop>btnRefreshPortsList</tabstop>
   <tabstop>btnClearPeakSearch</tabstop>
   <tabstop>floatSweepStartFreq</tabstop>
-  <tabstop>btnZeroSpan</tabstop>
   <tabstop>floatSweepStopFreq</tabstop>
   <tabstop>dblSpanMHz</tabstop>
   <tabstop>dblCenterMHz</tabstop>
@@ -1172,7 +1212,6 @@
   <tabstop>btnTrigger</tabstop>
   <tabstop>btnExit</tabstop>
   <tabstop>btn_get_arduino_msg</tabstop>
-  <tabstop>btnFullSpan</tabstop>
   <tabstop>line_edit_cmd</tabstop>
  </tabstops>
  <resources/>

@@ -37,6 +37,7 @@ name = f'File \"{__name__}.py\",'
 import sys
 #from time import perf_counter
 import numpy as np
+import pickle
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
@@ -92,12 +93,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #
         # sa.full_sweep_dict contains values for ref_clock, LO1, LO2, 
         # and LO3 used for controlling the hardware.
-        # Loading sa.full_sweep_dict in a separate process speeds up the app load.
-        sa.load_control_dict(sa.ref1_full_sweep_dict, 'full_control_ref1.csv')
-##        sa.load_control_dict(sa.ref2_full_sweep_dict, 'full_control_ref2.csv')
+        with open('full_control_ref1.pickle', 'rb') as f:
+            sa.ref1_full_sweep_dict = pickle.load(f)
+##        with open('full_control_ref2.pickle', 'rb') as f:
+##            sa.ref2_full_sweep_dict = pickle.load(f)
         sa.full_sweep_dict = sa.ref1_full_sweep_dict
-##        process = Process(target=sa.load_control_dict, args=(sa.full_sweep_dict, 'full_control_ref1.csv'))
-##        process.start()
 
 
 
@@ -106,10 +106,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
         sp.ser.read(sp.ser.in_waiting)         # Clear out the serial buffer.
-#        self.serial_read_thread()              # Start the serial read thread to accept sweep data
+        self.serial_read_thread()              # Start the serial read thread to accept sweep data
         sa.sa_control().sweep()
         self.label_sweep_status.setText("Sweep complete")
-##        plot_ampl_data()
+#        self.plot_ampl_data()
         QtGui.QGuiApplication.processEvents()
 
     last_n = -1
@@ -392,6 +392,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             pass
 
+    @pyqtSlot(float)
+    def on_dbl_rfin_frequency_valueChanged(self, p0):
+        """
+        Slot documentation goes here.
+
+        @param p0 DESCRIPTION
+        @type float
+        """
+        # TODO: not implemented yet
+        print(name, line(), f'LO1 freq = {self.label_LO1_freq.text()}')
 
 
 if __name__ == '__main__':

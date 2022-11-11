@@ -157,20 +157,6 @@ class data_generator():
         for file_name, data_list in zip(file_list, lists_list):
             with open(file_name, 'wb') as f:
                 pickle.dump(data_list, f, protocol=pickle.HIGHEST_PROTOCOL)
-##        """
-##        Save LO2 frequency files for ref1 and ref2.
-##        The data in these two lists require rounding before storing to file.
-##        """
-##        file_list.clear()
-##        lists_list.clear()
-##        file_list = ["LO2_ref1_freq_steps.pickle", "LO2_ref2_freq_steps.pickle"]
-##        lists_list = [self.LO2_ref1_freq_list, self.LO2_ref2_freq_list]
-##        for file_name, data_list in zip(file_list, lists_list):
-##            with open(file_name, 'wb') as f:
-##                pickle.dump(data_list, f, protocol=pickle.HIGHEST_PROTOCOL)
-##            with open(file_name, 'w') as f:
-##                for data in data_list:
-##                    f.write(str(round(data, 9)) + '\n')
 
     """~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
     def create_ref1_control_file(self) -> None:

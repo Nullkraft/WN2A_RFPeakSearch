@@ -113,7 +113,7 @@
      <widget class="QGroupBox" name="groupBox">
       <property name="minimumSize">
        <size>
-        <width>165</width>
+        <width>185</width>
         <height>0</height>
        </size>
       </property>
@@ -224,8 +224,14 @@
        </item>
        <item>
         <widget class="QLabel" name="label_LO1_freq">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="text">
-          <string>LO1: </string>
+          <string>LO1:  9999.999 MHz</string>
          </property>
         </widget>
        </item>

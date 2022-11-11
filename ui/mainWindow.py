@@ -23,7 +23,6 @@
 # of the source file. Requires: import sys
 name = lambda: f'File \"{__name__}.py\",'
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
-dbg_print = lambda message: print(name(), line(), message)
 
 
 import sys
@@ -141,7 +140,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def update_start_stop(self):
         view_range = self.graphWidget.viewRange()
-#        dbg_print(f'View range = {view_range}')
+#        print(name(), line(), f'View range = {view_range}')
         return view_range
 
     @pyqtSlot()
@@ -381,15 +380,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             pass
 
     @pyqtSlot(float)
-    def on_dbl_rfin_frequency_valueChanged(self, p0):
+    def on_dbl_rfin_frequency_valueChanged(self, RFin):
         """
         Slot documentation goes here.
 
         @param p0 DESCRIPTION
         @type float
         """
-        # TODO: not implemented yet
-        dbg_print(f'LO1 freq = {self.label_LO1_freq.text()}')
+        floating_point_frequency = str(RFin)
+        index = int(floating_point_frequency.replace('.', ''))
+        with open('LO1_ref1_freq_steps.pickle', 'rb') as f:
+            LO1_freq_list = pickle.load(f)
+        with open('LO2_ref1_freq_steps.pickle', 'rb') as f:
+            LO2_freq_list = pickle.load(f)
+
+        self.label_LO1_freq.setText(f'LO1:  {LO1_freq_list[index]} MHz')
+        self.label_LO2_freq.setText(f'LO2:  {LO2_freq_list[index]} MHz')
+
+        # Getting a divide-by-zero when M==0, but M should never be less than 2
+        with open('LO2_ref1_fmn_steps.pickle', 'rb') as f:
+            LO2_fmn_list = pickle.load(f)
+        print(name(), line(), f'LO2_fmn is {LO2_fmn_list[index]}')
 
 
 if __name__ == '__main__':

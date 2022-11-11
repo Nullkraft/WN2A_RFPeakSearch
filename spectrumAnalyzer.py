@@ -28,7 +28,6 @@
 # of the source file. Requires: import sys
 name = lambda: f'File \"{__name__}.py\",'
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
-dbg_print = lambda message: print(name(), line(), message)
 
 
 import sys
@@ -204,7 +203,7 @@ def fmn_to_MHz(fmn_word, Fpfd=66.0):
     F = fmn_word >> 20
     M = (fmn_word & 0xFFFFF) >> 8
     if M == 0:
-        print(name(), line(), fmn_word)
+        M = 1
     N = fmn_word & 0xFF
 #    print(name(), line(), '\t', f'F = {F} : M = {M} : N = {N}')
     return Fpfd * (N + F/M)

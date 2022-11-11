@@ -22,7 +22,6 @@
 # of the source file. Requires: import sys
 name = lambda: f'File \"{__name__}.py\",'
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
-dbg_print = lambda message: print(name(), line(), message)
 
 
 import hardware_cfg as hw

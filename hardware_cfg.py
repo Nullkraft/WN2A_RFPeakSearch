@@ -22,7 +22,6 @@
 # of the source file. Requires: import sys
 name = lambda: f'File \"{__name__}.py\",'
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
-dbg_print = lambda message: print(name(), line(), message)
 
 
 import sys
@@ -91,6 +90,7 @@ def MHz_to_fmn(LO2_target_freq_MHz: float, ref_clock: float) -> int:
             best_F = F
             best_M = M
 #    print(f'{LO2_target_freq_MHz} MHz : \tN:{N}, \tF:{best_F}, \tM:{best_M}')
+    print(name(), line(), f'F = {best_F} : M = {best_M} : N = {N}')
     return best_F<<20 | best_M<<8 | N
 
 

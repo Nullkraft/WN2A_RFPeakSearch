@@ -78,7 +78,7 @@ def MHz_to_fmn(LO2_target_freq_MHz: float, ref_clock: float) -> int:
     Fpfd = ref_clock / R
     N = int(Fvco / Fpfd)
     Fract = round(Fvco / Fpfd - N, 9)
-    for M in list(range(4096,1,-1)):
+    for M in list(range(4095,1,-1)):
         F = round(Fract * M)
         Err1 = abs(Fvco - (Fpfd * (N + F/M)))
         if Err1 == 0:
@@ -89,8 +89,7 @@ def MHz_to_fmn(LO2_target_freq_MHz: float, ref_clock: float) -> int:
             max_error = Err1
             best_F = F
             best_M = M
-#    print(f'{LO2_target_freq_MHz} MHz : \tN:{N}, \tF:{best_F}, \tM:{best_M}')
-    print(name(), line(), f'F = {best_F} : M = {best_M} : N = {N}')
+#    print(name(), line(), f'F = {best_F} : M = {best_M} : N = {N}')
     return best_F<<20 | best_M<<8 | N
 
 

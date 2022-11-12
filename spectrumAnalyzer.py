@@ -140,7 +140,6 @@ class sa_control():
         Function sweep() : Search the RF input for any or all RF signals
         """
 ##        cmd_proc.disable_LO3_RFout()
-        cmd_proc.sel_315MHz_adc()
         time.sleep(.004)
         cmd_proc.sel_LO2()
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
@@ -154,7 +153,7 @@ class sa_control():
 #            sp.simple_serial().get_ampl_data()
 #        raw_ampl_data_list = sp.simple_serial().data_buffer_in
         self.set_LO2(cmd_proc.LO2_mux_tristate)
-        cmd_proc.sweep_end()   # Send handshake signal to controller
+        cmd_proc.end_sweep()   # Send handshake signal to controller
         
 
     def set_center_freq(self, freq: float):

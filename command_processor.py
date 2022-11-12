@@ -38,8 +38,6 @@ Functions:
     get_version_message()
     disable_all_ref_clocks()
     enable_ref_clock(ref_clock_command)
-    sel_315MHz_adc()
-    sel_45MHz_adc()
     sweep_end()
     _send_command(command)
 Misc variables:
@@ -102,17 +100,13 @@ ref_clock1_enable = 0x0CFF   # Enables 66.000 MHz reference and disables 66.666 
 ref_clock2_enable = 0x14FF   # Enables 66.666 MHz reference and disables 66.000 MHz reference
 
 # Arduino status
-Arduino_LED_on    = 0x0FFF   # LED blink test - The 'Hello World' of embedded dev
 Arduino_LED_off   = 0x07FF
+Arduino_LED_on    = 0x0FFF   # LED blink test - The 'Hello World' of embedded dev
 version_message   = 0x17FF   # Query Arduino type and Software version
+sweep_start       = 0x1FFF   # Serial communication flow control
+sweep_end         = 0x27FF   # Tell the Arduino that all data has been sent
+reset_and_report  = 0x2FFF   # Reset the Spectrum Analyzer to default settings
 
-# ADC selection and read request
-sel_adc_LO2       = 0x27FF   # Enable 315 MHz LogAmp ADC and disable 45 MHz LogAmp ADC
-sel_adc_LO3       = 0x2FFF   # Enable 45 MHz LogAmp ADC and disable 315 MHz LogAmp ADC
-
-# Serial channel control
-block_xfer_start  = 0x3FFF   # Serial communication flow control
-block_xfer_stop   = 0x47FF   # Tell the Arduino that all data has been sent
 
 
 # Attenuator Command & Control
@@ -230,19 +224,9 @@ def enable_ref_clock(ref_clock_command) -> None:
     _send_command(ref_clock_command)
 
 
-def sel_315MHz_adc() -> None:
-    """Select the 315MHz bandwidth output and selects the A2D for reading the output amplitude."""
-    _send_command(sel_adc_LO2)
-
-
-def sel_45MHz_adc() -> None:
-    """Select the 45MHz bandwidth output and selects the A2D for reading the output amplitude."""
-    _send_command(sel_adc_LO3)
-
-
-def sweep_end() -> None:
+def end_sweep() -> None:
     """Serial data stream stop command when done sweeping LO2 or LO3."""
-    _send_command(block_xfer_stop)
+    _send_command(sweep_end)
 
 
 def _send_command(command) -> None:

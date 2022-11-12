@@ -323,7 +323,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         ref_clock, LO1_cntl_code, LO2_cntl_code = sa.full_sweep_dict[100.0]
         cmd_proc.enable_60MHz_ref_clock()
-        cmd_proc.sel_315MHz_adc()   # Selects LO2 path
         LO1_cntl_code = LO1_cntl_code.to_bytes(4, byteorder='little')
         cmd_proc.set_LO(cmd_proc.LO1_pos5dBm, LO1_cntl_code)
         LO2_control_code = LO2_cntl_code.to_bytes(4, byteorder='little')

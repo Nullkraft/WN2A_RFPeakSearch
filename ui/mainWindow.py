@@ -93,6 +93,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.last_start = 0
         self.last_stop = 0
 
+        self.RFin_list = list()
+        with open('RFin_steps.csv', 'r') as f:
+            for freq in f:
+                RFin = float(freq)
+                self.RFin_list.append(RFin)
 
 
     @pyqtSlot()
@@ -362,6 +367,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.last_step != round(self.intStepKHz.value() / MHz, 3):
             self.set_steps()
 
+
+    def float_to_index(self, hash_value):
+        num_slice = round(hash_value, 3)                # Limit to 3 decimal places before converting
+        stringified = "{:.3f}".format(num_slice)        # A string is needed for the next step
+        decimal_removed = stringified.replace(".", "")  # Same as multiplying by 1000
+        slice_index = int(decimal_removed)
+        return slice_index
+
         
     def set_steps(self):
         """
@@ -372,23 +385,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.last_start = self.floatStartMHz.value()
         self.last_stop = self.floatStopMHz.value()
         self.last_step = round(self.intStepKHz.value() / MHz, 3)
+
         sa_ctl.swept_freq_list.clear()                                # Prepare for a new sweep
         sa.sweep_step_size = round(self.intStepKHz.value() / MHz, 3)  # frequency step
         sa.sweep_start_freq = self.floatStartMHz.value()              # frequency start
         sa.sweep_stop_freq = self.floatStopMHz.value()                # frequency stop
 
-
+        start_slice = self.float_to_index(sa.sweep_start_freq)
+        stop_slice = self.float_to_index(sa.sweep_stop_freq)
+        step_slice = self.float_to_index(sa.sweep_step_size)
 
         start = perf_counter()
-        sa_ctl.swept_freq_list = [round(freq, 3) for freq in np.arange(sa.sweep_start_freq, sa.sweep_stop_freq, sa.sweep_step_size)]
+        sa_ctl.swept_freq_list = self.RFin_list[start_slice:stop_slice:step_slice]
+#        sa_ctl.swept_freq_list = [round(freq, 3) for freq in np.arange(sa.sweep_start_freq, sa.sweep_stop_freq, sa.sweep_step_size)]
         stop = perf_counter()
+        print(name(), line(), f'Len swept freq list = {len(sa_ctl.swept_freq_list)}')
 
         final_step = round(np.float64(self.floatStopMHz.value()), 3)  # Limit to 3 decimal places
         sa_ctl.swept_freq_list.append(final_step)                     # Include the stop frequency in the sweep list
         num_steps = len(sa_ctl.swept_freq_list)
         self.numFrequencySteps.setValue(num_steps)
 
-        print(name(), line(), f'Updating steps took {round(stop-start, 3)} seconds')
+        print(name(), line(), f'Updating steps took {round(stop-start, 6)} seconds')
+        print(name(), line(), f'Swept freq list[0:10] = {sa_ctl.swept_freq_list[:10]}')
 
     
     @pyqtSlot()

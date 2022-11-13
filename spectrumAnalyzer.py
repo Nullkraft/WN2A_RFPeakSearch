@@ -134,13 +134,13 @@ class sa_control():
             self.selected_device = spi_device.LO3   # Update currently selected device to LO3
         cmd_proc.set_LO3(control_code)      # Set to freq=control_code
 
-
+    '''
     def sweep(self):
         """
         Function sweep() : Search the RF input for any or all RF signals
         """
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
-        time.sleep(.004)
+        time.sleep(.001)
         for freq in self.swept_freq_list:
             ref_code, LO1_N_code, LO2_fmn_code = full_sweep_dict[freq]    # Get hardware control codes
             self.set_reference_clock(ref_code, self.last_ref_code);
@@ -149,7 +149,23 @@ class sa_control():
             time.sleep(.002)    # Allow the controller (Arduino) some processing time
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.end_sweep()   # Send handshake signal to controller
-        
+    '''
+
+    def sweep(self):
+        """
+        Function sweep() : Search the RF input for any or all RF signals
+        """
+        self.set_LO2(cmd_proc.LO2_mux_dig_lock)
+        time.sleep(.001)
+        for freq in self.swept_freq_list:
+            ref_code, LO1_N_code, LO2_fmn_code = full_sweep_dict[freq]    # Get hardware control codes
+            self.set_reference_clock(ref_code, self.last_ref_code);
+            self.set_LO1(LO1_N_code, self.last_LO1_code)
+            self.set_LO2(LO2_fmn_code)
+            time.sleep(.002)    # Allow the controller (Arduino) some processing time
+        self.set_LO2(cmd_proc.LO2_mux_tristate)
+        cmd_proc.end_sweep()   # Send handshake signal to controller
+
 
     def set_center_freq(self, freq: float):
         """

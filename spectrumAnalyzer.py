@@ -37,6 +37,7 @@ import numpy as np
 
 import command_processor as cmd_proc
 from hardware_cfg import cfg, spi_device
+import serial_port as sp
 
 
 ref_clock = cfg.ref_clock_1
@@ -155,14 +156,25 @@ class sa_control():
         """
         Function sweep() : Search the RF input for any or all RF signals
         """
+        sp.ser.read(sp.ser.in_waiting)           # Clear the serial buffer
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
         time.sleep(.001)
+        bytes_rxd = bytearray()
         for freq in self.swept_freq_list:
             ref_code, LO1_N_code, LO2_fmn_code = full_sweep_dict[freq]    # Get hardware control codes
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
             time.sleep(.002)    # Allow the controller (Arduino) some processing time
+            while len(bytes_rxd)<2:
+                bytes_rxd += sp.ser.read(sp.ser.in_waiting)
+                sp.simple_serial.data_buffer_in += bytes_rxd
+#                print(name(), line(), f'bytes rxd = {list(bytes_rxd)}')
+            bytes_rxd.clear()
+#            end_of_data = self.data_buffer_in.find(self.end_of_stream)  # Location for the end of the list
+#            if end_of_data > 0:                                         # The end of the list was found...
+#                self.data_buffer_in = self.data_buffer_in[:end_of_data] # so slice off any excess data bytes
+        print(name(), line(), f'Total bytes read = {len(sp.simple_serial.data_buffer_in)}')
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.end_sweep()   # Send handshake signal to controller
 

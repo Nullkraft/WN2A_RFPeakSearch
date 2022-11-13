@@ -41,24 +41,20 @@ from PyQt6.QtCore import QObject, pyqtSignal
     1. Make simple_serial independent of the comms channel, eg. it
        could be serial, ethernet or even GPIB.
     
-    2. Make the code more reasonable/understandable across modules.
-
-    3. YouTube Tutorial - Dependency INVERSION vs dependency INJECTION
+    2. YouTube Tutorial - Dependency INVERSION vs dependency INJECTION
        https://www.youtube.com/watch?v=2ejbLVkCndI
 """
 ser = serial.Serial()
 
 class simple_serial(QObject):
-    """
-    simple_serial is used to receive large amounts of data of a given bit width from the Arduino.
-    """
     finished = pyqtSignal(bytearray)
     progress = pyqtSignal(int)
+    data_buffer_in = bytearray()           # Incoming serial buffer
 
 
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
-        self.data_buffer_in = bytearray()           # Incoming serial buffer
+#        self.data_buffer_in = bytearray()           # Incoming serial buffer
         self.end_of_stream = bytearray([255, 255])  # Arduino A2D is only 10 bits so we can safely use 0xffff
         self.config_fname = 'serial.conf'
         self.default_serial_speed = '9600'
@@ -165,6 +161,8 @@ class simple_serial(QObject):
             print(name(), line(), f': Unable to read {self.config_fname}, file not found.')
 
 
+
+    '''
     def read_serial(self):
         """
         Worker thread for collecting incoming serial data
@@ -172,11 +170,12 @@ class simple_serial(QObject):
         while True:
             self.data_buffer_in += ser.read(ser.in_waiting)             # Accumulate the data bytes
             end_of_data = self.data_buffer_in.find(self.end_of_stream)  # Location for the end of the list
-#            self.progress.emit(len(self.data_buffer_in))
+            self.progress.emit(len(self.data_buffer_in))
             if end_of_data > 0:                                         # The end of the list was found...
                 self.finished.emit(self.data_buffer_in[:end_of_data])   # so slice off any excess data bytes
                 break
             time.sleep(.001)       # Prevents CPU from going to 100% utilization
+    '''
 
 # End simple_serial() class
 

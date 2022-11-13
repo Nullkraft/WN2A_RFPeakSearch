@@ -96,11 +96,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_btnSweep_clicked(self):
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
-        sp.ser.read(sp.ser.in_waiting)         # Clear out the serial buffer.
-        self.serial_read_thread()              # Start the serial read thread to accept sweep data
+#        sp.ser.read(sp.ser.in_waiting)         # Clear out the serial buffer.
+#        self.serial_read_thread()              # Start the serial read thread to accept sweep data
         sa.sa_control().sweep()
         self.label_sweep_status.setText("Sweep complete")
-#        self.plot_ampl_data()
+##        self.plot_ampl_data(sp.simple_serial.data_buffer_in)
         QtGui.QGuiApplication.processEvents()
 
     last_n = -1
@@ -170,10 +170,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ''' Correct the size of the list for some kind of output so you can maybe guess at what is broken '''
         if sz_freq_list > sz_ampl_list:
             sa_ctl.swept_freq_list = sa_ctl.swept_freq_list[0:sz_ampl_list]
-            print(name(), line(), 'Reduced the size of the x-axis frequency list')
+            print(name(), line(), f'Reduced the size of the x-axis frequency list to {len(sa_ctl.swept_freq_list)}')
         if sz_freq_list < sz_ampl_list:
             self.amplitude = self.amplitude[0:sz_freq_list]
-            print(name(), line(), 'Reduced the size of the y-axis amplitude list')
+            print(name(), line(), f'Reduced the size of the y-axis amplitude list to {len(self.amplitude)}')
         self.graphWidget.setXRange(sa_ctl.swept_freq_list[0], sa_ctl.swept_freq_list[-1])   # Limit plot to user selected frequency range
         purple = (75, 50, 255)
         self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=purple)

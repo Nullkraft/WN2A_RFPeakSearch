@@ -139,9 +139,6 @@ class sa_control():
         """
         Function sweep() : Search the RF input for any or all RF signals
         """
-##        cmd_proc.disable_LO3_RFout()
-        time.sleep(.004)
-        cmd_proc.sel_LO2()
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
         time.sleep(.004)
         for freq in self.swept_freq_list:
@@ -150,8 +147,6 @@ class sa_control():
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
             time.sleep(.002)    # Allow the controller (Arduino) some processing time
-#            sp.simple_serial().get_ampl_data()
-#        raw_ampl_data_list = sp.simple_serial().data_buffer_in
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.end_sweep()   # Send handshake signal to controller
         

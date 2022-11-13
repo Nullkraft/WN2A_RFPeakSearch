@@ -26,7 +26,7 @@ line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 
 
 import sys
-#from time import perf_counter
+from time import perf_counter
 import numpy as np
 import pickle
 
@@ -89,6 +89,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 ##        with open('full_control_ref2.pickle', 'rb') as f:
 ##            sa.ref2_full_sweep_dict = pickle.load(f)
         sa.full_sweep_dict = sa.ref1_full_sweep_dict
+        self.last_step = 0
+        self.last_start = 0
+        self.last_stop = 0
 
 
 
@@ -100,7 +103,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #        self.serial_read_thread()              # Start the serial read thread to accept sweep data
         sa.sa_control().sweep()
         self.label_sweep_status.setText("Sweep complete")
-##        self.plot_ampl_data(sp.simple_serial.data_buffer_in)
+        self.plot_ampl_data(sp.simple_serial.data_buffer_in)
         QtGui.QGuiApplication.processEvents()
 
     last_n = -1
@@ -170,10 +173,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ''' Correct the size of the list for some kind of output so you can maybe guess at what is broken '''
         if sz_freq_list > sz_ampl_list:
             sa_ctl.swept_freq_list = sa_ctl.swept_freq_list[0:sz_ampl_list]
-            print(name(), line(), f'Reduced the size of the x-axis frequency list to {len(sa_ctl.swept_freq_list)}')
+            print(name(), line(), f'Reduced the x-axis <frequency> to {len(sa_ctl.swept_freq_list)} data points')
         if sz_freq_list < sz_ampl_list:
             self.amplitude = self.amplitude[0:sz_freq_list]
-            print(name(), line(), f'Reduced the size of the y-axis amplitude list to {len(self.amplitude)}')
+            print(name(), line(), f'Reduced the y-axis <amplitude> to {len(self.amplitude)} data points')
         self.graphWidget.setXRange(sa_ctl.swept_freq_list[0], sa_ctl.swept_freq_list[-1])   # Limit plot to user selected frequency range
         purple = (75, 50, 255)
         self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=purple)
@@ -340,17 +343,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     @pyqtSlot()
     def on_floatStartMHz_editingFinished(self):
-        self.set_steps()
+        # Only update the steps if start value has changed
+        if self.last_start != self.floatStartMHz.value():
+            self.set_steps()
 
 
     @pyqtSlot()
     def on_floatStopMHz_editingFinished(self):
-        self.set_steps()
+        # Only update the steps if stop value has changed
+        if self.last_stop != self.floatStopMHz.value():
+            self.set_steps()
 
     
     @pyqtSlot()
     def on_intStepKHz_editingFinished(self):
-        self.set_steps()
+        MHz = 1000
+        # Only update the steps if step value has changed
+        if self.last_step != round(self.intStepKHz.value() / MHz, 3):
+            self.set_steps()
 
         
     def set_steps(self):
@@ -358,14 +368,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Public method Create a list of frequencies for sweeping
         """
         MHz = 1000
-        sa_ctl.swept_freq_list.clear()                                          # Prepare for a new sweep
-        sa.sweep_step_size = round(self.intStepKHz.value() / MHz, 3)            # frequency step
-        sa.sweep_start_freq = self.floatStartMHz.value()                        # frequency start
-        sa.sweep_stop_freq = self.floatStopMHz.value()                          # frequency stop
+        # Next 3 lines allow the spinbox focus events to be ignored unless the value changed
+        self.last_start = self.floatStartMHz.value()
+        self.last_stop = self.floatStopMHz.value()
+        self.last_step = round(self.intStepKHz.value() / MHz, 3)
+        sa_ctl.swept_freq_list.clear()                                # Prepare for a new sweep
+        sa.sweep_step_size = round(self.intStepKHz.value() / MHz, 3)  # frequency step
+        sa.sweep_start_freq = self.floatStartMHz.value()              # frequency start
+        sa.sweep_stop_freq = self.floatStopMHz.value()                # frequency stop
+
+
+
+        start = perf_counter()
         sa_ctl.swept_freq_list = [round(freq, 3) for freq in np.arange(sa.sweep_start_freq, sa.sweep_stop_freq, sa.sweep_step_size)]
-        sa_ctl.swept_freq_list.append(np.float64(self.floatStopMHz.value()))    # Include the stop frequency in the sweep list
+        stop = perf_counter()
+
+        final_step = round(np.float64(self.floatStopMHz.value()), 3)  # Limit to 3 decimal places
+        sa_ctl.swept_freq_list.append(final_step)                     # Include the stop frequency in the sweep list
         num_steps = len(sa_ctl.swept_freq_list)
         self.numFrequencySteps.setValue(num_steps)
+
+        print(name(), line(), f'Updating steps took {round(stop-start, 3)} seconds')
 
     
     @pyqtSlot()

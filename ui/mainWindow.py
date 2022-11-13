@@ -170,8 +170,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ''' Correct the size of the list for some kind of output so you can maybe guess at what is broken '''
         if sz_freq_list > sz_ampl_list:
             sa_ctl.swept_freq_list = sa_ctl.swept_freq_list[0:sz_ampl_list]
+            print(name(), line(), 'Reduced the size of the x-axis frequency list')
         if sz_freq_list < sz_ampl_list:
             self.amplitude = self.amplitude[0:sz_freq_list]
+            print(name(), line(), 'Reduced the size of the y-axis amplitude list')
         self.graphWidget.setXRange(sa_ctl.swept_freq_list[0], sa_ctl.swept_freq_list[-1])   # Limit plot to user selected frequency range
         purple = (75, 50, 255)
         self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=purple)

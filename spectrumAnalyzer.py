@@ -156,6 +156,9 @@ class sa_control():
         """
         Function sweep() : Search the RF input for any or all RF signals
         """
+        start = time.perf_counter()
+        bail = False
+        sp.simple_serial.data_buffer_in.clear()
         sp.ser.read(sp.ser.in_waiting)           # Clear the serial buffer
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
         time.sleep(.001)
@@ -165,16 +168,17 @@ class sa_control():
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
-            time.sleep(.002)    # Allow the controller (Arduino) some processing time
-            while len(bytes_rxd)<2:
+            delta_start = time.perf_counter()
+            while (len(bytes_rxd)<2) and (bail is False):
                 bytes_rxd += sp.ser.read(sp.ser.in_waiting)
                 sp.simple_serial.data_buffer_in += bytes_rxd
-#                print(name(), line(), f'bytes rxd = {list(bytes_rxd)}')
+                time.sleep(.0001)      # Prevent CPU from going to 100%
+                if (time.perf_counter()-delta_start) > 0.01:
+                    print(name(), line(), 'Sweep failed')
+                    bail = True
             bytes_rxd.clear()
-#            end_of_data = self.data_buffer_in.find(self.end_of_stream)  # Location for the end of the list
-#            if end_of_data > 0:                                         # The end of the list was found...
-#                self.data_buffer_in = self.data_buffer_in[:end_of_data] # so slice off any excess data bytes
-        print(name(), line(), f'Total bytes read = {len(sp.simple_serial.data_buffer_in)}')
+        stop = time.perf_counter()
+        print(name(), line(), f"Received = {len(sp.simple_serial.data_buffer_in)} bytes in {round(stop-start, 6)} seconds")
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.end_sweep()   # Send handshake signal to controller
 

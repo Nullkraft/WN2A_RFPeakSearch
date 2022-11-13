@@ -172,20 +172,11 @@ class simple_serial(QObject):
         while True:
             self.data_buffer_in += ser.read(ser.in_waiting)             # Accumulate the data bytes
             end_of_data = self.data_buffer_in.find(self.end_of_stream)  # Location for the end of the list
-            self.progress.emit(len(self.data_buffer_in))
+#            self.progress.emit(len(self.data_buffer_in))
             if end_of_data > 0:                                         # The end of the list was found...
                 self.finished.emit(self.data_buffer_in[:end_of_data])   # so slice off any excess data bytes
                 break
             time.sleep(.001)       # Prevents CPU from going to 100% utilization
-
-
-    def get_ampl_data(self):
-        self.data_buffer_in += ser.read(2)                          # Accumulate the data bytes
-#        self.data_buffer_in += ser.read(ser.in_waiting)             # Accumulate the data bytes
-        end_of_data = self.data_buffer_in.find(self.end_of_stream)  # Location for the end of the list
-        if end_of_data > 0:                                         # The end of the list was found so...
-            self.data_buffer_in = self.data_buffer_in[:end_of_data] # slice off any excess data bytes
-
 
 # End simple_serial() class
 

@@ -102,6 +102,7 @@ class sa_control():
         """
         if control_code != last_control_code:
             cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, control_code) # Set to -4 dBm & freq=control_code
+            time.sleep(0.002)                       # Wait 1 ms for LO1 to lock
             self.last_LO1_code = control_code
             self.selected_device = spi_device.LO1   # Update currently selected device to LO1
 
@@ -135,29 +136,14 @@ class sa_control():
             self.selected_device = spi_device.LO3   # Update currently selected device to LO3
         cmd_proc.set_LO3(control_code)      # Set to freq=control_code
 
-    '''
-    def sweep(self):
-        """
-        Function sweep() : Search the RF input for any or all RF signals
-        """
-        self.set_LO2(cmd_proc.LO2_mux_dig_lock)
-        time.sleep(.001)
-        for freq in self.swept_freq_list:
-            ref_code, LO1_N_code, LO2_fmn_code = full_sweep_dict[freq]    # Get hardware control codes
-            self.set_reference_clock(ref_code, self.last_ref_code);
-            self.set_LO1(LO1_N_code, self.last_LO1_code)
-            self.set_LO2(LO2_fmn_code)
-            time.sleep(.002)    # Allow the controller (Arduino) some processing time
-        self.set_LO2(cmd_proc.LO2_mux_tristate)
-        cmd_proc.end_sweep()   # Send handshake signal to controller
-    '''
 
     def sweep(self):
         """
         Function sweep() : Search the RF input for any or all RF signals
         """
+        last_freq = 0
+        time_delta = 0.1
         start = time.perf_counter()
-        bail = False
         sp.simple_serial.data_buffer_in.clear()
         sp.ser.read(sp.ser.in_waiting)           # Clear the serial buffer
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
@@ -169,13 +155,17 @@ class sa_control():
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
             delta_start = time.perf_counter()
-            while (len(bytes_rxd)<2) and (bail is False):
+            while (len(bytes_rxd)<2):
                 bytes_rxd += sp.ser.read(sp.ser.in_waiting)
                 sp.simple_serial.data_buffer_in += bytes_rxd
                 time.sleep(.000001)      # Prevent CPU from going to 100%
-                if (time.perf_counter()-delta_start) > 0.01:
-                    print(name(), line(), 'Sweep failed')
-                    bail = True
+                if (time.perf_counter()-delta_start) > time_delta:
+                    if freq == self.swept_freq_list[0]:
+                        time_delta = 0.005
+                    if freq != last_freq:
+                        print(name(), line(), f'"*** Sweep failed ***" freq = {freq} : bytes_rxd = {list(bytes_rxd)} : bytes_rxd = {bytes_rxd}')
+                        last_freq = freq
+                    delta_start = time.perf_counter()
             bytes_rxd.clear()
         stop = time.perf_counter()
         print(name(), line(), f"Received = {len(sp.simple_serial.data_buffer_in)} bytes in {round(stop-start, 6)} seconds")

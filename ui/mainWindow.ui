@@ -993,9 +993,12 @@
         </spacer>
        </item>
        <item>
-        <widget class="QCheckBox" name="chkFracOpt">
+        <widget class="QCheckBox" name="chk_plot_enable">
          <property name="text">
-          <string>Fractional Optimization</string>
+          <string>Enable Plotting</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -1221,7 +1224,7 @@
   <tabstop>numFrequencySteps</tabstop>
   <tabstop>btnCalibrate</tabstop>
   <tabstop>selectReferenceOscillator</tabstop>
-  <tabstop>chkFracOpt</tabstop>
+  <tabstop>chk_plot_enable</tabstop>
   <tabstop>selectSweepFrequency</tabstop>
   <tabstop>selectFixedFrequency</tabstop>
   <tabstop>btnTrigger</tabstop>

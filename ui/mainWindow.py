@@ -103,7 +103,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #        self.serial_read_thread()              # Start the serial read thread to accept sweep data
         sa.sa_control().sweep()
         self.label_sweep_status.setText("Sweep complete")
-        self.plot_ampl_data(sp.simple_serial.data_buffer_in)
+        if self.chk_plot_enable.isChecked():
+            self.plot_ampl_data(sp.simple_serial.data_buffer_in)
         QtGui.QGuiApplication.processEvents()
 
     last_n = -1
@@ -174,11 +175,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if sz_freq_list > sz_ampl_list:
             sa_ctl.swept_freq_list = sa_ctl.swept_freq_list[0:sz_ampl_list]
             print(name(), line(), f'Reduced the x-axis <frequency> to {len(sa_ctl.swept_freq_list)} data points')
-            breakpoint()
         if sz_freq_list < sz_ampl_list:
             self.amplitude = self.amplitude[0:sz_freq_list]
             print(name(), line(), f'Reduced the y-axis <amplitude> to {len(self.amplitude)} data points')
-            breakpoint()
         self.graphWidget.setXRange(sa_ctl.swept_freq_list[0], sa_ctl.swept_freq_list[-1])   # Limit plot to user selected frequency range
         purple = (75, 50, 255)
         self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=purple)
@@ -385,8 +384,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         final_step = round(np.float64(self.floatStopMHz.value()), 3)  # Limit to 3 decimal places
         sa_ctl.swept_freq_list.append(final_step)                     # Include the stop frequency in the sweep list
         # Fill in the user control so they can see how many steps it will take
-        num_steps = len(sa_ctl.swept_freq_list)
-        self.numFrequencySteps.setValue(num_steps)
+        sa.sweep_num_steps = len(sa_ctl.swept_freq_list)
+        self.numFrequencySteps.setValue(sa.sweep_num_steps)
+        pass
 
     
     @pyqtSlot()

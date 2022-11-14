@@ -369,10 +369,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
     def float_to_index(self, hash_value):
-        num_slice = round(hash_value, 3)                # Limit to 3 decimal places before converting
-        stringified = "{:.3f}".format(num_slice)        # A string is needed for the next step
-        decimal_removed = stringified.replace(".", "")  # Same as multiplying by 1000
-        slice_index = int(decimal_removed)
+        num_slice = round(hash_value, 3)                # Limit to 3 decimal places before converting...
+        stringified = "{:.3f}".format(num_slice)        # to a string is needed for the next step
+        decimal_removed = stringified.replace(".", "")  # Works the same as multiplying by 1000 and then...
+        slice_index = int(decimal_removed)              # creates the index for the RFin_list
         return slice_index
 
         

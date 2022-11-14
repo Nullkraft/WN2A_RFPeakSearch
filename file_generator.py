@@ -43,6 +43,9 @@ class data_generator():
         for freq in f:
             RFin = float(freq)
             RFin_list.append(RFin)
+    with open('RFin_steps.pickle', 'wb') as f:
+        pickle.dump(RFin_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+
 
     def _LO1_frequency(self, RFin: float, Fref: float, R: int=1) -> float:
         """

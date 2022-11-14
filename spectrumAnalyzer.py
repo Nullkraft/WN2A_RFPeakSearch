@@ -172,7 +172,7 @@ class sa_control():
             while (len(bytes_rxd)<2) and (bail is False):
                 bytes_rxd += sp.ser.read(sp.ser.in_waiting)
                 sp.simple_serial.data_buffer_in += bytes_rxd
-                time.sleep(.0001)      # Prevent CPU from going to 100%
+                time.sleep(.000001)      # Prevent CPU from going to 100%
                 if (time.perf_counter()-delta_start) > 0.01:
                     print(name(), line(), 'Sweep failed')
                     bail = True

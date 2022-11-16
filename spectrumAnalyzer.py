@@ -63,7 +63,7 @@ class sa_control():
         self.selected_device = spi_device.LO2
         self.last_ref_code = 0   # Decide if a new ref_code is to be sent
         self.last_LO1_code = 0   # Decide if a new LO1_code is to be sent
-        
+
     
     def adc_Vref(self):
         return cfg.Vref
@@ -142,10 +142,10 @@ class sa_control():
         Function sweep() : Search the RF input for any or all RF signals
         """
         last_freq = 0
-        time_delta = 0.1
+        interbyte_timeout = 0.1
         start = time.perf_counter()
-        sp.simple_serial.data_buffer_in.clear()
-        sp.ser.read(sp.ser.in_waiting)           # Clear the serial buffer
+        sp.simple_serial.data_buffer_in.clear()     # Clear any old data still in the data buffer
+        sp.ser.read(sp.ser.in_waiting)              # Clear the serial port buffer
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
         time.sleep(.001)
         bytes_rxd = bytearray()
@@ -154,18 +154,18 @@ class sa_control():
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
-            delta_start = time.perf_counter()
+            timeout_start = time.perf_counter()     # Start the interbyte_timeout
             while (len(bytes_rxd)<2):
                 bytes_rxd += sp.ser.read(sp.ser.in_waiting)
                 sp.simple_serial.data_buffer_in += bytes_rxd
                 time.sleep(.000001)      # Prevent CPU from going to 100%
-                if (time.perf_counter()-delta_start) > time_delta:
+                if (time.perf_counter()-timeout_start) > interbyte_timeout:
                     if freq == self.swept_freq_list[0]:
-                        time_delta = 0.005
+                        interbyte_timeout = 0.005
                     if freq != last_freq:
                         print(name(), line(), f'"*** Sweep failed ***" freq = {freq} : bytes_rxd = {list(bytes_rxd)} : bytes_rxd = {bytes_rxd}')
                         last_freq = freq
-                    delta_start = time.perf_counter()
+                    timeout_start = time.perf_counter()     # Reset the interbyte_timeout
             bytes_rxd.clear()
         stop = time.perf_counter()
         print(name(), line(), f"Received = {len(sp.simple_serial.data_buffer_in)} bytes in {round(stop-start, 6)} seconds")

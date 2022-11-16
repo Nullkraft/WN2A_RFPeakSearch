@@ -28,7 +28,7 @@ import time
 import errno as error
 import sys
 import os
-import serial       # requires 'pip3 install pyserial'
+import serial    # 'pip3 install pyserial'.   https://pyserial.readthedocs.io/en/latest/pyserial_api.html
 from serial.tools import list_ports
 import configparser
 from PyQt6.QtCore import QObject, pyqtSignal

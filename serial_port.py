@@ -160,24 +160,9 @@ class simple_serial(QObject):
         else:
             print(name(), line(), f': Unable to read {self.config_fname}, file not found.')
 
-
-
-    '''
-    def read_serial(self):
-        """
-        Worker thread for collecting incoming serial data
-        """
-        while True:
-            self.data_buffer_in += ser.read(ser.in_waiting)             # Accumulate the data bytes
-            end_of_data = self.data_buffer_in.find(self.end_of_stream)  # Location for the end of the list
-            self.progress.emit(len(self.data_buffer_in))
-            if end_of_data > 0:                                         # The end of the list was found...
-                self.finished.emit(self.data_buffer_in[:end_of_data])   # so slice off any excess data bytes
-                break
-            time.sleep(.001)       # Prevents CPU from going to 100% utilization
-    '''
-
 # End simple_serial() class
+
+
 
 # Dependency Injection video
 # https://www.youtube.com/watch?v=-ghD-XjjO2g&t=622s

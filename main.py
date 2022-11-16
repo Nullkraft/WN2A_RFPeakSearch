@@ -30,10 +30,9 @@ import sys
 
 from time import perf_counter
 
-
 def main():
-    start = perf_counter()
     app = QtWidgets.QApplication(sys.argv)
+    start = perf_counter()
     window = MainWindow()
     print(name(), line(), f'Startup took {round(perf_counter()-start, 6)} seconds')
     window.show()

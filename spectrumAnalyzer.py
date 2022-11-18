@@ -139,7 +139,7 @@ class sa_control():
 
     def sweep(self):
         """
-        Function sweep() : Search the RF input for any or all RF signals
+            Function sweep() : Search the RF input for any or all RF signals
         """
         last_freq = 0
         interbyte_timeout = 0.1
@@ -158,7 +158,7 @@ class sa_control():
             while (len(bytes_rxd)<2):
                 bytes_rxd += sp.ser.read(sp.ser.in_waiting)
                 sp.simple_serial.data_buffer_in += bytes_rxd
-                time.sleep(.000001)      # Prevent CPU from going to 100%
+                time.sleep(1e-9)  # Prevent CPU from going to 100% - Screw it! It slows the loop by 30% no matter what.
                 if (time.perf_counter()-timeout_start) > interbyte_timeout:
                     if freq == self.swept_freq_list[0]:
                         interbyte_timeout = 0.005
@@ -168,7 +168,7 @@ class sa_control():
                     timeout_start = time.perf_counter()     # Reset the interbyte_timeout
             bytes_rxd.clear()
         stop = time.perf_counter()
-        print(name(), line(), f"Received = {len(sp.simple_serial.data_buffer_in)} bytes in {round(stop-start, 6)} seconds")
+        print(name(), line(), f"Received = {len(sp.simple_serial.data_buffer_in)} bytes in {round(stop-start, 3)} seconds")
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.end_sweep()   # Send handshake signal to controller
 

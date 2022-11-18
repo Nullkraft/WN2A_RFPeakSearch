@@ -24,7 +24,6 @@ name = lambda: f'File \"{__name__}.py\",'
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 
 
-import time
 import errno as error
 import sys
 import os
@@ -32,7 +31,6 @@ import serial    # 'pip3 install pyserial'.   https://pyserial.readthedocs.io/en
 from serial.tools import list_ports
 import configparser
 from PyQt6.QtCore import QObject, pyqtSignal
-
 
 # Serial port object that can be shared across source files.
 """ NOTE: Investigate to see if we can used Dependency inversion
@@ -121,7 +119,6 @@ class simple_serial(QObject):
                 print(name(), line(), f': {self.config_fname} is corrupt. New default file created.')
                 self._write_config(self.default_serial_speed, self.default_serial_port)     # Corrupted file contents so recreate a default.
             else:
-                time.sleep(0.2)                                 # Give the port a moment to finish opening.
                 print(name(), line(), f'{ser_port.port} opened at {ser_port.baudrate} baud.')
             finally:
                 ser = ser_port

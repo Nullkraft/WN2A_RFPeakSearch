@@ -207,7 +207,7 @@ class Ui_MainWindow(object):
         self.gridLayout_2.addItem(spacerItem8, 25, 0, 1, 1)
         self.numPlotCeiling = QtWidgets.QDoubleSpinBox(self.groupBox_3)
         self.numPlotCeiling.setMinimum(0.0)
-        self.numPlotCeiling.setMaximum(2.5)
+        self.numPlotCeiling.setMaximum(5.0)
         self.numPlotCeiling.setSingleStep(0.1)
         self.numPlotCeiling.setProperty("value", 2.5)
         self.numPlotCeiling.setObjectName("numPlotCeiling")

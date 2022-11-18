@@ -26,7 +26,7 @@ line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 
 
 import sys
-#from time import perf_counter
+from time import sleep#, perf_counter
 import numpy as np
 import pickle
 
@@ -84,11 +84,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #
         # sa.full_sweep_dict contains values for ref_clock, LO1, LO2, 
         # and LO3 used for controlling the Spectrum Analyzer hardware.
-        with open('full_control_ref1.pickle', 'rb') as f:
-            sa.ref1_full_sweep_dict = pickle.load(f)
-##        with open('full_control_ref2.pickle', 'rb') as f:
-##            sa.ref2_full_sweep_dict = pickle.load(f)
-        sa.full_sweep_dict = sa.ref1_full_sweep_dict
+        with open('full_control.pickle', 'rb') as f:
+            sa.full_sweep_dict = pickle.load(f)
+        sa.full_sweep_dict = sa.full_sweep_dict
         # RFin_steps is used to create the list of sweep frequencies
         self.RFin_list = list()
         with open('RFin_steps.pickle', 'rb') as f:
@@ -163,8 +161,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Convert two 8-bit serial bytes into one 16 bit amplitude
         hi_byte_list = amplBytes[::2]
         lo_byte_list = amplBytes[1::2]
+        index = 0
         for hi_byte, lo_byte in zip(hi_byte_list, lo_byte_list):
-            ampl = hi_byte | (lo_byte << 8)                         # Combine MSByte/LSByte into an amplitude word
+            if hi_byte > 3:
+                hi_byte = (hi_byte & 15)        # Recover the amplitude value despite it not locking
+                print(name(), line(), f'freq, {sa_ctl.swept_freq_list[index]}, No lock: Hi byte = {hi_byte} : Lo byte = {lo_byte}')
+            ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
+            index += 1
             volts = (ampl/2**10) * sa.sa_control().adc_Vref()       # Convert 10 bit ADC counts to Voltage
             self.amplitude.append(volts)
         """ It's not a perfect check but the sweep and amplitude lists need to be the same size """
@@ -179,8 +182,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.amplitude = self.amplitude[0:sz_freq_list]
             print(name(), line(), f'Reduced the y-axis <amplitude> to {len(self.amplitude)} data points')
         self.graphWidget.setXRange(sa_ctl.swept_freq_list[0], sa_ctl.swept_freq_list[-1])   # Limit plot to user selected frequency range
-        purple = (75, 50, 255)
-        self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=purple)
+        yellow = (150, 255, 150)
+        self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=yellow)
+#        purple = (75, 50, 255)
+#        self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=purple)
 
     @pyqtSlot()
     def on_btnPeakSearch_clicked(self):
@@ -321,6 +326,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sel_baud = self.cbxSerialSpeedSelection.currentText()
         sel_port = self.cbxSerialPortSelection.currentText()
         sp.simple_serial().port_open(baud_rate=sel_baud, port=sel_port)
+        sleep(2)
     
     @pyqtSlot()
     def on_btn_set_frequency_clicked(self):

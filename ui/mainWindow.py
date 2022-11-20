@@ -91,14 +91,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #        control_file = Path('full_control.pickle')
         control_file = Path('full_control_ref1.pickle')
 #        control_file = Path('full_control_ref2.pickle')
-        assert control_file.exists(), f'Missing control file "{control_file}"'
+        if not control_file.exists():
+            print(name(), line(), f'Missing control file "{control_file}"')
         with open(control_file, 'rb') as f:
             sa.full_sweep_dict = pickle.load(f)
         ''' ~~~~~~ End control file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
 
         # RFin_steps is used to create the list of sweep frequencies
         RFin_file = Path('RFin_steps.pickle')
-        assert RFin_file.exists(), f'Missing RFin file "{RFin_file}"'
+        if not RFin_file.exists():
+            print(name(), line(), f'Missing RFin file "{RFin_file}"')
         self.RFin_list = list()
         with open('RFin_steps.pickle', 'rb') as f:
             self.RFin_list = pickle.load(f)

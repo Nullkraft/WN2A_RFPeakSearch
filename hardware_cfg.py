@@ -28,7 +28,7 @@ import sys
 from dataclasses import dataclass
 from numba import njit
 from enum import Enum, auto
-
+from functools import wraps
 
 class spi_device(Enum):
     """ Tracks which of the SPI capable chips is selected """
@@ -61,6 +61,18 @@ class cfg():
 
 
 
+def memoize(func):
+    cache = {}
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        key = str(args) + str(kwargs)
+        if key not in cache:
+            cache[key] = func(*args, **kwargs)
+        return cache[key]
+    return wrapper
+
+
+@memoize
 @njit(nogil=True)
 def MHz_to_fmn(LO2_target_freq_MHz: float, ref_clock: float) -> int:
     """ Form a 32 bit word containing F, M and N for the MAX2871.

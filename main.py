@@ -46,9 +46,10 @@ if __name__ == '__main__':
     main()
 
 
-
-
-
+'''
+    How To Reduce Coupling With Facade (Adding an abstraction layer)
+    https://www.youtube.com/watch?v=jjoLejA4iAE
+'''
 
 
 

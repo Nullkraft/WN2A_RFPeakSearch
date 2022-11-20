@@ -34,6 +34,7 @@ from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
 from PyQt6.QtWidgets import QMainWindow
 import pyqtgraph as pg
+from pathlib import Path
 
 from .Ui_mainWindow import Ui_MainWindow
 import spectrumAnalyzer as sa
@@ -64,6 +65,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #
         # Request the list of available serial ports and use it to
         # populate the user 'Serial Port' drop-down selection list.
+        ''' ~~~~~~ Setup serial port ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
         serial_ports = sp.simple_serial().get_serial_port_list()
         self.cbxSerialPortSelection.addItems(serial_ports)
         #
@@ -81,13 +83,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         speed_index = self.cbxSerialSpeedSelection.findData(str(serial_speed))
         if (speed_index >= 0):
             self.cbxSerialSpeedSelection.setCurrentIndex(speed_index)
+        ''' ~~~~~~ End serial port ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
         #
         # sa.full_sweep_dict contains values for ref_clock, LO1, LO2, 
         # and LO3 used for controlling the Spectrum Analyzer hardware.
-        with open('full_control.pickle', 'rb') as f:
+        ''' ~~~~~~ Load control file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
+#        control_file = Path('full_control.pickle')
+        control_file = Path('full_control_ref1.pickle')
+#        control_file = Path('full_control_ref2.pickle')
+        assert control_file.exists(), f'Missing control file "{control_file}"'
+        with open(control_file, 'rb') as f:
             sa.full_sweep_dict = pickle.load(f)
-        sa.full_sweep_dict = sa.full_sweep_dict
+        ''' ~~~~~~ End control file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
+
         # RFin_steps is used to create the list of sweep frequencies
+        RFin_file = Path('RFin_steps.pickle')
+        assert RFin_file.exists(), f'Missing RFin file "{RFin_file}"'
         self.RFin_list = list()
         with open('RFin_steps.pickle', 'rb') as f:
             self.RFin_list = pickle.load(f)
@@ -370,7 +381,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         slice_index = int(decimal_removed)              # creates the index for the RFin_list
         return slice_index
 
-        
+
     def set_steps(self):
         """
         Public method Create a list of frequencies for sweeping

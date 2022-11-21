@@ -97,11 +97,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             sa.full_sweep_dict = pickle.load(f)
         ''' ~~~~~~ End control file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
 
-        # RFin_steps is used to create the list of sweep frequencies
+        # RFin_steps.pickle is used when creating the list of frequencies to sweep
         RFin_file = Path('RFin_steps.pickle')
         if not RFin_file.exists():
             print(name(), line(), f'Missing RFin file "{RFin_file}"')
-        self.RFin_list = list()
         with open('RFin_steps.pickle', 'rb') as f:
             self.RFin_list = pickle.load(f)
 
@@ -183,17 +182,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             index += 1
             volts = (ampl/2**10) * sa.sa_control().adc_Vref()       # Convert 10 bit ADC counts to Voltage
             self.amplitude.append(volts)
-        """ It's not a perfect check but the sweep and amplitude lists need to be the same size """
-        sz_freq_list = len(sa_ctl.swept_freq_list)
-        sz_ampl_list = len(self.amplitude)
-#        assert sz_freq_list == sz_ampl_list, f'Sweep list ({sz_freq_list}) and Amplitude list ({sz_ampl_list}) should be the same size.'
-        ''' Correct the size of the list for some kind of output so you can maybe guess at what is broken '''
-        if sz_freq_list > sz_ampl_list:
-            sa_ctl.swept_freq_list = sa_ctl.swept_freq_list[0:sz_ampl_list]
-            print(name(), line(), f'Reduced the x-axis <frequency> to {len(sa_ctl.swept_freq_list)} data points')
-        if sz_freq_list < sz_ampl_list:
-            self.amplitude = self.amplitude[0:sz_freq_list]
-            print(name(), line(), f'Reduced the y-axis <amplitude> to {len(self.amplitude)} data points')
         self.graphWidget.setXRange(sa_ctl.swept_freq_list[0], sa_ctl.swept_freq_list[-1])   # Limit plot to user selected frequency range
         yellow = (150, 255, 150)
         self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=yellow)

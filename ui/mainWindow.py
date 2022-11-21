@@ -51,7 +51,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def __init__(self):
         super().__init__()
-        pg.setConfigOptions(useOpenGL=True)
+        pg.setConfigOptions(useOpenGL=True, enableExperimental=True)
         self.setupUi(self)  # Must come before self.graphWidget.plot()
         self.graphWidget.setYRange(0, 2.5)
         self.graphWidget.setMouseEnabled(x=True, y=False)

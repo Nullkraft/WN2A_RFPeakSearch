@@ -60,7 +60,7 @@ class sa_control():
     swept_freq_list = []    # The list of frequencies that the user requested to be swept
 
     def __init__(self):
-        self.selected_device = spi_device.LO2
+        self.selected_device = spi_device.LO2   # Spectrum Analyzer chip we're talking to
         self.last_ref_code = 0   # Decide if a new ref_code is to be sent
         self.last_LO1_code = 0   # Decide if a new LO1_code is to be sent
 
@@ -160,7 +160,7 @@ class sa_control():
                 sp.simple_serial.data_buffer_in += bytes_rxd
                 time.sleep(1e-9)  # Prevent CPU from going to 100% - Screw it! It slows the loop by 30% no matter what.
                 if (time.perf_counter()-timeout_start) > interbyte_timeout:
-                    if freq == self.swept_freq_list[0]:
+                    if freq == self.swept_freq_list[0]:     # Decrease the timeout after setting the first frequency.
                         interbyte_timeout = 0.005
                     if freq != last_freq:
                         print(name(), line(), f'"*** Sweep failed ***" freq = {freq} : bytes_rxd = {list(bytes_rxd)} : bytes_rxd = {bytes_rxd}')
@@ -168,7 +168,8 @@ class sa_control():
                     timeout_start = time.perf_counter()     # Reset the interbyte_timeout
             bytes_rxd.clear()
         stop = time.perf_counter()
-        print(name(), line(), f"Received = {len(sp.simple_serial.data_buffer_in)} bytes in {round(stop-start, 3)} seconds")
+        buffer_len = len(sp.simple_serial.data_buffer_in)
+        print(name(), line(), f"Received = {buffer_len} bytes in {round(stop-start, 3)} seconds")
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.end_sweep()   # Send handshake signal to controller
 

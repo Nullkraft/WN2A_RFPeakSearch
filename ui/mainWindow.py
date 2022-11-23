@@ -88,8 +88,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # sa.full_sweep_dict contains values for ref_clock, LO1, LO2, 
         # and LO3 used for controlling the Spectrum Analyzer hardware.
         ''' ~~~~~~ Load control file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
-#        control_file = Path('full_control.pickle')
-        control_file = Path('full_control_ref1.pickle')
+        control_file = Path('full_control.pickle')
+#        control_file = Path('full_control_ref1.pickle')
 #        control_file = Path('full_control_ref2.pickle')
         if not control_file.exists():
             print(name(), line(), f'Missing control file "{control_file}"')
@@ -103,6 +103,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print(name(), line(), f'Missing RFin file "{RFin_file}"')
         with open('RFin_steps.pickle', 'rb') as f:
             self.RFin_list = pickle.load(f)
+        """ List(s) of amplitudes collected from ref1 and ref2 full sweeps with NO input """
+        with open('amplitude_from_full_sweep_of_ref1.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
+            self.r1_ampl_list = pickle.load(f)
+        with open('amplitude_from_full_sweep_of_ref2.pickle', 'rb') as f:   # 3 million amplitudes collected with ref2
+            self.r2_ampl_list = pickle.load(f)
 
 
     @pyqtSlot()
@@ -169,6 +174,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sa.set_reference_clock(selected_ref_clock)
         
     def plot_ampl_data(self, amplBytes):
+        x_axis = list()
+        y_axis = list()
         self.amplitude.clear()
         # Convert two 8-bit serial bytes into one 16 bit amplitude
         hi_byte_list = amplBytes[::2]
@@ -177,14 +184,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for hi_byte, lo_byte in zip(hi_byte_list, lo_byte_list):
             if hi_byte > 3:
                 hi_byte = (hi_byte & 15)        # Recover the amplitude value despite it not locking
-                print(name(), line(), f'freq, {sa_ctl.swept_freq_list[index]}, No lock: Hi byte = {hi_byte} : Lo byte = {lo_byte}')
+#                print(name(), line(), f'freq, {sa_ctl.swept_freq_list[index]}, No lock: Hi byte = {hi_byte} : Lo byte = {lo_byte}')
             ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
             index += 1
             volts = (ampl/2**10) * sa.sa_control().adc_Vref()       # Convert 10 bit ADC counts to Voltage
             self.amplitude.append(volts)
-        self.graphWidget.setXRange(sa_ctl.swept_freq_list[0], sa_ctl.swept_freq_list[-1])   # Limit plot to user selected frequency range
+        argsort_index_list = np.argsort(sa_ctl.swept_freq_list)
+
+        for idx in argsort_index_list:
+            x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order
+            y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order
+        self.graphWidget.setXRange(x_axis[0], x_axis[-1])   # Limit plot to user selected frequency range
         yellow = (150, 255, 150)
-        self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=yellow)
+        self.dataLine.setData(x_axis, y_axis, pen=yellow)
 #        purple = (75, 50, 255)
 #        self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=purple)
 
@@ -372,6 +384,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return slice_index
 
 
+    def get_swept_freq_list(self, start: int, stop: int, step: int) -> list:
+        """ Get the sweep list from the user interface. This uses the
+            following lists already loaded from file:
+            1) RFin_list
+            2) r1_ampl_list
+            3) r2_ampl_list
+        """
+        ref1_out_list = list()
+        ref2_out_list = list()
+        for idx in range(start, stop, step):
+            freq = self.RFin_list[idx]       # Convert idx to a key for the control dictionaries
+            if self.r2_ampl_list[idx] > self.r1_ampl_list[idx]:
+                ref1_out_list.append(freq)
+            else:
+                ref2_out_list.append(freq)
+        ''' Because python won't we manually include the stop value in the plot '''
+        freq = self.RFin_list[stop]          # Convert idx to a key for the control dictionaries
+        if self.r2_ampl_list[stop] > self.r1_ampl_list[stop]:
+            ref1_out_list.append(freq)
+        else:
+            ref2_out_list.append(freq)
+        return ref1_out_list + ref2_out_list    # Return the list of frequencies to be swept
+
+
     def set_steps(self):
         """
         Public method Create a list of frequencies for sweeping
@@ -386,10 +422,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         stop_slice = self.float_to_index(sa.sweep_stop_freq)
         step_slice = self.float_to_index(sa.sweep_step_size)
         # Fill the list with new sweep frequencies
-        sa_ctl.swept_freq_list.clear()                                # Prepare for a new sweep
-        sa_ctl.swept_freq_list = self.RFin_list[start_slice:stop_slice:step_slice]  # Way faster than np.arange()
-        final_step = round(np.float64(self.floatStopMHz.value()), 3)  # Limit to 3 decimal places
-        sa_ctl.swept_freq_list.append(final_step)                     # Include the stop frequency in the sweep list
+        sa_ctl.swept_freq_list = self.get_swept_freq_list(start_slice, stop_slice, step_slice)  # Way faster than np.arange()
         # Fill in the user control so they can see how many steps it will take
         sa.sweep_num_steps = len(sa_ctl.swept_freq_list)
         self.numFrequencySteps.setValue(sa.sweep_num_steps)

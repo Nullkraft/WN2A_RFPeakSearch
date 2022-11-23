@@ -188,9 +188,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
             index += 1
             volts = (ampl/2**10) * sa.sa_control().adc_Vref()       # Convert 10 bit ADC counts to Voltage
-            self.amplitude.append(volts)
+            dB = 40 * volts
+            self.amplitude.append(dB)
+#            self.amplitude.append(volts)
         argsort_index_list = np.argsort(sa_ctl.swept_freq_list)
-
         for idx in argsort_index_list:
             x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order
             y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order

@@ -591,6 +591,9 @@
        </item>
        <item row="5" column="0">
         <widget class="QDoubleSpinBox" name="numPlotCeiling">
+         <property name="decimals">
+          <number>3</number>
+         </property>
          <property name="minimum">
           <double>0.000000000000000</double>
          </property>
@@ -607,6 +610,9 @@
        </item>
        <item row="7" column="0">
         <widget class="QDoubleSpinBox" name="numPlotFloor">
+         <property name="decimals">
+          <number>3</number>
+         </property>
          <property name="minimum">
           <double>0.000000000000000</double>
          </property>
@@ -1022,6 +1028,9 @@
            <property name="text">
             <string>Sweep</string>
            </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item>
@@ -1030,7 +1039,7 @@
             <string>Fixed</string>
            </property>
            <property name="checked">
-            <bool>true</bool>
+            <bool>false</bool>
            </property>
           </widget>
          </item>

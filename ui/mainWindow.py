@@ -121,6 +121,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.chk_plot_enable.isChecked():
             self.plot_ampl_data(sp.simple_serial.data_buffer_in)
         QtGui.QGuiApplication.processEvents()
+        print()
 
     last_n = -1
     def progress_report(self, n):
@@ -188,13 +189,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
             index += 1
             volts = (ampl/2**10) * sa.sa_control().adc_Vref()       # Convert 10 bit ADC counts to Voltage
-            dB = 40 * volts
-            self.amplitude.append(dB)
-#            self.amplitude.append(volts)
+#            dB = 40 * volts
+#            self.amplitude.append(dB)
+            self.amplitude.append(volts)
         argsort_index_list = np.argsort(sa_ctl.swept_freq_list)
-        for idx in argsort_index_list:
-            x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order
-            y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order
+
+        x_axis = [sa_ctl.swept_freq_list[idx] for idx in argsort_index_list] # Sort the frequency in ascending order
+        y_axis = [self.amplitude[idx] for idx in argsort_index_list]         # And make the amplitude match ...
+#        for idx in argsort_index_list:
+#            x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order
+#            y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order
+
         self.graphWidget.setXRange(x_axis[0], x_axis[-1])   # Limit plot to user selected frequency range
         yellow = (150, 255, 150)
         self.dataLine.setData(x_axis, y_axis, pen=yellow)

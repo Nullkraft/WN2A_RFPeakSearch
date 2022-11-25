@@ -80,6 +80,7 @@ class sa_control():
         @return The new_code in ref_code so it can be saved to an external last_code
         """
         if ref_code != last_ref_code:
+            self.last_LO1_code = 0   # Force LO1 to update every time we select a new reference clock
             cmd_proc.enable_ref_clock(ref_code)
             self.last_ref_code = ref_code
             time.sleep(0.02)  # Wait for the new reference clock to warm up
@@ -105,7 +106,6 @@ class sa_control():
             time.sleep(0.002)                       # Wait 1 ms for LO1 to lock
             self.last_LO1_code = control_code
             self.selected_device = spi_device.LO1   # Update currently selected device to LO1
-
 
     def set_LO2(self, control_code: int):
         """
@@ -143,7 +143,7 @@ class sa_control():
         """
         last_freq = 0
         interbyte_timeout = 0.1
-        start = time.perf_counter()
+        start = time.perf_counter()                 # track how long the communication cycle takes
         sp.simple_serial.data_buffer_in.clear()     # Clear any old data still in the data buffer
         sp.ser.read(sp.ser.in_waiting)              # Clear the serial port buffer
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
@@ -154,11 +154,11 @@ class sa_control():
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
-            timeout_start = time.perf_counter()     # Start the interbyte_timeout
+            timeout_start = time.perf_counter() # Start the interbyte_timeout (don't put this inside while-loop)
             while (len(bytes_rxd)<2):
                 bytes_rxd += sp.ser.read(sp.ser.in_waiting)
                 sp.simple_serial.data_buffer_in += bytes_rxd
-                time.sleep(1e-9)  # Prevent CPU from going to 100% - Screw it! It slows the loop by 30% no matter what.
+#                time.sleep(1e-9)  # Prevent CPU from going to 100% - It slows the loop by 30% when enabled
                 if (time.perf_counter()-timeout_start) > interbyte_timeout:
                     if freq == self.swept_freq_list[0]:     # Decrease the timeout after setting the first frequency.
                         interbyte_timeout = 0.005

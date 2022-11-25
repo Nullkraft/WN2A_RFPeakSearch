@@ -121,7 +121,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.chk_plot_enable.isChecked():
             self.plot_ampl_data(sp.simple_serial.data_buffer_in)
         QtGui.QGuiApplication.processEvents()
-        print()
+
 
     last_n = -1
     def progress_report(self, n):

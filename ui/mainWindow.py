@@ -197,12 +197,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #            self.amplitude.append(dB)
             self.amplitude.append(volts)
         argsort_index_list = np.argsort(sa_ctl.swept_freq_list)
-
-        x_axis = [sa_ctl.swept_freq_list[idx] for idx in argsort_index_list] # Sort the frequency in ascending order
-        y_axis = [self.amplitude[idx] for idx in argsort_index_list]         # And make the amplitude match ...
-#        for idx in argsort_index_list:
-#            x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order
-#            y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order
+        for idx in argsort_index_list:
+            x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order
+            y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order
 
         self.graphWidget.setXRange(x_axis[0], x_axis[-1])   # Limit plot to user selected frequency range
         yellow = (150, 255, 150)

@@ -392,27 +392,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
     def get_swept_freq_list(self, start: int, stop: int, step: int) -> list:
-        """ Get the sweep list from the user interface. This uses the
-            following lists already loaded from file:
-            1) RFin_list
-            2) r1_ampl_list
-            3) r2_ampl_list
+        """ Get the sweep list from the user interface
+            This uses the following lists already loaded from file; RFin_list,
+            r1_ampl_list, r2_ampl_list. r1_ampl_list & r2_ampl_list contain 3
+            million amplitudes associated with the 3 million frequencies that
+            the unit can step. If r1_ampl is less than r2_ampl then the control
+            codes for ref1 are copied into the ref1_sweep_list else the control
+            codes for ref2 are copied into the ref2_sweep_list.
         """
-        ref1_out_list = list()
-        ref2_out_list = list()
+        ref1_sweep_list = list()
+        ref2_sweep_list = list()
         for idx in range(start, stop, step):
             freq = self.RFin_list[idx]       # Convert idx to a key for the control dictionaries
             if self.r2_ampl_list[idx] > self.r1_ampl_list[idx]:
-                ref1_out_list.append(freq)
+                ref1_sweep_list.append(freq)
             else:
-                ref2_out_list.append(freq)
+                ref2_sweep_list.append(freq)
         ''' Because python won't we manually include the stop value in the plot '''
         freq = self.RFin_list[stop]          # Convert idx to a key for the control dictionaries
         if self.r2_ampl_list[stop] > self.r1_ampl_list[stop]:
-            ref1_out_list.append(freq)
+            ref1_sweep_list.append(freq)
         else:
-            ref2_out_list.append(freq)
-        return ref1_out_list + ref2_out_list    # Return the list of frequencies to be swept
+            ref2_sweep_list.append(freq)
+        return ref1_sweep_list + ref2_sweep_list    # Return the list of frequencies to be swept
 
 
     def set_steps(self):

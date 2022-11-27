@@ -118,11 +118,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_btnSweep_clicked(self):
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
-#        sp.ser.read(sp.ser.in_waiting)         # Clear out the serial buffer.
-#        self.serial_read_thread()              # Start the serial read thread to accept sweep data
-        sa.sa_control().sweep()
+        sweep_complete = sa.sa_control().sweep()
+        msg = 'Sweep complete' if sweep_complete == True else 'Sweep stopped by user'
+        print(name(), line(), f'{msg}.')
         self.label_sweep_status.setText("Sweep complete")
-        if self.chk_plot_enable.isChecked():
+        if self.chk_plot_enable.isChecked() and sweep_complete:
             self.plot_ampl_data(sp.simple_serial.data_buffer_in)
         QtGui.QGuiApplication.processEvents()
 

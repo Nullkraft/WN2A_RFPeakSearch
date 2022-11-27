@@ -58,6 +58,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.dataLine = self.graphWidget.plot()
         # When zooming the graph this updates the x-axis start & stop frequencies
         self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
+        horiz_line_item = pg.InfiniteLine(pos=(1), angle=(0), pen=(255, 128, 255), movable=True, span=(0, 1))
+        vert_line_item = pg.InfiniteLine(pos=(1), pen=(128, 255, 128), movable=True, span=(0, 1))
+        self.graphWidget.addItem(horiz_line_item)
+        self.graphWidget.addItem(vert_line_item)
         #
         # MAX2871 chip will need to be initialized
         self.initialized = False

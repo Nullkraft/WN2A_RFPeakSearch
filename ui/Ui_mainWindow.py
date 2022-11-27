@@ -223,6 +223,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.groupBox_3, 1, 0, 1, 1)
         self.graphWidget = PlotWidget(self.centralWidget)
         self.graphWidget.setMinimumSize(QtCore.QSize(0, 0))
+        self.graphWidget.setMouseTracking(True)
         self.graphWidget.setObjectName("graphWidget")
         self.gridLayout.addWidget(self.graphWidget, 1, 1, 1, 1)
         self.groupBox_2 = QtWidgets.QGroupBox(self.centralWidget)

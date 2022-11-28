@@ -53,7 +53,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super().__init__()
         pg.setConfigOptions(useOpenGL=True, enableExperimental=True)
         self.setupUi(self)  # Must come before self.graphWidget.plot()
-        self.graphWidget.setYRange(0, 2.5)
+#        self.graphWidget.setYRange(0, 2.5)
         self.graphWidget.setMouseEnabled(x=True, y=False)
         self.dataLine = self.graphWidget.plot()
         # When zooming the graph this updates the x-axis start & stop frequencies
@@ -192,7 +192,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #                print(name(), line(), f'freq, {sa_ctl.swept_freq_list[index]}, No lock: Hi byte = {hi_byte} : Lo byte = {lo_byte}')
             ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
             index += 1
-            volts = (ampl/2**10) * sa.sa_control().adc_Vref()       # Convert 10 bit ADC counts to Voltage
+            volts = ampl * sa.sa_control().adc_Vref()/2**10       # Convert 10 bit ADC counts to Voltage
 #            dB = 40 * volts
 #            self.amplitude.append(dB)
             self.amplitude.append(volts)

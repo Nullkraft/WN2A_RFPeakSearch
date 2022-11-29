@@ -201,8 +201,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 hi_byte = (hi_byte & 15)        # Recover the amplitude value despite it not locking
                 print(name(), line(), f'WARNING::Arduino timed out waiting for PLL to lock at {sa_ctl.swept_freq_list[idx]} Mhz')
             ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
-            volts = ampl * sa.sa_control().adc_Vref()/2**10       # Convert 10 bit ADC counts to Voltage
-            volts_list.append(volts)
+            voltage = ampl * sa.sa_control().adc_Vref()/2**10       # Convert 10 bit ADC counts to Voltage
+            volts_list.append(voltage)
         return volts_list
         
         

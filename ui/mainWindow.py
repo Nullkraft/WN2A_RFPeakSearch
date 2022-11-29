@@ -65,7 +65,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #
         # MAX2871 chip will need to be initialized
         self.initialized = False
-        self.amplitude = []       # Declare amplitude storage that will allow appending
+        self.amplitude = list()     # Declare amplitude storage that will allow appending
         #
         # Request the list of available serial ports and use it to
         # populate the user 'Serial Port' drop-down selection list.
@@ -178,23 +178,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_selectReferenceOscillator_currentIndexChanged(self, selected_ref_clock):
         sa.set_reference_clock(selected_ref_clock)
         
-    def _volts_to_dBm(self, volts: float) -> float:
+    def _volts_to_dBm(self, voltage: float) -> float:
         '''
         Protected method Convert ADC results from Volts to dBm for the y_axis
 
-        @param volts Found based on the number of ADC bits and reference voltage
+        @param voltage Found based on the number of ADC bits and reference voltage
         @type float
         @return Output power in the range of -80 to +20 dBm
         @rtype float
         '''
-        x = volts
+        x = voltage
         dBm = -9.460927 * x**8 + 110.57352 * x**7 - 538.8610489 * x**6 + 1423.9059205 * x**5 - 2219.08322 * x**4 + 2073.3123 * x**3 - 1122.5121 * x**2 + 355.7665 * x - 112.663
         return dBm
-        
-    def plot_ampl_data(self, amplBytes):
-        x_axis = list()
-        y_axis = list()
-        self.amplitude.clear()
+    
+    def _adc_to_volts(self, amplBytes):
+        volts_list = list()
         # Convert two 8-bit serial bytes into one 16 bit amplitude
         hi_byte_list = amplBytes[::2]
         lo_byte_list = amplBytes[1::2]
@@ -204,19 +202,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 print(name(), line(), f'WARNING::Arduino timed out waiting for PLL to lock at {sa_ctl.swept_freq_list[idx]} Mhz')
             ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
             volts = ampl * sa.sa_control().adc_Vref()/2**10       # Convert 10 bit ADC counts to Voltage
-            dBm = self._volts_to_dBm(volts)
-            self.amplitude.append(dBm)
-#            self.amplitude.append(volts)
+            volts_list.append(volts)
+        return volts_list
+        
+        
+    def plot_ampl_data(self, amplBytes):
+        x_axis = list()
+        y_axis = list()
+        self.amplitude.clear()
+        volts_list = self._adc_to_volts(amplBytes)
+        self.amplitude = [self._volts_to_dBm(voltage) for voltage in volts_list]
         argsort_index_list = np.argsort(sa_ctl.swept_freq_list)
         for idx in argsort_index_list:
             x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order
             y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order
-
         self.graphWidget.setXRange(x_axis[0], x_axis[-1])   # Limit plot to user selected frequency range
         yellow = (150, 255, 150)
         self.dataLine.setData(x_axis, y_axis, pen=yellow)
 #        purple = (75, 50, 255)
 #        self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=purple)
+
 
     @pyqtSlot()
     def on_btnPeakSearch_clicked(self):

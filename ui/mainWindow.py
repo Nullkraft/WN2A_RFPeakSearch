@@ -182,9 +182,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         '''
         Protected method Convert ADC results from Volts to dBm for the y_axis
 
-        @param volts DESCRIPTION
+        @param volts Found based on the number of ADC bits and reference voltage
         @type float
-        @return DESCRIPTION
+        @return Output power in the range of -80 to +20 dBm
         @rtype float
         '''
         x = volts
@@ -202,7 +202,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for hi_byte, lo_byte in zip(hi_byte_list, lo_byte_list):
             if hi_byte > 3:
                 hi_byte = (hi_byte & 15)        # Recover the amplitude value despite it not locking
-#                print(name(), line(), f'freq, {sa_ctl.swept_freq_list[index]}, No lock: Hi byte = {hi_byte} : Lo byte = {lo_byte}')
+                print(name(), line(), f'WARNING::PLL failed to lock at {sa_ctl.swept_freq_list[index]} Mhz')
             ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
             index += 1
             volts = ampl * sa.sa_control().adc_Vref()/2**10       # Convert 10 bit ADC counts to Voltage
@@ -436,19 +436,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         MHz = 1000
         # Get the start/stop/step values for creating the list of sweep frequencies
-        sa.sweep_start_freq = self.floatStartMHz.value()
-        sa.sweep_stop_freq = self.floatStopMHz.value()
-        sa.sweep_step_size = round(self.intStepKHz.value() / MHz, 3)
+        start_freq = self.floatStartMHz.value()
+        stop_freq = self.floatStopMHz.value()
+        step_size = round(self.intStepKHz.value() / MHz, 3)
         # Convert the start/stop/step 'values' into indexes for the sweep frequencies list
-        start_slice = self.float_to_index(sa.sweep_start_freq)
-        stop_slice = self.float_to_index(sa.sweep_stop_freq)
-        step_slice = self.float_to_index(sa.sweep_step_size)
+        start_idx = self.float_to_index(start_freq)
+        stop_idx = self.float_to_index(stop_freq)
+        step_idx = self.float_to_index(step_size)
         # Fill the list with new sweep frequencies
-        sa_ctl.swept_freq_list = self.get_swept_freq_list(start_slice, stop_slice, step_slice)  # Way faster than np.arange()
+        sa_ctl.swept_freq_list = self.get_swept_freq_list(start_idx, stop_idx, step_idx)  # Way faster than np.arange()
         # Fill in the user control so they can see how many steps it will take
-        sa.sweep_num_steps = len(sa_ctl.swept_freq_list)
-        self.numFrequencySteps.setValue(sa.sweep_num_steps)
-        pass
+        self.numFrequencySteps.setValue(len(sa_ctl.swept_freq_list))
 
     
     @pyqtSlot()

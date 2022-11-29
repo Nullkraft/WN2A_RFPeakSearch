@@ -41,17 +41,11 @@ import serial_port as sp
 
 
 ref_clock = cfg.ref_clock_1
-sweep_step_size = 0.25
-sweep_start_freq = 4.0
-sweep_stop_freq = 3000.0 + sweep_step_size
-sweep_num_steps: int
 
 last_sweep_start = 0.0
 last_sweep_stop = 9999.0
 last_sweep_step = 0.0
 full_sweep_dict = {} # Dictionary of ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
-ref1_full_sweep_dict = {}
-ref2_full_sweep_dict = {}
 
 amplitude_list = []     # The collected list of swept frequencies used for plotting amplitude vs. frequency
 

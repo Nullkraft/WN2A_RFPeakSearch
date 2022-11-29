@@ -27,7 +27,7 @@ In the __init__() of class MainWindow.py:
 
 # WN2A 3GHz Spectrum Analyzer
 
-Work is progressing on a Python application that sends control codes from the PC, reads the Arduino ADC, and then receives the data from the serial port. This tends to block the main thread of the gui so a pynput keyboard listener was setup to monitor for the ESC key. If pressed it will cancel the current sweep and lesaves the current plot on screen.
+Work is progressing on a Python application that sends control codes from the PC, reads the Arduino ADC, and then receives the data from the serial port. This tends to block the main thread of the gui so a pynput keyboard listener was setup to monitor for the ESC key. If pressed it will cancel the current sweep and leaves the current plot on screen.
 
 There are three distinct, but ultimately related, areas of concern.
 

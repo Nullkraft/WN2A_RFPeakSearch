@@ -44,7 +44,7 @@ ref_clock = cfg.ref_clock_1
 sweep_step_size = 0.25
 sweep_start_freq = 4.0
 sweep_stop_freq = 3000.0 + sweep_step_size
-sweep_num_steps = 1601
+sweep_num_steps: int
 
 last_sweep_start = 0.0
 last_sweep_stop = 9999.0
@@ -161,11 +161,9 @@ class sa_control():
         global SWEEP
         last_freq = 0
         SWEEP = True                                # New sweep started
-        sp.simple_serial.data_buffer_in.clear()
-        interbyte_timeout = 0.1
-        start = time.perf_counter()                 # track how long the communication cycle takes
-        sp.simple_serial.data_buffer_in.clear()     # Clear any old data still in the data buffer
+        interbyte_timeout = 0.1                     # If another byte takes too long to arrive...
         sp.ser.read(sp.ser.in_waiting)              # Clear the serial port buffer
+        sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
         time.sleep(.001)
         bytes_rxd = bytearray()
@@ -187,9 +185,6 @@ class sa_control():
                         last_freq = freq
                     timeout_start = time.perf_counter()     # Reset the interbyte_timeout
             bytes_rxd.clear()
-        stop = time.perf_counter()
-        buffer_len = len(sp.simple_serial.data_buffer_in)
-        print(name(), line(), f"Received = {buffer_len} bytes in {round(stop-start, 3)} seconds")
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.end_sweep()   # Send handshake signal to controller
         return SWEEP

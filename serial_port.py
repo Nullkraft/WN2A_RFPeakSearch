@@ -119,7 +119,7 @@ class simple_serial(QObject):
                 print(name(), line(), f': {self.config_fname} is corrupt. New default file created.')
                 self._write_config(self.default_serial_speed, self.default_serial_port)     # Corrupted file contents so recreate a default.
             else:
-                print(name(), line(), f'{ser_port.port} opened at {ser_port.baudrate} baud.')
+                print(name(), line(), f'INFO::{ser_port.port} opened at {ser_port.baudrate} baud.')
             finally:
                 ser = ser_port
                 self._write_config(current_speed=self.baud, current_port=self.port)

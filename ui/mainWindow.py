@@ -53,7 +53,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super().__init__()
         pg.setConfigOptions(useOpenGL=True, enableExperimental=True)
         self.setupUi(self)  # Must come before self.graphWidget.plot()
-#        self.graphWidget.setYRange(0, 2.5)
+        self.graphWidget.setYRange(15.5, -55)     # dBm scale
         self.graphWidget.setMouseEnabled(x=True, y=False)
         self.dataLine = self.graphWidget.plot()
         # When zooming the graph this updates the x-axis start & stop frequencies
@@ -108,9 +108,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         with open('RFin_steps.pickle', 'rb') as f:
             self.RFin_list = pickle.load(f)
         """ List(s) of amplitudes collected from ref1 and ref2 full sweeps with NO input """
-        with open('amplitude_from_full_sweep_of_ref1.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
+        with open('full_sweep_ref1_amplitude.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
             self.r1_ampl_list = pickle.load(f)
-        with open('amplitude_from_full_sweep_of_ref2.pickle', 'rb') as f:   # 3 million amplitudes collected with ref2
+        with open('full_sweep_ref2_amplitude.pickle', 'rb') as f:   # 3 million amplitudes collected with ref2
             self.r2_ampl_list = pickle.load(f)
 
 
@@ -119,8 +119,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
         sweep_complete = sa.sa_control().sweep()
-        msg = 'Sweep complete' if sweep_complete == True else 'Sweep stopped by user'
-        print(name(), line(), f'{msg}.')
+        if not sweep_complete:
+           print(name(), line(), 'Sweep stopped by user')
         self.label_sweep_status.setText("Sweep complete")
         if self.chk_plot_enable.isChecked() and sweep_complete:
             self.plot_ampl_data(sp.simple_serial.data_buffer_in)
@@ -178,6 +178,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_selectReferenceOscillator_currentIndexChanged(self, selected_ref_clock):
         sa.set_reference_clock(selected_ref_clock)
         
+    def _volts_to_dBm(self, volts: float) -> float:
+        '''
+        Protected method Convert ADC results from Volts to dBm for the y_axis
+
+        @param volts DESCRIPTION
+        @type float
+        @return DESCRIPTION
+        @rtype float
+        '''
+        x = volts
+        dBm = -9.460927 * x**8 + 110.57352 * x**7 - 538.8610489 * x**6 + 1423.9059205 * x**5 - 2219.08322 * x**4 + 2073.3123 * x**3 - 1122.5121 * x**2 + 355.7665 * x - 112.663
+        return dBm
+        
     def plot_ampl_data(self, amplBytes):
         x_axis = list()
         y_axis = list()
@@ -193,9 +206,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
             index += 1
             volts = ampl * sa.sa_control().adc_Vref()/2**10       # Convert 10 bit ADC counts to Voltage
-#            dB = 40 * volts
-#            self.amplitude.append(dB)
-            self.amplitude.append(volts)
+            dBm = self._volts_to_dBm(volts)
+            self.amplitude.append(dBm)
+#            self.amplitude.append(volts)
         argsort_index_list = np.argsort(sa_ctl.swept_freq_list)
         for idx in argsort_index_list:
             x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order

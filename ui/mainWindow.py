@@ -198,13 +198,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Convert two 8-bit serial bytes into one 16 bit amplitude
         hi_byte_list = amplBytes[::2]
         lo_byte_list = amplBytes[1::2]
-        index = 0
-        for hi_byte, lo_byte in zip(hi_byte_list, lo_byte_list):
+        for idx, (hi_byte, lo_byte) in enumerate(zip(hi_byte_list, lo_byte_list)):
             if hi_byte > 3:
                 hi_byte = (hi_byte & 15)        # Recover the amplitude value despite it not locking
-                print(name(), line(), f'WARNING::Arduino timed out waiting for PLL to lock at {sa_ctl.swept_freq_list[index]} Mhz')
+                print(name(), line(), f'WARNING::Arduino timed out waiting for PLL to lock at {sa_ctl.swept_freq_list[idx]} Mhz')
             ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
-            index += 1
             volts = ampl * sa.sa_control().adc_Vref()/2**10       # Convert 10 bit ADC counts to Voltage
             dBm = self._volts_to_dBm(volts)
             self.amplitude.append(dBm)

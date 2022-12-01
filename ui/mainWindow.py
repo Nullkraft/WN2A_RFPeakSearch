@@ -88,37 +88,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if (speed_index >= 0):
             self.cbxSerialSpeedSelection.setCurrentIndex(speed_index)
         ''' ~~~~~~ End serial port ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
-        #
-        # sa.full_sweep_dict contains values for ref_clock, LO1, LO2, 
-        # and LO3 used for controlling the Spectrum Analyzer hardware.
-        ''' ~~~~~~ Load control file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
-        control_file = Path('full_control.pickle')
-#        control_file = Path('full_control_ref1.pickle')
-#        control_file = Path('full_control_ref2.pickle')
-        if not control_file.exists():
-            print(name(), line(), f'Missing control file "{control_file}"')
-        with open(control_file, 'rb') as f:
-            sa.full_sweep_dict = pickle.load(f)
-        ''' ~~~~~~ End control file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
-
         # RFin_steps.pickle is used when creating the list of frequencies to sweep
         RFin_file = Path('RFin_steps.pickle')
         if not RFin_file.exists():
             print(name(), line(), f'Missing RFin file "{RFin_file}"')
         with open('RFin_steps.pickle', 'rb') as f:
             self.RFin_list = pickle.load(f)
-        """ List(s) of amplitudes collected from ref1 and ref2 full sweeps with NO input """
-        with open('full_sweep_ref1_amplitude.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
-            self.r1_ampl_list = pickle.load(f)
-        with open('full_sweep_ref2_amplitude.pickle', 'rb') as f:   # 3 million amplitudes collected with ref2
-            self.r2_ampl_list = pickle.load(f)
 
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
+        start = perf_counter()
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
         sweep_complete = sa.sa_control().sweep()
+        print(name(), line(), f'Sweep & plot of {len(self.amplitude)} data points took {round(perf_counter()-start, 6)} seconds')
         if not sweep_complete:
            print(name(), line(), 'Sweep stopped by user')
         self.label_sweep_status.setText("Sweep complete")
@@ -415,6 +399,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             codes for ref1 are copied into the ref1_sweep_list else the control
             codes for ref2 are copied into the ref2_sweep_list.
         """
+        if not self.r1_ampl_list:
+            """ List(s) of amplitudes collected from ref1 and ref2 full sweeps with NO input """
+            with open('full_sweep_ref1_amplitude.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
+                self.r1_ampl_list = pickle.load(f)
+            with open('full_sweep_ref2_amplitude.pickle', 'rb') as f:   # 3 million amplitudes collected with ref2
+                self.r2_ampl_list = pickle.load(f)
         ref1_sweep_list = list()
         ref2_sweep_list = list()
         for idx in range(start, stop, step):
@@ -437,6 +427,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Public method Create a list of frequencies for sweeping
         """
         MHz = 1000
+        # sa.full_sweep_dict contains values for ref_clock, LO1, LO2, 
+        # and LO3 used for controlling the Spectrum Analyzer hardware.
+#        control_file = Path('full_control.pickle')
+#        control_file = Path('full_control_ref1.pickle')
+        control_file = Path('full_control_ref2.pickle')
+        print(name(), line(), f'Opening control file "{control_file}"')
+        if not sa.full_sweep_dict:
+            if not control_file.exists():
+                print(name(), line(), f'Missing control file "{control_file}"')
+            with open(control_file, 'rb') as f:
+                sa.full_sweep_dict = pickle.load(f)
+                print(name(), line(), f'Control file "{control_file}" opened')
         # Get the start/stop/step values for creating the list of sweep frequencies
         start_freq = self.floatStartMHz.value()
         stop_freq = self.floatStopMHz.value()

@@ -105,6 +105,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         start = perf_counter()
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
+        sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
         sweep_complete = sa.sa_control().sweep()
         print(name(), line(), f'Sweep & plot of {len(self.amplitude)} data points took {round(perf_counter()-start, 6)} seconds')
         if not sweep_complete:
@@ -120,6 +121,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         start = perf_counter()
         self.label_sweep_status.setText("Amplitude cal in progress...")
         QtGui.QGuiApplication.processEvents()
+        sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.sa_control().sweep()
         if calibration_complete:
             ampl_volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(sp.simple_serial.data_buffer_in)]
@@ -132,10 +134,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print(name(), line(), f'Calibration of {len(ampl_volts_list)} data points took {round(perf_counter()-start, 6)} seconds')
 
 
-    last_n = -1
     def progress_report(self, n):
-        if n != self.last_n:
-            self.last_n = n
+        if n != self.last_N:
+            self.last_N = n
 #            print(name(), line(), f'Len in_buff = {n}')
         pass
     

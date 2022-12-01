@@ -26,7 +26,7 @@ line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 
 
 import sys
-from time import sleep#, perf_counter
+from time import sleep, perf_counter
 import numpy as np
 import pickle
 
@@ -66,6 +66,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # MAX2871 chip will need to be initialized
         self.initialized = False
         self.amplitude = list()     # Declare amplitude storage that will allow appending
+        self.r1_ampl_list = list()  # The values in r1_ampl_list are compared to r2_ampl_list
+        self.r2_ampl_list = list()  # to choose between ref_clk_1 or ref2_clk_2
+        self.x_axis = list()
+        self.y_axis = list()
         #
         # Request the list of available serial ports and use it to
         # populate the user 'Serial Port' drop-down selection list.
@@ -245,17 +249,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.marker = np.append(self.marker, pg.ArrowItem())  # Add a place for a new marker
             self.text = np.append(self.text, pg.TextItem())       # Add a place for a new label
             self.marker[i] = pg.ArrowItem(angle=-90, tipAngle=40, tailWidth=10, pen={'color': 'w', 'width': 1})
-            frequency = self.freqRange[idx[i]]
-            amplitude = self.amplitude[idx[i]]
+            frequency = self.x_axis[idx[i]]
+            amplitude = self.y_axis[idx[i]]
             self.marker[i].setPos(frequency, amplitude)  # x-axis = frequency, y-axis = amplitude
-            frequency_text = str('%.5f' % self.freqRange[idx[i]])
-            amplitude_text = str('%.2f' % self.amplitude[idx[i]])
+            frequency_text = str('%.5f' % self.x_axis[idx[i]])
+            amplitude_text = str('%.2f' % self.y_axis[idx[i]])
             markerLabel = frequency_text + ' MHz\n' + amplitude_text + ' V'
             self.text[i] = pg.TextItem(markerLabel, anchor = (0.5, 1.5), border = 'w', fill = (0, 0, 255, 100))
             self.graphWidget.addItem(self.marker[i])
             self.graphWidget.addItem(self.text[i])
-            frequency_pos = self.freqRange[idx[i]]
-            amplitude_pos = self.amplitude[idx[i]]
+            frequency_pos = self.x_axis[idx[i]]
+            amplitude_pos = self.y_axis[idx[i]]
             self.text[i].setPos(frequency_pos, amplitude_pos)
 
     def _clear_peak_markers(self):
@@ -449,8 +453,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         step_idx = self.float_to_index(step_size)
         # Fill the list with new sweep frequencies
         sa_ctl.swept_freq_list = self.get_swept_freq_list(start_idx, stop_idx, step_idx)  # Way faster than np.arange()
-        # Fill in the user control so they can see how many steps it will take
-        self.numFrequencySteps.setValue(len(sa_ctl.swept_freq_list))
+        self.numFrequencySteps.setValue(len(sa_ctl.swept_freq_list))    # Display the number of steps to the user
 
     
     @pyqtSlot()

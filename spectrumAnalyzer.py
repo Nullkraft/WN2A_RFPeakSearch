@@ -169,7 +169,7 @@ class sa_control():
             timeout_start = time.perf_counter() # Start the interbyte_timeout (don't put this inside while-loop)
             while (len(bytes_rxd)<2) and SWEEP:
                 bytes_rxd += sp.ser.read(sp.ser.in_waiting)
-                sp.simple_serial.data_buffer_in += bytes_rxd
+                sp.simple_serial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
 #                time.sleep(1e-9)  # Prevent CPU from going to 100% - It slows the loop by 30% when enabled
                 if (time.perf_counter()-timeout_start) > interbyte_timeout:
                     if freq == self.swept_freq_list[0]:     # Decrease the timeout after setting the first frequency.
@@ -177,7 +177,7 @@ class sa_control():
                     if freq != last_freq:
                         print(name(), line(), f'"*** Sweep failed ***" freq = {freq} : bytes_rxd = {list(bytes_rxd)} : bytes_rxd = {bytes_rxd}')
                         last_freq = freq
-                    timeout_start = time.perf_counter()     # Reset the interbyte_timeout
+                    timeout_start = time.perf_counter()     # Restart the interbyte timer
             bytes_rxd.clear()
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.end_sweep()   # Send handshake signal to controller

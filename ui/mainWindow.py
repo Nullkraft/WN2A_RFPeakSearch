@@ -127,11 +127,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         QtGui.QGuiApplication.processEvents()
 
 
+    @pyqtSlot()
+    def on_btnCalibrate_clicked(self):
+        start = perf_counter()
+        self.label_sweep_status.setText("Amplitude cal in progress...")
+        QtGui.QGuiApplication.processEvents()
+        calibration_complete = sa.sa_control().sweep()
+        if calibration_complete:
+            ampl_volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(sp.simple_serial.data_buffer_in)]
+        else:
+            print(name(), line(), 'Calibration cancelled by user')
+        self.label_sweep_status.setText("Calibration complete")
+        with open('full_sweep_refN_amplitude.pickle', 'wb') as f:
+            pickle.dump(ampl_volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+        QtGui.QGuiApplication.processEvents()
+        print(name(), line(), f'Calibration of {len(ampl_volts_list)} data points took {round(perf_counter()-start, 6)} seconds')
+
+
     last_n = -1
     def progress_report(self, n):
         if n != self.last_n:
             self.last_n = n
 #            print(name(), line(), f'Len in_buff = {n}')
+        pass
     
     
     def clear_last_N(self):

@@ -193,7 +193,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         dBm = -9.460927 * x**8 + 110.57352 * x**7 - 538.8610489 * x**6 + 1423.9059205 * x**5 - 2219.08322 * x**4 + 2073.3123 * x**3 - 1122.5121 * x**2 + 355.7665 * x - 112.663
         return dBm
     
-    def _adc_to_volts(self, amplBytes):
+    def _amplitude_bytes_to_volts(self, amplBytes) -> list:
         volts_list = list()
         # Convert two 8-bit serial bytes into one 16 bit amplitude
         hi_byte_list = amplBytes[::2]
@@ -209,20 +209,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         
     def plot_ampl_data(self, amplBytes):
-        x_axis = list()
-        y_axis = list()
+        self.x_axis.clear()
+        self.y_axis.clear()
         self.amplitude.clear()
-        volts_list = self._adc_to_volts(amplBytes)
+        volts_list = self._amplitude_bytes_to_volts(amplBytes)
         self.amplitude = [self._volts_to_dBm(voltage) for voltage in volts_list]
-        argsort_index_list = np.argsort(sa_ctl.swept_freq_list)
-        for idx in argsort_index_list:
-            x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order
-            y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order
-        self.graphWidget.setXRange(x_axis[0], x_axis[-1])   # Limit plot to user selected frequency range
-        yellow = (150, 255, 150)
-        self.dataLine.setData(x_axis, y_axis, pen=yellow)
+        argsort_index_nparray = np.argsort(sa_ctl.swept_freq_list)
+        for idx in argsort_index_nparray:
+            self.x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order
+            self.y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order
+        self.graphWidget.setXRange(self.x_axis[0], self.x_axis[-1])   # Limit plot to user selected frequency range
 #        purple = (75, 50, 255)
 #        self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=purple)
+        yellow = (150, 255, 150)
+        self.dataLine.setData(self.x_axis, self.y_axis, pen=yellow)
 
 
     @pyqtSlot()

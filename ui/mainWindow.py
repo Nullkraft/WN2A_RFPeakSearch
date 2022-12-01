@@ -241,7 +241,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.text = np.array([pg.TextItem()])        # Make a growable array of labels
         # idx is sorted so that idx[0] points to the highest amplitude in the
         # amplitudeData array, idx[1] points to the second highest and so on.
-        idx = sa.peakSearch(self.amplitude, self.numPeakMarkers.value())
+        idx = sa.peakSearch(self.y_axis, self.numPeakMarkers.value())
         # Get the number of markers from the user control on the front panel
         num_markers = self.numPeakMarkers.value()
         # Create and add Peak Markers to the graph.

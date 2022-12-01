@@ -382,25 +382,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sp.simple_serial().port_open(baud_rate=sel_baud, port=sel_port)
         sleep(2)
     
-    @pyqtSlot()
-    def on_btn_set_frequency_clicked(self):
-        """
-        Program the SA to a single frequency for testing
-        """
-        ref_clock, LO1_cntl_code, LO2_cntl_code = sa.full_sweep_dict[100.0]
-        cmd_proc.enable_60MHz_ref_clock()
-        LO1_cntl_code = LO1_cntl_code.to_bytes(4, byteorder='little')
-        cmd_proc.set_LO(cmd_proc.LO1_pos5dBm, LO1_cntl_code)
-        LO2_control_code = LO2_cntl_code.to_bytes(4, byteorder='little')
-        cmd_proc.set_LO(cmd_proc.LO2_pos5dBm, LO2_control_code)
-    
-    @pyqtSlot()
-    def on_btnCalibrate_clicked(self):
-        """
-        Slot documentation goes here.
-        """
-        # TODO: not implemented yet
-        raise NotImplementedError
     
     @pyqtSlot()
     def on_floatStartMHz_editingFinished(self):

@@ -134,6 +134,38 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print(name(), line(), f'Calibration of {len(ampl_volts_list)} data points took {round(perf_counter()-start, 6)} seconds')
 
 
+    @pyqtSlot()
+    def on_btn_make_control_dict_clicked(self):
+        '''
+        Protected method The full control dictionary is used for programming
+        the 3 LO chips on the Spectrum Analyzer board. The dictionary is created
+        by comparing the amplitudes that were found when running a full sweep
+        with ref1 selected and then ref2. Whichever amplitude is lower then the
+        control codes for that frequency are copied to the full_control_dict.
+        '''
+        ampl_file_1 = Path('full_sweep_ref1_amplitude.pickle')
+        ampl_file_2 = Path('full_sweep_ref2_amplitude.pickle')
+        if ampl_file_1.exists() and ampl_file_2.exists():
+            if not self.r1_ampl_list:
+                """ List(s) of amplitudes collected from ref1 and ref2 full sweeps with NO input """
+                with open('full_sweep_ref1_amplitude.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
+                    self.r1_ampl_list = pickle.load(f)
+                with open('full_sweep_ref2_amplitude.pickle', 'rb') as f:   # 3 million amplitudes collected with ref2
+                    self.r2_ampl_list = pickle.load(f)
+                with open('full_control_ref1.pickle', 'rb') as f:
+                    control_ref1_dict = pickle.load(f)
+                with open('full_control_ref2.pickle', 'rb') as f:
+                    control_ref2_dict = pickle.load(f)
+            for idx, freq in enumerate(self.r1_ampl_list):
+                freq = self.RFin_list[idx]       # Converts idx into a key for the control dictionaries
+                if self.r2_ampl_list[idx] > self.r1_ampl_list[idx]:
+                    sa.full_sweep_dict[freq] = control_ref1_dict[freq]
+                else:
+                    sa.full_sweep_dict[freq] = control_ref2_dict[freq]
+        with open('full_control.pickle', 'wb') as f:
+            pickle.dump(sa.full_sweep_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
     def progress_report(self, n):
         if n != self.last_N:
             self.last_N = n
@@ -396,7 +428,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
     def get_swept_freq_list(self, start: int, stop: int, step: int) -> list:
-        """ Get the sweep list from the user interface
+        """ Get the list of frequencies to sweep from the user interface
             This uses the following lists already loaded from file; RFin_list,
             r1_ampl_list, r2_ampl_list. r1_ampl_list & r2_ampl_list contain 3
             million amplitudes associated with the 3 million frequencies that
@@ -404,27 +436,40 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             codes for ref1 are copied into the ref1_sweep_list else the control
             codes for ref2 are copied into the ref2_sweep_list.
         """
-        if not self.r1_ampl_list:
-            """ List(s) of amplitudes collected from ref1 and ref2 full sweeps with NO input """
-            with open('full_sweep_ref1_amplitude.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
-                self.r1_ampl_list = pickle.load(f)
-            with open('full_sweep_ref2_amplitude.pickle', 'rb') as f:   # 3 million amplitudes collected with ref2
-                self.r2_ampl_list = pickle.load(f)
-        ref1_sweep_list = list()
-        ref2_sweep_list = list()
-        for idx in range(start, stop, step):
-            freq = self.RFin_list[idx]       # Convert idx to a key for the control dictionaries
-            if self.r2_ampl_list[idx] > self.r1_ampl_list[idx]:
+        sweep_freq_list = list()
+        ampl_file_1 = Path('full_sweep_ref1_amplitude.pickle')
+        ampl_file_2 = Path('full_sweep_ref2_amplitude.pickle')
+        if ampl_file_1.exists() and ampl_file_2.exists():
+            if not self.r1_ampl_list:
+                """ List(s) of amplitudes collected from ref1 and ref2 full sweeps with NO input """
+                with open('full_sweep_ref1_amplitude.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
+                    self.r1_ampl_list = pickle.load(f)
+                with open('full_sweep_ref2_amplitude.pickle', 'rb') as f:   # 3 million amplitudes collected with ref2
+                    self.r2_ampl_list = pickle.load(f)
+            ref1_sweep_list = list()
+            ref2_sweep_list = list()
+            for idx in range(start, stop, step):
+                freq = self.RFin_list[idx]       # Converts idx into a key for the control dictionaries
+                if self.r2_ampl_list[idx] > self.r1_ampl_list[idx]:
+                    ref1_sweep_list.append(freq)
+                else:
+                    ref2_sweep_list.append(freq)
+            ''' Include the stop value in the list '''
+            freq = self.RFin_list[stop]          # Converts idx into a key for the control dictionaries
+            if self.r2_ampl_list[stop] > self.r1_ampl_list[stop]:
                 ref1_sweep_list.append(freq)
             else:
                 ref2_sweep_list.append(freq)
-        ''' Because python won't we manually include the stop value in the plot '''
-        freq = self.RFin_list[stop]          # Convert idx to a key for the control dictionaries
-        if self.r2_ampl_list[stop] > self.r1_ampl_list[stop]:
-            ref1_sweep_list.append(freq)
-        else:
-            ref2_sweep_list.append(freq)
-        return ref1_sweep_list + ref2_sweep_list    # Return the list of frequencies to be swept
+            sweep_freq_list = ref1_sweep_list + ref2_sweep_list
+        else: # performing a calibration run to collect the data for ampl_1 and ampl_2 files
+            print(name(), line(), f'{ampl_file_1} and {ampl_file_2} are missing. These files are created when running a calibration.')
+            for idx in range(start, stop, step):
+                freq = self.RFin_list[idx]
+                sweep_freq_list.append(freq)
+            ''' Include the stop value in the list '''
+            freq = self.RFin_list[stop]      # Converts idx into a key for the control dictionaries
+            sweep_freq_list.append(freq)
+        return sweep_freq_list    # Return the list of frequencies to be swept
 
 
     def set_steps(self):
@@ -434,10 +479,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         MHz = 1000
         # sa.full_sweep_dict contains values for ref_clock, LO1, LO2, 
         # and LO3 used for controlling the Spectrum Analyzer hardware.
-#        control_file = Path('full_control.pickle')
+        control_file = Path('full_control.pickle')
 #        control_file = Path('full_control_ref1.pickle')
-        control_file = Path('full_control_ref2.pickle')
-        print(name(), line(), f'Opening control file "{control_file}"')
+#        control_file = Path('full_control_ref2.pickle')
         if not sa.full_sweep_dict:
             if not control_file.exists():
                 print(name(), line(), f'Missing control file "{control_file}"')
@@ -483,8 +527,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         LO2_frequency = LO2_freq_list[index]
         self.label_LO1_freq.setText(f'LO1:  {LO1_frequency} MHz')
         self.label_LO2_freq.setText(f'LO2:  {LO2_frequency} MHz')
- 
- 
+
 if __name__ == '__main__':
     print()
 #    freeze_support()

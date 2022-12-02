@@ -156,7 +156,7 @@ def set_LO1(LO1_command: int, int_N: int = 54) -> None:
 
     """
     if int_N is not None:
-        if (54 <= int_N <= 100):
+        if (53 <= int_N <= 100):
             N = int_N << 16
         else:
             logging.error(f'{name}, {line()}, N ({int_N}) exceeds the limits of the ADF4356 (LO1)')

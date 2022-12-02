@@ -154,9 +154,9 @@ class sa_control():
         """
         global SWEEP
         last_freq = 0
-        SWEEP = True                                # New sweep started
-        interbyte_timeout = 0.1                     # If another byte takes too long to arrive...
-        sp.ser.read(sp.ser.in_waiting)              # Clear the serial port buffer
+        SWEEP = True                            # ESC key makes SWEEP=False and cancels the sweep
+        interbyte_timeout = 0.1                 # If another byte takes too long to arrive...
+        sp.ser.read(sp.ser.in_waiting)          # Clear the serial port buffer
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
         time.sleep(.001)
         bytes_rxd = bytearray()

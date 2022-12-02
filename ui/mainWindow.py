@@ -285,9 +285,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             frequency = self.x_axis[idx[i]]
             amplitude = self.y_axis[idx[i]]
             self.marker[i].setPos(frequency, amplitude)  # x-axis = frequency, y-axis = amplitude
-            frequency_text = str('%.5f' % self.x_axis[idx[i]])
+            frequency_text = str('%.6f' % self.x_axis[idx[i]])
             amplitude_text = str('%.2f' % self.y_axis[idx[i]])
-            markerLabel = frequency_text + ' MHz\n' + amplitude_text + ' V'
+            markerLabel = frequency_text + ' MHz\n' + amplitude_text + ' dBm'
             self.text[i] = pg.TextItem(markerLabel, anchor = (0.5, 1.5), border = 'w', fill = (0, 0, 255, 100))
             self.graphWidget.addItem(self.marker[i])
             self.graphWidget.addItem(self.text[i])

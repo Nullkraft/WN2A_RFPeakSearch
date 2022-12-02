@@ -357,20 +357,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         tmp_bytes = cmd_int.to_bytes(4, byteorder='little')
         sp.ser.write(tmp_bytes)     # Leave me alone!  I'm for testing...
 
-    @pyqtSlot()
-    def on_btn_disable_LO2_RFout_clicked(self):
-        """
-        Disable the RF output of the MAX2871 chip designated as LO2
-        """
-        cmd_proc.disable_LO2_RFout()
-
-    @pyqtSlot()
-    def on_btn_disable_LO3_RFout_clicked(self):
-        """
-        Disable the RF output of the MAX2871 chip designated as LO3
-        """
-        cmd_proc.disable_LO3_RFout()
-
     @pyqtSlot(bool)
     def on_chkArduinoLED_toggled(self, checked):
         sa.toggle_arduino_led(checked)

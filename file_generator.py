@@ -34,17 +34,17 @@ class data_generator():
     """ These files will be used by calibrate_sa.py for creating the
         control dictionaries needed by the calibration scripts.
     """
-    ref1 = cmd.ref_clock1_enable
-    ref2 = cmd.ref_clock2_enable
-
-    ''' RFin_list contains every frequency from 0 to 3000.0 MHz in 1 kHz steps '''
-    RFin_list = list()
-    with open('RFin_steps.csv', 'r') as f:
-        for freq in f:
-            RFin = float(freq)
-            RFin_list.append(RFin)
-    with open('RFin_steps.pickle', 'wb') as f:
-        pickle.dump(RFin_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+    def __init__(self):
+        self.ref1 = cmd.ref_clock1_enable
+        self.ref2 = cmd.ref_clock2_enable
+        ''' RFin_list contains every frequency from 0 to 3000.0 MHz in 1 kHz steps '''
+        self.RFin_list = list()
+        with open('RFin_steps.csv', 'r') as f:
+            for freq in f:
+                RFin = float(freq)
+                self.RFin_list.append(RFin)
+        with open('RFin_steps.pickle', 'wb') as f:
+            pickle.dump(self.RFin_list, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
     def _LO1_frequency(self, RFin: float, Fref: float, R: int=1) -> float:
@@ -65,7 +65,8 @@ class data_generator():
         LO1_freq = int((hw.cfg.IF1 + RFin) / Fpfd) * Fpfd
         return LO1_freq
 
-    def _LO2_frequency(self, RFin: float, ref_clock: str) -> float:
+
+    def _LO2_frequency(self, RFin: float, ref_clock: str, injection: str) -> float:
         """
         Protected method calculates the frequency for LO2 from LO1, RFin, and
         the selected reference clock
@@ -80,27 +81,11 @@ class data_generator():
         select_dict = {"ref1": self.LO1_ref1_freq_dict, "ref2": self.LO1_ref2_freq_dict}
         LO1_ref_dict = select_dict[ref_clock]
         LO1_freq = LO1_ref_dict[RFin]
-        if RFin < 2500:
-            LO2_freq = LO1_freq - RFin - hw.cfg.IF2   # Low-side
-        else:
+        if injection == "HI":
             LO2_freq = LO1_freq - RFin + hw.cfg.IF2   # High-side
+        elif injection == "LO":
+            LO2_freq = LO1_freq - RFin - hw.cfg.IF2   # Low-side
         return LO2_freq
-
-    def load_list(self, file_name) -> list:
-        """
-        Read the control codes for LO1, LO2 and LO3 from their associated lists.
-
-        @param file_name The name of an ASCII file that contains int's or float's
-        @type <class 'string'>
-        @param data_type <class 'type'>, int or float, that you want your data converted to.
-        @type <class 'int'> OR <class 'float'> depending on file contents
-        @return A list containing the value(s) of 'type'
-        @rtype <class 'list'>
-        """
-        with open(file_name, 'rb') as f:
-            tmp_list = pickle.load(f)
-        return tmp_list
-
 
 
     def create_data(self) -> None:
@@ -118,58 +103,63 @@ class data_generator():
         self.LO1_ref1_freq_dict = dict(zip(self.RFin_list, self.LO1_ref1_freq_list))
         self.LO1_ref2_freq_dict = dict(zip(self.RFin_list, self.LO1_ref2_freq_list))
         # Create the frequency lookup tables for LO2. (LO2_freq = LO1 - freq + hw.cfg.IF2)
-        self.LO2_ref1_freq_list = [round(self._LO2_frequency(freq, "ref1"), 9) for freq in self.RFin_list]
-        self.LO2_ref2_freq_list = [round(self._LO2_frequency(freq, "ref2"), 9) for freq in self.RFin_list]
+        self.LO2_ref1_hi_freq_list = [round(self._LO2_frequency(freq, "ref1", "HI"), 9) for freq in self.RFin_list]
+        self.LO2_ref2_hi_freq_list = [round(self._LO2_frequency(freq, "ref2", "HI"), 9) for freq in self.RFin_list]
+        self.LO2_ref1_lo_freq_list = [round(self._LO2_frequency(freq, "ref1", "LO"), 9) for freq in self.RFin_list]
+        self.LO2_ref2_lo_freq_list = [round(self._LO2_frequency(freq, "ref2", "LO"), 9) for freq in self.RFin_list]
         # Create the LO2 control codes for setting the frequency of the MAX2871 chip for ref clocks 1 and 2
-        self.LO2_ref1_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_1) for freq in self.LO2_ref1_freq_list]
-        self.LO2_ref2_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_2) for freq in self.LO2_ref2_freq_list]
-        pass
+        self.LO2_ref1_hi_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_1) for freq in self.LO2_ref1_hi_freq_list]
+        self.LO2_ref2_hi_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_2) for freq in self.LO2_ref2_hi_freq_list]
+        self.LO2_ref1_lo_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_1) for freq in self.LO2_ref1_lo_freq_list]
+        self.LO2_ref2_lo_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_2) for freq in self.LO2_ref2_lo_freq_list]
 
-    def save_data_files(self) -> None:
-        """Save LO1 and LO2 data for ref1 and ref2."""
-        file_list = ["LO1_ref1_freq_steps.pickle", "LO1_ref2_freq_steps.pickle",
-                     "LO1_ref1_N_steps.pickle", "LO1_ref2_N_steps.pickle",
-                     "LO2_ref1_fmn_steps.pickle", "LO2_ref2_fmn_steps.pickle",
-                     "LO2_ref1_freq_steps.pickle", "LO2_ref2_freq_steps.pickle",
-                     ]
-        lists_list = [self.LO1_ref1_freq_list, self.LO1_ref2_freq_list,
-                      self.LO1_ref1_N_list, self.LO1_ref2_N_list,
-                      self.LO2_ref1_fmn_list, self.LO2_ref2_fmn_list,
-                      self.LO2_ref1_freq_list, self.LO2_ref2_freq_list,
-                      ]
-        for file_name, data_list in zip(file_list, lists_list):
-            with open(file_name, 'wb') as f:
-                pickle.dump(data_list, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-    """~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
-    def create_ref1_control_file(self) -> None:
-        LO1_n = self.load_list('LO1_ref1_N_steps.pickle')
-        LO2_fmn = self.load_list('LO2_ref1_fmn_steps.pickle')
+    def create_ref1_hi_control_file(self) -> None:
+        LO1_n = self.LO1_ref1_N_list
+        LO2_fmn = self.LO2_ref1_hi_fmn_list
         full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
-        with open('full_control_ref1.pickle', 'wb') as f:
+        with open('control_ref1_HI.pickle', 'wb') as f:
             pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def create_ref2_control_file(self):
-        LO1_n = self.load_list('LO1_ref2_N_steps.pickle')
-        LO2_fmn = self.load_list('LO2_ref2_fmn_steps.pickle')
+
+    def create_ref2_hi_control_file(self):
+        LO1_n = self.LO1_ref2_N_list
+        LO2_fmn = self.LO2_ref2_hi_fmn_list
         full_sweep_step_dict = {freq: (self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
-        with open('full_control_ref2.pickle', 'wb') as f:
+        with open('control_ref2_HI.pickle', 'wb') as f:
             pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
-    """~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
+
+
+    def create_ref1_lo_control_file(self) -> None:
+        LO1_n = self.LO1_ref1_N_list
+        LO2_fmn = self.LO2_ref1_lo_fmn_list
+        full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
+        with open('control_ref1_LO.pickle', 'wb') as f:
+            pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+    def create_ref2_lo_control_file(self):
+        LO1_n = self.LO1_ref2_N_list
+        LO2_fmn = self.LO2_ref2_lo_fmn_list
+        full_sweep_step_dict = {freq: (self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
+        with open('control_ref2_LO.pickle', 'wb') as f:
+            pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+
 
 
 if __name__ == '__main__':
     print()
     import time
-    print(f'Fpfd values are {hw.cfg.Fpfd1} & {hw.cfg.Fpfd2}')
 
+    print(f'Fpfd values are {hw.cfg.Fpfd1} & {hw.cfg.Fpfd2}')
     dg = data_generator()
 
     start = time.perf_counter()
     dg.create_data()
-    dg.save_data_files()
-    dg.create_ref1_control_file()
-    dg.create_ref2_control_file()
+    dg.create_ref1_hi_control_file()
+    dg.create_ref2_hi_control_file()
+    dg.create_ref1_lo_control_file()
+    dg.create_ref2_lo_control_file()
     print(f'Time to generate all the files = {round(time.perf_counter()-start, 6)} seconds')
 
     print("Generator done")

@@ -45,7 +45,7 @@ ref_clock = cfg.ref_clock_1
 last_sweep_start = 0.0
 last_sweep_stop = 9999.0
 last_sweep_step = 0.0
-full_sweep_dict = {} # Dictionary of ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
+all_frequencies_dict = {} # Dictionary of ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
 
 amplitude_list = []     # The collected list of swept frequencies used for plotting amplitude vs. frequency
 
@@ -161,12 +161,17 @@ class sa_control():
         time.sleep(.001)
         bytes_rxd = bytearray()
         for freq in self.swept_freq_list:
-            ref_code, LO1_N_code, LO2_fmn_code = full_sweep_dict[freq]    # Get hardware control codes
+            if not SWEEP:                       # The user pressed the ESC key so time to bail out
+                break
+            ''' Progress report '''
+            if (freq % 10) == 0:
+                print(name(), line(), f'Freq step {freq}')  # For monitor a sweep or calibration status
+            ref_code, LO1_N_code, LO2_fmn_code = all_frequencies_dict[freq]    # Get hardware control codes
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
             timeout_start = time.perf_counter() # Start the interbyte_timeout (don't put this inside while-loop)
-            while (len(bytes_rxd)<2) and SWEEP:
+            while len(bytes_rxd)<2:
                 bytes_rxd += sp.ser.read(sp.ser.in_waiting)
                 sp.simple_serial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
 #                time.sleep(1e-9)  # Prevent CPU from going to 100% - It slows the loop by 30% when enabled

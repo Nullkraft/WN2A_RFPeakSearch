@@ -100,6 +100,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print(name(), line(), f'Missing RFin file "{RFin_file}"')
         with open('RFin_steps.pickle', 'rb') as f:
             self.RFin_list = pickle.load(f)
+        # Loading the initial control file (in the background?)
+        self.load_control_file('control.pickle')
+
+
+    def load_control_file(self, control_fname: str=None):
+        if control_fname is None:
+            print(name(), line(), 'You must enter a control file name')
+        else:
+            control_file = Path(control_fname)
+        if control_file.exists():
+            with open(control_file, 'rb') as f:
+                sa_ctl.all_frequencies_dict = pickle.load(f)
+                print(name(), line(), f'Control file "{control_file}" loaded')
+        else:
+            print(name(), line(), f'Missing control file "{control_file}"')
 
 
     @pyqtSlot()

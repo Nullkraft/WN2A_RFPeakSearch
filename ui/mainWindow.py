@@ -140,7 +140,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         QtGui.QGuiApplication.processEvents()
 
         ''' Run ref1 HI calibrations '''
-        self.set_steps('control_ref1_HI.pickle')
+        self.load_control_file('control_ref1_HI.pickle')
+        self.set_steps()
         sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.sa_control().sweep()
         if calibration_complete:
@@ -151,7 +152,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
 
         ''' Run ref2 HI calibrations '''
-        self.set_steps('control_ref2_HI.pickle')
+        self.load_control_file('control_ref2_HI.pickle')
+        self.set_steps()
         sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.sa_control().sweep()
         if calibration_complete:
@@ -162,7 +164,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
 
         ''' Run ref1 LO calibrations '''
-        self.set_steps('control_ref1_LO.pickle')
+        self.load_control_file('control_ref1_LO.pickle')
+        self.set_steps()
         sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.sa_control().sweep()
         if calibration_complete:
@@ -173,7 +176,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
 
         ''' Run ref2 LO calibrations '''
-        self.set_steps('control_ref2_LO.pickle')
+        self.load_control_file('control_ref2_LO.pickle')
+        self.set_steps()
         sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.sa_control().sweep()
         if calibration_complete:
@@ -198,6 +202,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         with ref1 selected and then ref2. Whichever amplitude is lower then the
         control codes for that frequency are copied to the control_dict.
         '''
+        sa_ctl.all_frequencies_dict.clear()
         ampl_file_1 = Path('amplitude_ref1_HI.pickle')
         ampl_file_2 = Path('amplitude_ref2_HI.pickle')
         if ampl_file_1.exists() and ampl_file_2.exists():
@@ -247,20 +252,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
                 ''' Compare amplitudes of ref1 vs. ref2 '''
                 if ampl_ref1_list[idx] < ampl_ref2_list[idx]:
-                    sa.all_frequencies_dict[freq] = control_r1_dict[freq]
+                    sa_ctl.all_frequencies_dict[freq] = control_r1_dict[freq]
                 else:
-                    sa.all_frequencies_dict[freq] = control_r2_dict[freq]
+                    sa_ctl.all_frequencies_dict[freq] = control_r2_dict[freq]
 
                 difference = round(ampl_ref1_list[idx]-ampl_ref2_list[idx], 1)
                 if difference > 0.5:
                     delta_list.append(freq)
 
         with open('control.pickle', 'wb') as f:
-            pickle.dump(sa.all_frequencies_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(sa_ctl.all_frequencies_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
             
         with open('control.csv', 'w') as fcsv:
-            for f in sa.all_frequencies_dict:
-                r, LO1_N, LO2_FMN = sa.all_frequencies_dict[f]
+            for f in sa_ctl.all_frequencies_dict:
+                r, LO1_N, LO2_FMN = sa_ctl.all_frequencies_dict[f]
                 freq = str(f)
                 ref_clock = str(r)
                 LO1 = str(LO1_N)
@@ -497,17 +502,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     @pyqtSlot()
     def on_floatStartMHz_editingFinished(self):
-        self.set_steps('control.pickle')
+        self.set_steps()
 
 
     @pyqtSlot()
     def on_floatStopMHz_editingFinished(self):
-        self.set_steps('control.pickle')
+        self.set_steps()
 
     
     @pyqtSlot()
     def on_intStepKHz_editingFinished(self):
-        self.set_steps('control.pickle')
+        self.set_steps()
 
 
     def float_to_index(self, hash_value):
@@ -516,67 +521,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         decimal_removed = stringified.replace(".", "")  # Works the same as multiplying by 1000 and then...
         slice_index = int(decimal_removed)              # creates the index for the RFin_list
         return slice_index
-
-
-#    def set_steps(self, control_file_name: str = 'control_ref1_HI.pickle'):
-#    def set_steps(self, control_file_name: str = 'control_ref1_LO.pickle'):
-#    def set_steps(self, control_file_name: str = 'control_ref2_HI.pickle'):
-#    def set_steps(self, control_file_name: str = 'control_ref2_LO.pickle'):
-    def set_steps(self, control_file_name: str=None):
-        """
-        Public method Create a list of frequencies for sweeping
-        """
-        MHz = 1000
-        # Convert the start/stop/step floats into indexes for the sweep frequencies list
-        start = self.float_to_index(self.floatStartMHz.value())
-        stop = self.float_to_index(self.floatStopMHz.value())
-        step = self.float_to_index(round(self.intStepKHz.value() / MHz, 3))
-        # Fill the list with new sweep frequecies
-        if control_file_name is None:
-            sa_ctl.swept_freq_list = [f for f in self.RFin_list[start:stop:step]]
-        else:
-            sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step, control_file_name)  # Way faster than np.arange()
-        self.numFrequencySteps.setValue(len(sa_ctl.swept_freq_list))    # Display the number of steps to the user
-
-
-    def get_swept_freq_list(self, start: int, stop: int, step: int, control_fname: str) -> list:
-        ''' control_fname is the filename of a control dictionary. A control dictionary has
-            freq: (ref_clock_code, LO1_N, LO2_FMN) as key and values in a tuple. When making
-            the list of sweep frequencies it will need to be sorted by ref_clock_code if the
-            file contains more than one code. However, switching between reference clocks
-            requires as much as 20 milliseconds for the new clock to settle so we would like
-            to only switch once during a sweep. The resulting sweep list can be sorted by ref1 and ref2 control codes. 
-        '''
-        ref1_sweep_freq_list = list()
-        ref2_sweep_freq_list = list()
-
-        if control_fname is None:
-            pass
-        else:
-            control_file = Path(control_fname)
-        if not sa.all_frequencies_dict:
-            if control_file.exists():
-                with open(control_file, 'rb') as f:
-                    sa.all_frequencies_dict = pickle.load(f)
-                    print(name(), line(), f'Control file "{control_file}" opened')
-            else:
-                print(name(), line(), f'Missing control file "{control_file}"')
-
-        freq_steps = [f for f in range(start, stop, step)]  # Populate the list of frequencies to step thru
-        freq_steps.append(stop)                             # Include the stop value
-        for idx in freq_steps:
-            freq = self.RFin_list[idx]                      # freq is the key for accessing the all_frequencies_dict
-            ref_code, _, _ = sa.all_frequencies_dict[freq]  # We need the ref_code from all_frequencies_dict
-            ''' Selecting by ref_clock because all_frequencies_dict was already
-                calibrated. If you are running a calibration then the sorting 
-                has no effect. All the control codes will either be for ref1 or
-                ref2 depending on which one you are calibrating.
-            '''
-            if ref_code == 0x0CFF:                          # ref_clock_1 control code = 0x0CFF
-                ref1_sweep_freq_list.append(freq)           # Find all the freqs associated with ref_clock 1
-            elif ref_code == 0x14FF:                        # ref_clock_2 control code = 0x14FF
-                ref2_sweep_freq_list.append(freq)           # Find all the freqs associated with ref_clock 2
-        return ref1_sweep_freq_list + ref2_sweep_freq_list  # Return the list of frequencies to be swept
 
 
     @pyqtSlot()

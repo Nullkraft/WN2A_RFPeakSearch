@@ -192,6 +192,47 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print(name(), line(), f'Calibration of {len(volts_list)} data points took {round(perf_counter()-start, 6)} seconds')
 
 
+    def set_steps(self):
+        """
+        Public method Create a list of frequencies for sweeping
+        """
+        MHz = 1000
+        # Convert the start/stop/step floats into indexes for the sweep frequencies list
+        start = self.float_to_index(self.floatStartMHz.value())
+        stop = self.float_to_index(self.floatStopMHz.value())
+        step = self.float_to_index(round(self.intStepKHz.value() / MHz, 3))
+        # Fill the list with new sweep frequecies
+        sa_ctl.swept_freq_list.clear()
+        sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
+        self.numFrequencySteps.setValue(len(sa_ctl.swept_freq_list))    # Display the number of steps to the user
+
+
+    def get_swept_freq_list(self, start: int, stop: int, step: int) -> list:
+        ''' control_fname is the filename of a control dictionary. A control dictionary has
+            freq: (ref_clock_code, LO1_N, LO2_FMN) as key and values in a tuple. When making
+            the list of sweep frequencies it will need to be sorted by ref_clock_code if the
+            file contains more than one code. However, switching between reference clocks
+            requires as much as 20 milliseconds for the new clock to settle so we would like
+            to only switch once during a sweep. The resulting sweep list can be sorted by ref1 and ref2 control codes. 
+        '''
+        ref1_sweep_freq_list = list()
+        ref2_sweep_freq_list = list()
+        freq_steps = [f for f in range(start, stop, step)]  # Populate the list of frequencies to step thru
+        freq_steps.append(stop)                             # Include the stop value
+        for idx in freq_steps:
+            freq = self.RFin_list[idx]                      # freq is the key for accessing the all_frequencies_dict
+            ref_code, _, _ = sa_ctl.all_frequencies_dict[freq]  # We need the ref_code from all_frequencies_dict
+            ''' Selecting by ref_clock because all_frequencies_dict was already
+                calibrated. If you are running a calibration then the sorting 
+                has no effect. All the control codes will either be for ref1 or
+                ref2 depending on which one you are calibrating.
+            '''
+            if ref_code == 0x0CFF:                          # ref_clock_1 control code = 0x0CFF
+                ref1_sweep_freq_list.append(freq)           # Find all the freqs associated with ref_clock 1
+            elif ref_code == 0x14FF:                        # ref_clock_2 control code = 0x14FF
+                ref2_sweep_freq_list.append(freq)           # Find all the freqs associated with ref_clock 2
+        return ref1_sweep_freq_list + ref2_sweep_freq_list  # Return the list of frequencies to be swept
+
 
     @pyqtSlot()
     def on_btn_make_control_dict_clicked(self):

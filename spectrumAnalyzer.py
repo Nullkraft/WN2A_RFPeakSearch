@@ -18,11 +18,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-""" Spectrum Analyzer Notes:
-    LO1_freq = int({IF1 + RFin} - [{IF1 + RFin} / Fpfd])
-    LO2_freq = LO1_freq - RFin + IF2
-    RFin = LO1_freq + IF2 - LO2_freq
-"""
+
 
 # Utility functions used for displaying the name and the line number
 # of the source file. Requires: import sys
@@ -45,9 +41,8 @@ ref_clock = cfg.ref_clock_1
 last_sweep_start = 0.0
 last_sweep_stop = 9999.0
 last_sweep_step = 0.0
-all_frequencies_dict = {} # Dictionary of ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
 
-amplitude_list = []     # The collected list of swept frequencies used for plotting amplitude vs. frequency
+#amplitude_list = []     # The collected list of swept frequencies used for plotting amplitude vs. frequency
 
 SWEEP: bool             # Flag to test for ESC key during a sweep
 
@@ -68,7 +63,8 @@ listener.start()
 
 
 class sa_control():
-    swept_freq_list = []    # The list of frequencies that the user requested to be swept
+    swept_freq_list = list()        # The list of frequencies that the user requested to be swept
+    all_frequencies_dict = dict()   # ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
 
     def __init__(self):
         self.selected_device = spi_device.LO2   # Spectrum Analyzer chip we're talking to
@@ -166,7 +162,7 @@ class sa_control():
             ''' Progress report '''
             if (freq % 10) == 0:
                 print(name(), line(), f'Freq step {freq}')  # For monitor a sweep or calibration status
-            ref_code, LO1_N_code, LO2_fmn_code = all_frequencies_dict[freq]    # Get hardware control codes
+            ref_code, LO1_N_code, LO2_fmn_code = self.all_frequencies_dict[freq]    # Get hardware control codes
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)

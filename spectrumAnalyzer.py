@@ -159,9 +159,9 @@ class sa_control():
         for freq in self.swept_freq_list:
             if not SWEEP:                       # The user pressed the ESC key so time to bail out
                 break
-            ''' Progress report '''
-            if (freq % 10) == 0:
-                print(name(), line(), f'Freq step {freq}')  # For monitor a sweep or calibration status
+##            ''' Progress report '''
+##            if (freq % 10) == 0:
+##                print(name(), line(), f'Freq step {freq}')  # For monitor a sweep or calibration status
             ref_code, LO1_N_code, LO2_fmn_code = self.all_frequencies_dict[freq]    # Get hardware control codes
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)

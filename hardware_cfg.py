@@ -55,10 +55,6 @@ class cfg():
 
     RFin_max_freq = 3000                # No control codes available beyond this frequency
 
-    _RFin_start: float = 0.0            #
-    _RFin_stop:  float = 3000.001       # Maximum hardware bandwidth 
-    _RFin_step:  float = 0.001          #
-
 
 
 def memoize(func):

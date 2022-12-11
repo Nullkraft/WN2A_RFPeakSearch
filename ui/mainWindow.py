@@ -194,13 +194,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def set_steps(self):
         """
-        Public method Create a list of frequencies for sweeping
+            Public method Create a list of frequencies for sweeping
         """
-        MHz = 1000
-        # Convert the start/stop/step floats into indexes for the sweep frequencies list
-        start = self.float_to_index(self.floatStartMHz.value())
-        stop = self.float_to_index(self.floatStopMHz.value())
-        step = self.float_to_index(round(self.intStepKHz.value() / MHz, 3))
+        # Get the start and stop indexes for the sweep frequencies list
+        start: int = self.RFin_list.index(self.floatStartMHz.value())
+        stop: int = self.RFin_list.index(self.floatStopMHz.value())
+        step: int = self.intStepKHz.value()
         # Fill the list with new sweep frequecies
         sa_ctl.swept_freq_list.clear()
         sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
@@ -554,14 +553,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def on_intStepKHz_editingFinished(self):
         self.set_steps()
-
-
-    def float_to_index(self, hash_value):
-        num_slice = round(hash_value, 3)                # Limit to 3 decimal places before converting...
-        stringified = "{:.3f}".format(num_slice)        # to a string needed for the next step.
-        decimal_removed = stringified.replace(".", "")  # Works the same as multiplying by 1000 and then...
-        slice_index = int(decimal_removed)              # creates the index for the RFin_list
-        return slice_index
 
 
     @pyqtSlot()

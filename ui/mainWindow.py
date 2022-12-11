@@ -212,7 +212,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             the list of sweep frequencies it will need to be sorted by ref_clock_code if the
             file contains more than one code. However, switching between reference clocks
             requires as much as 20 milliseconds for the new clock to settle so we would like
-            to only switch once during a sweep. The resulting sweep list can be sorted by ref1 and ref2 control codes. 
+            to only switch once during a sweep. The resulting sweep list can be sorted by
+            ref1 and ref2 control codes. 
         '''
         ref1_sweep_freq_list = list()
         ref2_sweep_freq_list = list()

@@ -405,8 +405,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order
                 self.y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order
             self.graphWidget.setXRange(self.x_axis[0], self.x_axis[-1])   # Limit plot to user selected frequency range
-    #        purple = (75, 50, 255)
-    #        self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=purple)
+#            purple = (75, 50, 255)
+#            self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=purple)
             yellow = (150, 255, 150)
             self.dataLine.setData(self.x_axis, self.y_axis, pen=yellow)
         else:

@@ -2,19 +2,21 @@
   "header": {
     "comment": "eric project file for project WN2A_RFPeakSearch",
     "copyright": "Copyright (C) 2022 , ",
-    "saved": "2022-09-03, 13:47:58"
+    "saved": "2022-12-15, 06:19:45"
   },
   "project": {
     "AUTHOR": "",
     "CHECKERSPARMS": {
       "Pep8Checker": {
         "AnnotationsChecker": {
+          "AllowStarArgAny": false,
           "AllowUntypedDefs": false,
           "AllowUntypedNested": false,
           "DispatchDecorators": [
             "singledispatch",
             "singledispatchmethod"
           ],
+          "ForceFutureAnnotations": false,
           "MaximumComplexity": 3,
           "MaximumLength": 7,
           "MinimumCoverage": 75,
@@ -59,7 +61,7 @@
         "DocstringType": "pep257",
         "EnabledCheckerCategories": "A, C, D, E, M, N, S, W",
         "ExcludeFiles": "",
-        "ExcludeMessages": "E121,E123,E126,E226,E24,E704,W503,W504",
+        "ExcludeMessages": "A101,E24,E121,E123,E126,E226,E266,E704,W503,W504",
         "FixCodes": "",
         "FixIssues": false,
         "FutureChecker": "",
@@ -67,7 +69,12 @@
         "ImportsChecker": {
           "ApplicationPackageNames": [],
           "BanRelativeImports": "",
-          "BannedModules": []
+          "BannedModules": [],
+          "CombinedAsImports": false,
+          "SortCaseSensitive": false,
+          "SortFromFirst": false,
+          "SortIgnoringStyle": false,
+          "SortOrder": "natural"
         },
         "IncludeMessages": "",
         "LineComplexity": 15,
@@ -120,6 +127,7 @@
       }
     },
     "EMAIL": "",
+    "EMBEDDED_VENV": false,
     "EOL": 0,
     "FILETYPES": {
       "*.e4p": "OTHERS",
@@ -154,6 +162,7 @@
     },
     "INTERFACES": [],
     "LEXERASSOCS": {},
+    "LICENSE": "",
     "MAINSCRIPT": "main.py",
     "MAKEPARAMS": {
       "MakeEnabled": false,
@@ -195,10 +204,12 @@
     "SPELLEXCLUDES": "",
     "SPELLLANGUAGE": "en_US",
     "SPELLWORDS": "",
+    "TESTING_FRAMEWORK": "",
     "TRANSLATIONEXCEPTIONS": [],
     "TRANSLATIONPATTERN": "",
     "TRANSLATIONS": [],
     "TRANSLATIONSBINPATH": "",
+    "TRANSLATIONSOURCESTARTPATH": "",
     "UICPARAMS": {
       "Package": "",
       "PackagesRoot": "",

@@ -61,6 +61,71 @@ def on_release(key):
 listener = keyboard.Listener(on_release=on_release)
 listener.start()
 
+class DictionarySlicer:
+    """ Add slicing to a dictionary. """
+
+    def __init__(self, d_items: {}, k_list: []=None) -> None:
+        """
+        Constructor Store d_items and k_list. If k_list is None then _keys
+                    will be created from d_items.keys(). The result of
+                    indexing or slicing _keys is used to create a new
+                    list called self._keys that is a subset of k_list that
+                    will return a subset of the values in d_items.
+
+        @param d_items The dictionary that you want to slice.
+        @type {}
+        @param _keys The list of keys for d_items (defaults to None)
+        @type [] (optional)
+        @return None
+        @rtype None
+
+        """
+        self.dict_slice = {}
+        self._dict = d_items    # One data item = {RFin_freq: (RFin, LO1_N, LO2_FMN)}
+        if k_list is None:
+            self._keys = list(self._dict)   # Create index list from dictionary keys
+        else:
+            self._keys = k_list             # Copy index list from the provided k_list
+
+    def __len__(self) -> {}:
+        """
+        Special method Reports the length of the sliced dictionary result.
+
+        @return Length of sliced dictionary.
+        @rtype dict
+        """
+        return len(self.dict_slice)
+
+    def __getitem__(self, key: None) -> {}:
+        """
+        Special method Get a slice or single item from a dictionary.
+
+        @param key A slice = [start:stop:step], index = [int], or None.
+        @type slice, int, or NoneType
+        @return A subset of items sliced from the full dictionary or a single item.
+        @rtype dict
+
+        """
+        if isinstance(key, type(None)):             # When slice == [::] or [:]
+            self.dict_slice = self._dict
+        if isinstance(key, int):                    # Getting a single item
+            try:
+                self.dict_slice = {f: self._dict[f] for f in self._keys[key:key+1]}
+            except TypeError:
+                if not isinstance(self._dict, dict):
+                    raise TypeError(f' d_items must be a type dict. d_items == {type(self._dict)}')
+                if not isinstance(self._keys, list):
+                    raise TypeError(f' k_list must be a type list. k_list == {type(self._keys)}')
+        if isinstance(key, slice):                  # Getting a range of items
+            try:
+                self.dict_slice = {f: self._dict[f] for f in self._keys[key.start:key.stop:key.step]}
+            except TypeError:
+                if not isinstance(self._dict, dict):
+                    raise TypeError(f' d_items must be a type dict. d_items == {type(self._dict)}')
+                if not isinstance(self._keys, list):
+                    raise TypeError(f' k_list must be a type list. k_list == {type(self._keys)}')
+        return self.dict_slice
+
 
 class sa_control():
     swept_freq_list = list()        # The list of frequencies that the user requested to be swept

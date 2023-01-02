@@ -61,7 +61,7 @@ def on_release(key):
 listener = keyboard.Listener(on_release=on_release)
 listener.start()
 
-class DictionarySlicer:
+class DictionarySlicer(dict):
     """ Add slicing to a dictionary. """
 
     def __init__(self, d_items: {}, k_list: []=None) -> None:
@@ -224,10 +224,11 @@ class sa_control():
         for freq in self.swept_freq_list:
             if not SWEEP:                       # The user pressed the ESC key so time to bail out
                 break
-##            ''' Progress report '''
-##            if (freq % 10) == 0:
-##                print(name(), line(), f'Freq step {freq}')  # For monitor a sweep or calibration status
+            ''' Progress report '''
+#            if (freq % 10) == 0:
+#                print(name(), line(), f'Freq step {freq}')  # For monitor a sweep or calibration status
             ref_code, LO1_N_code, LO2_fmn_code = self.all_frequencies_dict[freq]    # Get hardware control codes
+#            print(name(), line(), f'{str(self.all_frequencies_dict[freq]).strip()}')
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
@@ -240,9 +241,12 @@ class sa_control():
                     if freq == self.swept_freq_list[0]:     # Decrease the timeout after setting the first frequency.
                         interbyte_timeout = 0.005
                     if freq != last_freq:
-                        print(name(), line(), f'"*** Sweep failed ***" freq = {freq} : bytes_rxd = {list(bytes_rxd)} : bytes_rxd = {bytes_rxd}')
+                        print(name(), line(), f'"*** Sweep failed ***" {freq = } : {list(bytes_rxd) = } : {bytes_rxd = }')
+                        sp.simple_serial.data_buffer_in += b'\xFF\xFF'  # TESTING ONLY
                         last_freq = freq
                     timeout_start = time.perf_counter()     # Restart the interbyte timer
+#            if freq == 630.0:
+#                print(name(), line(), f'{freq = }, {bytes_rxd = }')
             bytes_rxd.clear()
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.end_sweep()   # Send handshake signal to controller

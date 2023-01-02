@@ -147,6 +147,38 @@ class data_generator():
 
 
 
+    def dump_control_files(self):
+        LO1_n = self.LO1_ref1_N_list
+        LO2_fmn = self.LO2_ref1_hi_fmn_list
+        full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
+        with open('control_ref1_HI.csv', 'w') as f:
+            for all_items in full_sweep_step_dict.items():
+                f.write(f'{all_items}' + '\n')
+
+        LO1_n = self.LO1_ref2_N_list
+        LO2_fmn = self.LO2_ref2_hi_fmn_list
+        full_sweep_step_dict = {freq: (self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
+        with open('control_ref2_HI.csv', 'w') as f:
+            for all_items in full_sweep_step_dict.items():
+                f.write(f'{all_items}' + '\n')
+
+        LO1_n = self.LO1_ref1_N_list
+        LO2_fmn = self.LO2_ref1_lo_fmn_list
+        full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
+        with open('control_ref1_LO.csv', 'w') as f:
+            for all_items in full_sweep_step_dict.items():
+                f.write(f'{all_items}' + '\n')
+
+        LO1_n = self.LO1_ref2_N_list
+        LO2_fmn = self.LO2_ref2_lo_fmn_list
+        full_sweep_step_dict = {freq: (self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
+        with open('control_ref2_LO.csv', 'w') as f:
+            for all_items in full_sweep_step_dict.items():
+                f.write(f'{all_items}' + '\n')
+
+
+
+
 if __name__ == '__main__':
     print()
     import time
@@ -161,5 +193,7 @@ if __name__ == '__main__':
     dg.create_ref1_lo_control_file()
     dg.create_ref2_lo_control_file()
     print(f'Time to generate all the files = {round(time.perf_counter()-start, 6)} seconds')
+    
+    dg.dump_control_files()
 
     print("Generator done")

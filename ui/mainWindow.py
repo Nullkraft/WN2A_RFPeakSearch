@@ -24,7 +24,6 @@
 name = lambda: f'File \"{__name__}.py\",'
 line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 
-
 import sys
 from time import sleep, perf_counter
 import numpy as np
@@ -102,13 +101,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.RFin_list = pickle.load(f)
         # Loading the initial control file (in the background?)
         self.load_control_file('control.pickle')
-
+#        self.sweep_control_dict = sa.DictionarySlicer(sa_ctl.all_frequencies_dict)
+#        print()
 
     def load_control_file(self, control_fname: str=None):
         if control_fname is None:
             print(name(), line(), 'You must enter a control file name')
         else:
-            control_file = Path(control_fname)
+            sa_ctl.all_frequencies_dict.clear()     # get ready for a new set of control codes
+            control_file = Path(control_fname)      # Filename containting new control codes
         if control_file.exists():
             with open(control_file, 'rb') as f:
                 sa_ctl.all_frequencies_dict = pickle.load(f)
@@ -119,12 +120,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
-        start = perf_counter()
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
         sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
         sweep_complete = sa.sa_control().sweep()
-        print(name(), line(), f'Sweep & plot of {len(self.amplitude)} data points took {round(perf_counter()-start, 6)} seconds')
         if not sweep_complete:
            print(name(), line(), 'Sweep stopped by user')
         self.label_sweep_status.setText("Sweep complete")
@@ -150,6 +149,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref1_HI.pickle', 'wb') as f:
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+        with open('amplitude_ref1_HI.csv', 'w') as f:
+            for amplitude in volts_list:
+                f.write(f'{amplitude}' + '\n')
 
         ''' Run ref2 HI calibrations '''
         self.load_control_file('control_ref2_HI.pickle')
@@ -162,6 +164,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref2_HI.pickle', 'wb') as f:
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+        with open('amplitude_ref2_HI.csv', 'w') as f:
+            for amplitude in volts_list:
+                f.write(f'{amplitude}' + '\n')
 
         ''' Run ref1 LO calibrations '''
         self.load_control_file('control_ref1_LO.pickle')
@@ -174,6 +179,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref1_LO.pickle', 'wb') as f:
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+        with open('amplitude_ref1_LO.csv', 'w') as f:
+            for amplitude in volts_list:
+                f.write(f'{amplitude}' + '\n')
 
         ''' Run ref2 LO calibrations '''
         self.load_control_file('control_ref2_LO.pickle')
@@ -186,6 +194,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref2_LO.pickle', 'wb') as f:
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+        with open('amplitude_ref2_LO.csv', 'w') as f:
+            for amplitude in volts_list:
+                f.write(f'{amplitude}' + '\n')
 
         self.label_sweep_status.setText("Calibration complete")
         QtGui.QGuiApplication.processEvents()
@@ -197,9 +208,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             Public method Create a list of frequencies for sweeping
         """
         # Get the start and stop indexes for the sweep frequencies list
-        start: int = self.RFin_list.index(self.floatStartMHz.value())
-        stop: int = self.RFin_list.index(self.floatStopMHz.value())
+        start: int = self.RFin_list.index(round(self.floatStartMHz.value(), 3))
+        stop: int = self.RFin_list.index(round(self.floatStopMHz.value(), 3))
         step: int = self.intStepKHz.value()
+#        next_stop = stop + step
+        
+#        steps_dict = self.sweep_control_dict[start:next_stop:step]
+#        print(name(), line(), f'{len(steps_dict) = } and {next_stop = }')
         # Fill the list with new sweep frequecies
         sa_ctl.swept_freq_list.clear()
         sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
@@ -215,8 +230,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             to only switch once during a sweep. The resulting sweep list can be sorted by
             ref1 and ref2 control codes. 
         '''
-        ref1_sweep_freq_list = list()
-        ref2_sweep_freq_list = list()
+        ref1_sweep_freq_list = []
+        ref2_sweep_freq_list = []
         freq_steps = [f for f in range(start, stop, step)]  # Populate the list of frequencies to step thru
         freq_steps.append(stop)                             # Include the stop value
         for idx in freq_steps:
@@ -375,11 +390,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         @rtype float
         '''
         x = voltage
-        dBm = -9.460927 * x**8 + 110.57352 * x**7 - 538.8610489 * x**6 + 1423.9059205 * x**5 - 2219.08322 * x**4 + 2073.3123 * x**3 - 1122.5121 * x**2 + 355.7665 * x - 112.663
+        dBm = (((((((-9.460927*x + 110.57352)*x - 538.8610489)*x + 1423.9059205)*x - 2219.08322)*x + 2073.3123)*x - 1122.5121)*x + 355.7665)*x - 112.663
         return dBm
     
     def _amplitude_bytes_to_volts(self, amplBytes) -> list:
-        volts_list = list()
+        volts_list = []
         # Convert two 8-bit serial bytes into one 16 bit amplitude
         hi_byte_list = amplBytes[::2]
         lo_byte_list = amplBytes[1::2]

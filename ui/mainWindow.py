@@ -400,10 +400,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         lo_byte_list = amplBytes[1::2]
         for idx, (hi_byte, lo_byte) in enumerate(zip(hi_byte_list, lo_byte_list)):
             if hi_byte > 3:
-                hi_byte = (hi_byte & 15)        # Recover the amplitude value despite it not locking
-                print(name(), line(), f'WARNING::Arduino timed out waiting for PLL to lock at {sa_ctl.swept_freq_list[idx]} Mhz')
+                hi_byte = (hi_byte & 15)        # Store the amplitude value despite it not locking
+                print(name(), line(), f'WARNING:: PLL failed to lock at {sa_ctl.swept_freq_list[idx]} Mhz')
             ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
-            voltage = ampl * sa.sa_control().adc_Vref()/2**10       # Convert 10 bit ADC counts to Voltage
+            voltage = ampl * sa.sa_control().adc_Vref()/(2**10-1)       # Convert 10 bit ADC counts to Voltage
             volts_list.append(voltage)
         return volts_list
         
@@ -421,9 +421,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order
             self.graphWidget.setXRange(self.x_axis[0], self.x_axis[-1])   # Limit plot to user selected frequency range
 #            purple = (75, 50, 255)
-#            self.dataLine.setData(sa_ctl.swept_freq_list, self.amplitude, pen=purple)
             yellow = (150, 255, 150)
-            self.dataLine.setData(self.x_axis, self.y_axis, pen=yellow)
+            color = yellow
+            self.dataLine.setData(self.x_axis, self.y_axis, pen=color)
         else:
             print(name(), line(), 'Unable to plot. Missing amplitude data.')
 

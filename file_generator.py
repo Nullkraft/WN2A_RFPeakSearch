@@ -61,7 +61,7 @@ class data_generator():
         @return The LO1 frequency that steps by the Fpfd value
         @rtype float
         """
-        Fpfd = Fref/R     # Fpfd1 = 66.0 and Fpfd2 = 66.666 MHz
+        Fpfd = Fref/R     # Fpfd1 = reference clock_1 and Fpfd2 = reference clock_2
         LO1_freq = int((hw.cfg.IF1 + RFin) / Fpfd) * Fpfd
         return LO1_freq
 

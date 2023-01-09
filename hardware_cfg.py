@@ -41,7 +41,7 @@ class spi_device(Enum):
 @dataclass
 class cfg():
     max_error = 2**32
-    Vref = 5.0                          # Analog reference voltage
+    Vref = 2.595 #5.0                   # Analog reference voltage
 
     ref_clock_1 = 66.000
     ref_clock_2 = 67.108864

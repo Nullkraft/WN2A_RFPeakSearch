@@ -26,7 +26,6 @@ line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 
 import sys
 from time import sleep, perf_counter
-import numpy as np
 import pickle
 
 from PyQt6 import QtCore, QtGui
@@ -38,7 +37,6 @@ from pathlib import Path
 from .Ui_mainWindow import Ui_MainWindow
 import spectrumAnalyzer as sa
 from spectrumAnalyzer import sa_control as sa_ctl
-#import command_processor as cmd_proc
 import serial_port as sp
 
 
@@ -415,7 +413,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.amplitude.clear()
             volts_list = self._amplitude_bytes_to_volts(amplBytes)
             self.amplitude = [self._volts_to_dBm(voltage) for voltage in volts_list]
-            argsort_index_nparray = np.argsort(sa_ctl.swept_freq_list)
+            argsort_index_nparray = sa.np.argsort(sa_ctl.swept_freq_list)
             for idx in argsort_index_nparray:
                 self.x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order
                 self.y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order
@@ -436,8 +434,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self._peak_search()
 
     def _peak_search(self):
-        self.marker = np.array([pg.ArrowItem()])     # Create a growable array of markers
-        self.text = np.array([pg.TextItem()])        # Make a growable array of labels
+        self.marker = sa.np.array([pg.ArrowItem()])     # Create a growable array of markers
+        self.text = sa.np.array([pg.TextItem()])        # Make a growable array of labels
         # idx is sorted so that idx[0] points to the highest amplitude in the
         # amplitudeData array, idx[1] points to the second highest and so on.
         idx = sa.peakSearch(self.y_axis, self.numPeakMarkers.value())
@@ -445,8 +443,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         num_markers = self.numPeakMarkers.value()
         # Create and add Peak Markers to the graph.
         for i in range(min(num_markers, len(idx))):
-            self.marker = np.append(self.marker, pg.ArrowItem())  # Add a place for a new marker
-            self.text = np.append(self.text, pg.TextItem())       # Add a place for a new label
+            self.marker = sa.np.append(self.marker, pg.ArrowItem())  # Add a place for a new marker
+            self.text = sa.np.append(self.text, pg.TextItem())       # Add a place for a new label
             self.marker[i] = pg.ArrowItem(angle=-90, tipAngle=40, tailWidth=10, pen={'color': 'w', 'width': 1})
             frequency = self.x_axis[idx[i]]
             amplitude = self.y_axis[idx[i]]

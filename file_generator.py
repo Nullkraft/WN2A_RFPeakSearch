@@ -114,7 +114,7 @@ class data_generator():
         self.LO2_ref2_lo_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_2) for freq in self.LO2_ref2_lo_freq_list]
 
 
-    def create_ref1_hi_control_file(self) -> None:
+    def save_ref1_hi_control_file(self) -> None:
         LO1_n = self.LO1_ref1_N_list
         LO2_fmn = self.LO2_ref1_hi_fmn_list
         full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
@@ -122,7 +122,7 @@ class data_generator():
             pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-    def create_ref2_hi_control_file(self):
+    def save_ref2_hi_control_file(self):
         LO1_n = self.LO1_ref2_N_list
         LO2_fmn = self.LO2_ref2_hi_fmn_list
         full_sweep_step_dict = {freq: (self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
@@ -130,7 +130,7 @@ class data_generator():
             pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-    def create_ref1_lo_control_file(self) -> None:
+    def save_ref1_lo_control_file(self) -> None:
         LO1_n = self.LO1_ref1_N_list
         LO2_fmn = self.LO2_ref1_lo_fmn_list
         full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
@@ -138,7 +138,7 @@ class data_generator():
             pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-    def create_ref2_lo_control_file(self):
+    def save_ref2_lo_control_file(self):
         LO1_n = self.LO1_ref2_N_list
         LO2_fmn = self.LO2_ref2_lo_fmn_list
         full_sweep_step_dict = {freq: (self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
@@ -188,10 +188,10 @@ if __name__ == '__main__':
 
     start = time.perf_counter()
     dg.create_data()
-    dg.create_ref1_hi_control_file()
-    dg.create_ref2_hi_control_file()
-    dg.create_ref1_lo_control_file()
-    dg.create_ref2_lo_control_file()
+    dg.save_ref1_hi_control_file()
+    dg.save_ref2_hi_control_file()
+    dg.save_ref1_lo_control_file()
+    dg.save_ref2_lo_control_file()
     print(f'Time to generate all the files = {round(time.perf_counter()-start, 6)} seconds')
     
     dg.dump_control_files()

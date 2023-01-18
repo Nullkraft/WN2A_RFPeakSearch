@@ -135,14 +135,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         start = perf_counter()
         self.label_sweep_status.setText("Amplitude cal in progress...")
         QtGui.QGuiApplication.processEvents()
+        serial_buf = sp.simple_serial.data_buffer_in
 
         ''' Run ref1 HI calibrations '''
         self.load_control_file('control_ref1_HI.pickle')
         self.set_steps()
-        sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
+        serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.sa_control().sweep()
         if calibration_complete:
-            volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(sp.simple_serial.data_buffer_in)]
+            volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
         else:
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref1_HI.pickle', 'wb') as f:
@@ -154,10 +155,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ''' Run ref2 HI calibrations '''
         self.load_control_file('control_ref2_HI.pickle')
         self.set_steps()
-        sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
+        serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.sa_control().sweep()
         if calibration_complete:
-            volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(sp.simple_serial.data_buffer_in)]
+            volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
         else:
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref2_HI.pickle', 'wb') as f:
@@ -169,10 +170,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ''' Run ref1 LO calibrations '''
         self.load_control_file('control_ref1_LO.pickle')
         self.set_steps()
-        sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
+        serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.sa_control().sweep()
         if calibration_complete:
-            volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(sp.simple_serial.data_buffer_in)]
+            volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
         else:
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref1_LO.pickle', 'wb') as f:
@@ -184,10 +185,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ''' Run ref2 LO calibrations '''
         self.load_control_file('control_ref2_LO.pickle')
         self.set_steps()
-        sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
+        serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.sa_control().sweep()
         if calibration_complete:
-            volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(sp.simple_serial.data_buffer_in)]
+            volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
         else:
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref2_LO.pickle', 'wb') as f:
@@ -259,8 +260,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sa_ctl.all_frequencies_dict.clear()
         ampl_file_1 = Path('amplitude_ref1_HI.pickle')
         ampl_file_2 = Path('amplitude_ref2_HI.pickle')
+
         if ampl_file_1.exists() and ampl_file_2.exists():
-            if not self.r1_hi_ampl_list:
+            if not self.r1_hi_ampl_list:    # List does not exist
                 """ List(s) of amplitudes collected from ref1 and ref2 full sweeps with NO input """
                 with open('amplitude_ref1_HI.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
                     self.r1_hi_ampl_list = pickle.load(f)

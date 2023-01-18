@@ -281,40 +281,38 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 with open('control_ref2_LO.pickle', 'rb') as f:
                     control_ref2_lo_dict = pickle.load(f)
 
-            ampl_ref1_list = list()
-            ampl_ref2_list = list()
-            control_r1_dict = dict()
-            control_r2_dict = dict()
-            delta_list = list()
+
+            self.prev_val = 0
+            def lp_filt(prev_value, next_value) -> float:
+                filtered_value = 0.005*next_value + 0.995*self.prev_val
+                self.prev_val = filtered_value
+                return round(filtered_value, 9)
 
             ''' 2 Amplitude files and 2 control files are need from Compare & Combine '''
+            a1_filtered = [lp_filt(self.prev_val, next_val) for next_val in self.r1_hi_ampl_list]
+            self.prev_val = 0
+            a2_filtered = [lp_filt(self.prev_val, next_val) for next_val in self.r1_lo_ampl_list]
+            self.prev_val = 0
+            a3_filtered = [lp_filt(self.prev_val, next_val) for next_val in self.r2_hi_ampl_list]
+            self.prev_val = 0
+            a4_filtered = [lp_filt(self.prev_val, next_val) for next_val in self.r2_lo_ampl_list]
+
             for idx, freq in enumerate(self.RFin_list):
-                ''' Create ampl_ref1_list & control_r1_dict by 
-                    Compare & Combine r1 LO & HI amplitudes '''
-                if self.r1_lo_ampl_list[idx] < self.r1_hi_ampl_list[idx]:
-                    ampl_ref1_list.append(self.r1_lo_ampl_list[idx])
-                    control_r1_dict[freq] = control_ref1_lo_dict[freq]
-                else:
-                    ampl_ref1_list.append(self.r1_hi_ampl_list[idx])
-                    control_r1_dict[freq] = control_ref1_hi_dict[freq]
+                a1 = a1_filtered[idx]
+                a2 = a2_filtered[idx]
+                a3 = a3_filtered[idx]
+                a4 = a4_filtered[idx]
 
-                ''' Compare amplitudes of ref2 lo-side vs. hi-side '''
-                if self.r2_lo_ampl_list[idx] < self.r2_hi_ampl_list[idx]:
-                    ampl_ref2_list.append(self.r2_lo_ampl_list[idx])
-                    control_r2_dict[freq] = control_ref2_lo_dict[freq]
-                else:
-                    ampl_ref2_list.append(self.r2_hi_ampl_list[idx])
-                    control_r2_dict[freq] = control_ref2_hi_dict[freq]
-
-                ''' Compare amplitudes of ref1 vs. ref2 '''
-                if ampl_ref1_list[idx] < ampl_ref2_list[idx]:
-                    sa_ctl.all_frequencies_dict[freq] = control_r1_dict[freq]
-                else:
-                    sa_ctl.all_frequencies_dict[freq] = control_r2_dict[freq]
-
-                difference = round(ampl_ref1_list[idx]-ampl_ref2_list[idx], 1)
-                if difference > 0.5:
-                    delta_list.append(freq)
+                """ Using a threshold value causes more spurs! """
+                # Select from the same control code when all 4 amplitudes are in the noise-floor
+                if a1 <= a2 and a1 <= a3 and a1 <= a4:
+                    sa_ctl.all_frequencies_dict[freq] = control_ref1_hi_dict[freq]
+                elif a2 < a1 and a2 <= a3 and a2 <= a4:
+                    sa_ctl.all_frequencies_dict[freq] = control_ref1_lo_dict[freq]
+                elif a3 < a1 and a3 < a2 and a3 <= a4:
+                    sa_ctl.all_frequencies_dict[freq] = control_ref2_hi_dict[freq]
+                elif a4 < a1 and a4 < a2 and a4 < a3:
+                    sa_ctl.all_frequencies_dict[freq] = control_ref2_lo_dict[freq]
 
         with open('control.pickle', 'wb') as f:
             pickle.dump(sa_ctl.all_frequencies_dict, f, protocol=pickle.HIGHEST_PROTOCOL)

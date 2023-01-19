@@ -62,13 +62,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #
         # MAX2871 chip will need to be initialized
         self.initialized = False
-        self.amplitude = list()     # Declare amplitude storage that will allow appending
-        self.r1_hi_ampl_list = list()
-        self.r1_lo_ampl_list = list()
-        self.r2_hi_ampl_list = list()
-        self.r2_lo_ampl_list = list()
-        self.x_axis = list()
-        self.y_axis = list()
+        self.amplitude = []     # Declare amplitude storage that will allow appending
+        self.r1_hi_ampl_list = []
+        self.r1_lo_ampl_list = []
+        self.r2_hi_ampl_list = []
+        self.r2_lo_ampl_list = []
+        self.x_axis = []
+        self.y_axis = []
         #
         # Request the list of available serial ports and use it to
         # populate the user 'Serial Port' drop-down selection list.
@@ -419,7 +419,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order
             self.graphWidget.setXRange(self.x_axis[0], self.x_axis[-1])   # Limit plot to user selected frequency range
             color = {"purple": (75, 50, 255), "yellow": (150, 255, 150)}
-            self.dataLine.setData(self.x_axis, self.y_axis, pen=color["purple"])
+            self.dataLine.setData(self.x_axis, self.y_axis, pen=color["yellow"])
         else:
             print(name(), line(), 'Unable to plot. Missing amplitude data.')
 
@@ -429,33 +429,48 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # If there are any existing markers remove them first.
         self._clear_marker_text()
         self._clear_peak_markers()
-        self._peak_search()
+        self._peak_search(self.x_axis, self.y_axis)
 
-    def _peak_search(self):
-        self.marker = sa.np.array([pg.ArrowItem()])     # Create a growable array of markers
-        self.text = sa.np.array([pg.TextItem()])        # Make a growable array of labels
-        # idx is sorted so that idx[0] points to the highest amplitude in the
-        # amplitudeData array, idx[1] points to the second highest and so on.
-        idx = sa.peakSearch(self.y_axis, self.numPeakMarkers.value())
-        # Get the number of markers from the user control on the front panel
-        num_markers = self.numPeakMarkers.value()
-        # Create and add Peak Markers to the graph.
-        for i in range(min(num_markers, len(idx))):
-            self.marker = sa.np.append(self.marker, pg.ArrowItem())  # Add a place for a new marker
-            self.text = sa.np.append(self.text, pg.TextItem())       # Add a place for a new label
-            self.marker[i] = pg.ArrowItem(angle=-90, tipAngle=40, tailWidth=10, pen={'color': 'w', 'width': 1})
-            frequency = self.x_axis[idx[i]]
-            amplitude = self.y_axis[idx[i]]
-            self.marker[i].setPos(frequency, amplitude)  # x-axis = frequency, y-axis = amplitude
-            frequency_text = str('%.6f' % self.x_axis[idx[i]])
-            amplitude_text = str('%.2f' % self.y_axis[idx[i]])
-            markerLabel = frequency_text + ' MHz\n' + amplitude_text + ' dBm'
-            self.text[i] = pg.TextItem(markerLabel, anchor = (0.5, 1.5), border = 'w', fill = (0, 0, 255, 100))
-            self.graphWidget.addItem(self.marker[i])
-            self.graphWidget.addItem(self.text[i])
-            frequency_pos = self.x_axis[idx[i]]
-            amplitude_pos = self.y_axis[idx[i]]
-            self.text[i].setPos(frequency_pos, amplitude_pos)
+    def _peak_search(self, x_axis: list = None, y_axis: list = None):
+        if x_axis is not None or y_axis is not None:
+            plot_x_min = round(self.graphWidget.viewRange()[0][0], 3) # Read x-min value from plotWidget
+            plot_x_max = round(self.graphWidget.viewRange()[0][1], 3) # Read x-max value from plotWidget
+            if plot_x_min < x_axis[0]:
+                plot_x_min = x_axis[0]
+            if plot_x_max > x_axis[-1]:
+                plot_x_max = x_axis[-1]
+            plot_x_min = min(x_axis, key=lambda x:abs(x-plot_x_min))  # Get x_axis value nearest to the value from the plotWidget
+            plot_x_max = min(x_axis, key=lambda x:abs(x-plot_x_max))
+            idx_min = x_axis.index(plot_x_min)
+            idx_max = x_axis.index(plot_x_max)
+            
+            x_axis = x_axis[idx_min:idx_max]
+            y_axis = y_axis[idx_min:idx_max]
+            
+            self.marker = sa.np.array([pg.ArrowItem()])     # Create a growable array of markers
+            self.text = sa.np.array([pg.TextItem()])        # Make a growable array of labels
+            # idx is sorted so that idx[0] points to the highest amplitude in the
+            # amplitudeData array, idx[1] points to the second highest and so on.
+            idx = sa.peakSearch(y_axis, self.numPeakMarkers.value())
+            # Get the number of markers from the user control on the front panel
+            num_markers = self.numPeakMarkers.value()
+            # Create and add Peak Markers to the graph.
+            for i in range(min(num_markers, len(idx))):
+                self.marker = sa.np.append(self.marker, pg.ArrowItem())  # Add a place for a new marker
+                self.text = sa.np.append(self.text, pg.TextItem())       # Add a place for a new label
+                self.marker[i] = pg.ArrowItem(angle=-90, tipAngle=40, tailWidth=10, pen={'color': 'w', 'width': 1})
+                frequency = x_axis[idx[i]]
+                amplitude = y_axis[idx[i]]
+                self.marker[i].setPos(frequency, amplitude)  # x-axis = frequency, y-axis = amplitude
+                frequency_text = str('%.6f' % x_axis[idx[i]])
+                amplitude_text = str('%.2f' % y_axis[idx[i]])
+                markerLabel = frequency_text + ' MHz\n' + amplitude_text + ' dBm'
+                self.text[i] = pg.TextItem(markerLabel, anchor = (0.5, 1.5), border = 'w', fill = (0, 0, 255, 100))
+                self.graphWidget.addItem(self.marker[i])
+                self.graphWidget.addItem(self.text[i])
+                frequency_pos = x_axis[idx[i]]
+                amplitude_pos = y_axis[idx[i]]
+                self.text[i].setPos(frequency_pos, amplitude_pos)
 
     def _clear_peak_markers(self):
         try:

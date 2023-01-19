@@ -117,7 +117,7 @@ class Ui_MainWindow(object):
         self.numPlotFloor.setMinimum(-90.0)
         self.numPlotFloor.setMaximum(100.0)
         self.numPlotFloor.setSingleStep(0.1)
-        self.numPlotFloor.setProperty("value", -59.0)
+        self.numPlotFloor.setProperty("value", -62.0)
         self.numPlotFloor.setObjectName("numPlotFloor")
         self.gridLayout_2.addWidget(self.numPlotFloor, 7, 0, 1, 1)
         self.label_5 = QtWidgets.QLabel(self.groupBox_3)

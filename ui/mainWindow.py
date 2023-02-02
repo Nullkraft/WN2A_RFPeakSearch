@@ -27,6 +27,7 @@ line = lambda: f'line {str(sys._getframe(1).f_lineno)},'
 import sys
 from time import sleep, perf_counter
 import pickle
+import numpy as np
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
@@ -55,6 +56,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.dataLine = self.graphWidget.plot()
         # When zooming the graph this updates the x-axis start & stop frequencies
         self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
+##        self.graphWidget.enableMouse()
+##        self.graphWidget.lastMousePos()
+##        self.graphWidget.mousePressEvent()
+##        self.graphWidget.mousePressPos()
         horiz_line_item = pg.InfiniteLine(pos=(1), angle=(0), pen=(255, 128, 255), movable=True, span=(0, 1))
         vert_line_item = pg.InfiniteLine(pos=(1), pen=(128, 255, 128), movable=True, span=(0, 1))
         self.graphWidget.addItem(horiz_line_item)
@@ -99,8 +104,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.RFin_list = pickle.load(f)
         # Loading the initial control file (in the background?)
         self.load_control_file('control.pickle')
-#        self.sweep_control_dict = sa.DictionarySlicer(sa_ctl.all_frequencies_dict)
-#        print()
 
     def load_control_file(self, control_fname: str=None):
         if control_fname is None:
@@ -260,9 +263,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sa_ctl.all_frequencies_dict.clear()
         ampl_file_1 = Path('amplitude_ref1_HI.pickle')
         ampl_file_2 = Path('amplitude_ref2_HI.pickle')
-
         if ampl_file_1.exists() and ampl_file_2.exists():
-            if not self.r1_hi_ampl_list:    # List does not exist
+            if not self.r1_hi_ampl_list:    # List is empty or does not exist
                 """ List(s) of amplitudes collected from ref1 and ref2 full sweeps with NO input """
                 with open('amplitude_ref1_HI.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
                     self.r1_hi_ampl_list = pickle.load(f)
@@ -281,30 +283,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 with open('control_ref2_LO.pickle', 'rb') as f:
                     control_ref2_lo_dict = pickle.load(f)
 
+            def lp_filt(window_size: int, index: int = 0) -> float:
+                """ Using a Centered Moving Average to smooth out the amplitude data """
+                start = index - int(window_size / 2)
+                stop = index + int(window_size / 2)
+                if start < 0:                   # too close to the start of the list
+                    start = 0
+                if stop > len(self.active_list):       # too close to the end of the list
+                    stop = len(self.active_list)
+                avg_value = round(np.average(self.active_list[start:stop]),3)
+                return avg_value
 
-            self.prev_val = 0
-            def lp_filt(prev_value, next_value) -> float:
-                filtered_value = 0.005*next_value + 0.995*self.prev_val
-                self.prev_val = filtered_value
-                return round(filtered_value, 9)
-
-            ''' 2 Amplitude files and 2 control files are need from Compare & Combine '''
-            a1_filtered = [lp_filt(self.prev_val, next_val) for next_val in self.r1_hi_ampl_list]
-            self.prev_val = 0
-            a2_filtered = [lp_filt(self.prev_val, next_val) for next_val in self.r1_lo_ampl_list]
-            self.prev_val = 0
-            a3_filtered = [lp_filt(self.prev_val, next_val) for next_val in self.r2_hi_ampl_list]
-            self.prev_val = 0
-            a4_filtered = [lp_filt(self.prev_val, next_val) for next_val in self.r2_lo_ampl_list]
+            """ We need smoothed amplitude data for performing the amplitude comparison step """
+            window = 6      # Must ALWAYS be even
+            self.active_list = self.r1_hi_ampl_list
+            a1_filtered = [lp_filt(window, index) for index, _ in enumerate(self.active_list)]
+            self.active_list = self.r1_lo_ampl_list
+            a2_filtered = [lp_filt(window, index) for index, _ in enumerate(self.active_list)]
+            self.active_list = self.r2_hi_ampl_list
+            a3_filtered = [lp_filt(window, index) for index, _ in enumerate(self.active_list)]
+            self.active_list = self.r2_lo_ampl_list
+            a4_filtered = [lp_filt(window, index) for index, _ in enumerate(self.active_list)]
 
             for idx, freq in enumerate(self.RFin_list):
+                """ For each RFin select the control code that generated the best (lowest) amplitude. """
                 a1 = a1_filtered[idx]
                 a2 = a2_filtered[idx]
                 a3 = a3_filtered[idx]
                 a4 = a4_filtered[idx]
-
-                """ Using a threshold value causes more spurs! """
-                # Select from the same control code when all 4 amplitudes are in the noise-floor
                 if a1 <= a2 and a1 <= a3 and a1 <= a4:
                     sa_ctl.all_frequencies_dict[freq] = control_ref1_hi_dict[freq]
                 elif a2 < a1 and a2 <= a3 and a2 <= a4:
@@ -465,7 +471,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.marker[i] = pg.ArrowItem(angle=-90, tipAngle=40, tailWidth=10, pen={'color': 'w', 'width': 1})
             frequency = x_axis[idx[i]]
             amplitude = y_axis[idx[i]]
-            self.marker[i].setPos(frequency, amplitude)  # x-axis = frequency, y-axis = amplitude
+            small_vertical_gap = 0.2
+            self.marker[i].setPos(frequency, amplitude+small_vertical_gap)
             frequency_text = str('%.6f' % x_axis[idx[i]])
             amplitude_text = str('%.2f' % y_axis[idx[i]])
             markerLabel = frequency_text + ' MHz\n' + amplitude_text + ' dBm'

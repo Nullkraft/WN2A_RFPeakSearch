@@ -62,7 +62,16 @@ class data_generator():
         @rtype float
         """
         Fpfd = Fref/R     # Fpfd1 = reference clock_1 and Fpfd2 = reference clock_2
-        LO1_freq = int((hw.cfg.IF1 + RFin) / Fpfd) * Fpfd
+        IF1 = hw.cfg.IF1
+        LO1_freq = Fpfd * int((RFin + IF1) / Fpfd)
+###        if RFin <= 2000:
+###            LO1_freq = Fpfd * int((RFin + 3800 ) / Fpfd)
+###        else:
+###            LO1_freq = Fpfd * int((RFin + 3700 ) / Fpfd)
+##        if RFin <= 2000:
+##            LO1_freq = Fpfd * int((RFin + Fpfd + 3800 ) / Fpfd)
+##        else:
+##            LO1_freq = Fpfd * int((RFin + Fpfd + 3700 ) / Fpfd)
         return LO1_freq
 
 
@@ -81,12 +90,36 @@ class data_generator():
         select_dict = {"ref1": self.LO1_ref1_freq_dict, "ref2": self.LO1_ref2_freq_dict}
         LO1_ref_dict = select_dict[ref_clock]
         LO1_freq = LO1_ref_dict[RFin]
+        IF1 = LO1_freq - RFin    # Update with corrected IF1
         if injection == "HI":
-            LO2_freq = LO1_freq - RFin + hw.cfg.IF2   # High-side
+            LO2_freq = IF1 + hw.cfg.IF2   # High-side
         elif injection == "LO":
-            LO2_freq = LO1_freq - RFin - hw.cfg.IF2   # Low-side
+            LO2_freq = IF1 - hw.cfg.IF2   # Low-side
         return LO2_freq
 
+
+    def _LO3_frequency(self, RFin: float, ref_clock: str, injection: str) -> float:
+        """
+        Protected method calculates the frequency for LO2 from LO1, RFin, and
+        the selected reference clock
+        
+        @param RFin is the Spectrum Anaylzer input frequency
+        @type float
+        @param ref_clock is the name of the reference clock 'ref1' or 'ref2'
+        @type str
+        @return LO2 frequency
+        @rtype float
+        """
+        select_dict = {"ref1": self.LO1_ref1_freq_dict, "ref2": self.LO1_ref2_freq_dict}
+        LO1_ref_dict = select_dict[ref_clock]
+        LO1_freq = LO1_ref_dict[RFin]
+        IF1 = LO1_freq - RFin    # Update with corrected IF1
+        if injection == "HI":
+            LO3_freq = IF1 + hw.cfg.IF2   # High-side
+        elif injection == "LO":
+            LO3_freq = IF1 - hw.cfg.IF2   # Low-side
+        return LO3_freq
+        
 
     def create_data(self) -> None:
         # Create the list of LO1 frequencies when using reference clock 1.

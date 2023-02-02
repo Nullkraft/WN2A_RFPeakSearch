@@ -226,7 +226,7 @@ class Ui_MainWindow(object):
         self.floatStartMHz.setMinimum(0.0)
         self.floatStartMHz.setMaximum(3200.0)
         self.floatStartMHz.setSingleStep(0.001)
-        self.floatStartMHz.setProperty("value", 4.0)
+        self.floatStartMHz.setProperty("value", 3.0)
         self.floatStartMHz.setObjectName("floatStartMHz")
         self.gridLayout_3.addWidget(self.floatStartMHz, 3, 1, 1, 1)
         self.label_1 = QtWidgets.QLabel(self.groupBox_2)

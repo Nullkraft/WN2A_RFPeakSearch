@@ -265,7 +265,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ampl_file_2 = Path('amplitude_ref2_HI.pickle')
         if ampl_file_1.exists() and ampl_file_2.exists():
             if not self.r1_hi_ampl_list:    # List is empty or does not exist
-                """ List(s) of amplitudes collected from ref1 and ref2 full sweeps with NO input """
+                """ List(s) of amplitudes collected from ref1 and ref2 full sweeps with NO RFin """
                 with open('amplitude_ref1_HI.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
                     self.r1_hi_ampl_list = pickle.load(f)
                 with open('amplitude_ref1_LO.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
@@ -283,10 +283,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 with open('control_ref2_LO.pickle', 'rb') as f:
                     control_ref2_lo_dict = pickle.load(f)
 
-            def lp_filt(window_size: int, index: int = 0) -> float:
+            def lp_filt(half_window: int, index: int = 0) -> float:
                 """ Using a Centered Moving Average to smooth out the amplitude data """
-                start = index - int(window_size / 2)
-                stop = index + int(window_size / 2)
+                start = index - half_window
+                stop = index + half_window
                 if start < 0:                   # too close to the start of the list
                     start = 0
                 if stop > len(self.active_list):       # too close to the end of the list
@@ -295,7 +295,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 return avg_value
 
             """ We need smoothed amplitude data for performing the amplitude comparison step """
-            window = 100      # Must ALWAYS be even
+            window = 50      # Sets the +/- window value. eg. (+/-10) = 20
             self.active_list = self.r1_hi_ampl_list
             a1_filtered = [lp_filt(window, index) for index, _ in enumerate(self.active_list)]
             self.active_list = self.r1_lo_ampl_list

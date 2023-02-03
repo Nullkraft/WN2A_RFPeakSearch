@@ -295,7 +295,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 return avg_value
 
             """ We need smoothed amplitude data for performing the amplitude comparison step """
-            window = 6      # Must ALWAYS be even
+            window = 100      # Must ALWAYS be even
             self.active_list = self.r1_hi_ampl_list
             a1_filtered = [lp_filt(window, index) for index, _ in enumerate(self.active_list)]
             self.active_list = self.r1_lo_ampl_list

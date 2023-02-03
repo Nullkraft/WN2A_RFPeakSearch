@@ -62,16 +62,16 @@ class data_generator():
         @rtype float
         """
         Fpfd = Fref/R     # Fpfd1 = reference clock_1 and Fpfd2 = reference clock_2
-        IF1 = hw.cfg.IF1
-        LO1_freq = Fpfd * int((RFin + IF1) / Fpfd)
+#        IF1 = hw.cfg.IF1
+#        LO1_freq = Fpfd * int((RFin + IF1) / Fpfd)
 ###        if RFin <= 2000:
 ###            LO1_freq = Fpfd * int((RFin + 3800 ) / Fpfd)
 ###        else:
 ###            LO1_freq = Fpfd * int((RFin + 3700 ) / Fpfd)
-##        if RFin <= 2000:
-##            LO1_freq = Fpfd * int((RFin + Fpfd + 3800 ) / Fpfd)
-##        else:
-##            LO1_freq = Fpfd * int((RFin + Fpfd + 3700 ) / Fpfd)
+        if RFin <= 2000:
+            LO1_freq = Fpfd * int((RFin + Fpfd + 3800 ) / Fpfd)
+        else:
+            LO1_freq = Fpfd * int((RFin + Fpfd + 3700 ) / Fpfd)
         return LO1_freq
 
 

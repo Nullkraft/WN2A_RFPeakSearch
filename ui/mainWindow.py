@@ -319,6 +319,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     sa_ctl.all_frequencies_dict[freq] = control_ref2_hi_dict[freq]
                 elif a4 < a1 and a4 < a2 and a4 < a3:
                     sa_ctl.all_frequencies_dict[freq] = control_ref2_lo_dict[freq]
+                """ Special cases requiring manual input """
+                if 208 < freq < 210.35:
+                    sa_ctl.all_frequencies_dict[freq] = control_ref2_lo_dict[freq]
+                if 359.9 < freq < 360.1:
+#                    sa_ctl.all_frequencies_dict[freq] = control_ref2_lo_dict[freq]
+                    sa_ctl.all_frequencies_dict[freq] = control_ref1_hi_dict[freq]
+                if 2482 < freq < 2484:
+                    sa_ctl.all_frequencies_dict[freq] = control_ref1_hi_dict[freq]
 
         with open('control.pickle', 'wb') as f:
             pickle.dump(sa_ctl.all_frequencies_dict, f, protocol=pickle.HIGHEST_PROTOCOL)

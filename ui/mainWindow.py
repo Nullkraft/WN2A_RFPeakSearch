@@ -127,7 +127,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sweep_complete = sa.sa_control().sweep()
         if not sweep_complete:
            print(name(), line(), 'Sweep stopped by user')
-        self.label_sweep_status.setText("Sweep complete")
+        status_txt = f'Sweep complete, fwidth = {sa_ctl.filter_width}'
+        self.label_sweep_status.setText(status_txt)
         if self.chk_plot_enable.isChecked() and sweep_complete:
             self.plot_ampl_data(sp.simple_serial.data_buffer_in)
         QtGui.QGuiApplication.processEvents()

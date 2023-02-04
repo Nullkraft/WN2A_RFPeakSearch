@@ -295,16 +295,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 avg_value = round(np.average(self.active_list[start:stop]),3)
                 return avg_value
 
-            """ We need smoothed amplitude data for performing the amplitude comparison step """
-            window = 50      # Sets the +/- window value. eg. (+/-10) = 20
-            self.active_list = self.r1_hi_ampl_list
-            a1_filtered = [lp_filt(window, index) for index, _ in enumerate(self.active_list)]
-            self.active_list = self.r1_lo_ampl_list
-            a2_filtered = [lp_filt(window, index) for index, _ in enumerate(self.active_list)]
-            self.active_list = self.r2_hi_ampl_list
-            a3_filtered = [lp_filt(window, index) for index, _ in enumerate(self.active_list)]
-            self.active_list = self.r2_lo_ampl_list
-            a4_filtered = [lp_filt(window, index) for index, _ in enumerate(self.active_list)]
+            """ We need smoothed amplitude data for performing the amplitude comparison step
+                The lp_filt() def uses self.r1_lo_ampl_list, etc., directly. It's faster
+                than passing the entire list.
+            """
+            window = sa_ctl.filter_width
+            a1_filtered = [lp_filt(window, idx) for idx, _ in enumerate(self.r1_hi_ampl_list)]
+            a2_filtered = [lp_filt(window, idx) for idx, _ in enumerate(self.r1_lo_ampl_list)]
+            a3_filtered = [lp_filt(window, idx) for idx, _ in enumerate(self.r2_hi_ampl_list)]
+            a4_filtered = [lp_filt(window, idx) for idx, _ in enumerate(self.r2_lo_ampl_list)]
 
             for idx, freq in enumerate(self.RFin_list):
                 """ For each RFin select the control code that generated the best (lowest) amplitude. """

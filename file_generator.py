@@ -62,16 +62,11 @@ class data_generator():
         @rtype float
         """
         Fpfd = Fref/R     # Fpfd1 = reference clock_1 and Fpfd2 = reference clock_2
-#        IF1 = hw.cfg.IF1
-#        LO1_freq = Fpfd * int((RFin + IF1) / Fpfd)
-###        if RFin <= 2000:
-###            LO1_freq = Fpfd * int((RFin + 3800 ) / Fpfd)
-###        else:
-###            LO1_freq = Fpfd * int((RFin + 3700 ) / Fpfd)
         if RFin <= 2000:
-            LO1_freq = Fpfd * int((RFin + Fpfd + 3800 ) / Fpfd)
+            IF1 = 3800
         else:
-            LO1_freq = Fpfd * int((RFin + Fpfd + 3700 ) / Fpfd)
+            IF1 = 3700
+        LO1_freq = Fpfd * int((RFin + Fpfd + IF1 ) / Fpfd)
         return LO1_freq
 
 
@@ -88,13 +83,12 @@ class data_generator():
         @rtype float
         """
         select_dict = {"ref1": self.LO1_ref1_freq_dict, "ref2": self.LO1_ref2_freq_dict}
-        LO1_ref_dict = select_dict[ref_clock]
-        LO1_freq = LO1_ref_dict[RFin]
-        IF1 = LO1_freq - RFin    # Update with corrected IF1
+        LO1_freq = select_dict[ref_clock]
+        IF1_corrected = LO1_freq[RFin] - RFin       # Make correction to IF1
         if injection == "HI":
-            LO2_freq = IF1 + hw.cfg.IF2   # High-side
+            LO2_freq = IF1_corrected + hw.cfg.IF2   # High-side injection
         elif injection == "LO":
-            LO2_freq = IF1 - hw.cfg.IF2   # Low-side
+            LO2_freq = IF1_corrected - hw.cfg.IF2   # Low-side injection
         return LO2_freq
 
 

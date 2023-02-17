@@ -92,26 +92,9 @@ class data_generator():
         return LO2_freq
 
 
-    def _LO3_frequency(self, RFin: float, ref_clock: str, injection: str) -> float:
-        """
-        Protected method calculates the frequency for LO2 from LO1, RFin, and
-        the selected reference clock
-        
-        @param RFin is the Spectrum Anaylzer input frequency
-        @type float
-        @param ref_clock is the name of the reference clock 'ref1' or 'ref2'
-        @type str
-        @return LO2 frequency
-        @rtype float
-        """
-        select_dict = {"ref1": self.LO1_ref1_freq_dict, "ref2": self.LO1_ref2_freq_dict}
-        LO1_ref_dict = select_dict[ref_clock]
-        LO1_freq = LO1_ref_dict[RFin]
-        IF1 = LO1_freq - RFin    # Update with corrected IF1
-        if injection == "HI":
-            LO3_freq = IF1 + hw.cfg.IF2   # High-side
-        elif injection == "LO":
-            LO3_freq = IF1 - hw.cfg.IF2   # Low-side
+    def _LO3_frequency(self, LO2_freq: float, ref_clock: str, injection: str) -> float:
+        IF1 = 3600
+        LO3_freq = (LO2_freq - IF1) - 45.000
         return LO3_freq
         
 

@@ -211,8 +211,7 @@ class sa_control():
 
 
     def sweep(self):
-        """
-            Function sweep() : Search the RF input for any or all RF signals
+        """ Function sweep() : Search the RF input for any or all RF signals
         """
         global SWEEP
         last_freq = 0
@@ -225,11 +224,7 @@ class sa_control():
         for freq in self.swept_freq_list:
             if not SWEEP:                       # The user pressed the ESC key so time to bail out
                 break
-            ''' Progress report '''
-            if (freq % 10) == 0:
-                print(name(), line(), f'Freq step {freq}')  # For monitor a sweep or calibration status
             ref_code, LO1_N_code, LO2_fmn_code = self.all_frequencies_dict[freq]    # Get hardware control codes
-#            print(name(), line(), f'{str(self.all_frequencies_dict[freq]).strip()}')
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
@@ -237,7 +232,6 @@ class sa_control():
             while len(bytes_rxd)<2:
                 bytes_rxd += sp.ser.read(sp.ser.in_waiting)
                 sp.simple_serial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
-#                time.sleep(1e-9)  # Prevent CPU from going to 100% - It slows the loop by 30% when enabled
                 if (time.perf_counter()-timeout_start) > interbyte_timeout:
                     if freq == self.swept_freq_list[0]:     # Decrease the timeout after setting the first frequency.
                         interbyte_timeout = 0.005
@@ -246,8 +240,6 @@ class sa_control():
                         sp.simple_serial.data_buffer_in += b'\xFF\xFF'  # TESTING ONLY
                         last_freq = freq
                     timeout_start = time.perf_counter()     # Restart the interbyte timer
-#            if freq == 630.0:
-#                print(name(), line(), f'{freq = }, {bytes_rxd = }')
             bytes_rxd.clear()
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.end_sweep()   # Send handshake signal to controller

@@ -28,6 +28,7 @@ import hardware_cfg as hw
 import command_processor as cmd
 import sys
 import pickle
+import numpy as np
 
 
 class data_generator():
@@ -101,10 +102,17 @@ class data_generator():
     def create_data(self) -> None:
         # Create the list of LO1 frequencies when using reference clock 1.
         self.LO1_ref1_freq_list = [self._LO1_frequency(RFin, hw.cfg.Fpfd1) for RFin in self.RFin_list]
-        self.LO1_ref1_freq_list = [round(x, 9) for x in self.LO1_ref1_freq_list]
+        self.LO1_ref1_freq_list = np.round(self.LO1_ref1_freq_list, decimals= 9)
         # Create the list of LO1 frequencies when using reference clock 2.
         self.LO1_ref2_freq_list = [self._LO1_frequency(RFin, hw.cfg.Fpfd2) for RFin in self.RFin_list]
         self.LO1_ref2_freq_list = [round(x, 9) for x in self.LO1_ref2_freq_list]
+        with open('freq_LO1_ref1.csv', 'w') as f:
+            for LO1_freq in self.LO1_ref1_freq_list:
+                f.write(f'{LO1_freq}' + '\n')
+
+        with open('freq_LO1_ref2.csv', 'w') as f:
+            for LO1_freq in self.LO1_ref2_freq_list:
+                f.write(f'{LO1_freq}' + '\n')
         # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 1
         self.LO1_ref1_N_list = [int(LO1_freq/hw.cfg.Fpfd1) for LO1_freq in self.LO1_ref1_freq_list]
         # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 2

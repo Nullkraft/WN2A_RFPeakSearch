@@ -214,9 +214,7 @@ class sa_control():
         """ Function sweep() : Search the RF input for any or all RF signals
         """
         global SWEEP
-        last_freq = 0
         SWEEP = True                            # ESC key makes SWEEP=False and cancels the sweep
-        interbyte_timeout = 0.1                 # If another byte takes too long to arrive...
         sp.ser.read(sp.ser.in_waiting)          # Clear the serial port buffer
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
         time.sleep(.001)
@@ -228,19 +226,20 @@ class sa_control():
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
-            timeout_start = time.perf_counter() # Start the interbyte_timeout (don't put this inside while-loop)
-            while len(bytes_rxd)<2:
-                bytes_rxd += sp.ser.read(sp.ser.in_waiting)
-                sp.simple_serial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
-                if (time.perf_counter()-timeout_start) > interbyte_timeout:
-                    if freq == self.swept_freq_list[0]:     # Decrease the timeout after setting the first frequency.
-                        interbyte_timeout = 0.005
-                    if freq != last_freq:
-                        print(name(), line(), f'"*** Sweep failed ***" {freq = } : {list(bytes_rxd) = } : {bytes_rxd = }')
-                        sp.simple_serial.data_buffer_in += b'\xFF\xFF'  # TESTING ONLY
-                        last_freq = freq
-                    timeout_start = time.perf_counter()     # Restart the interbyte timer
+            # Prevent 100% CPU when reading the serial input
+#            for _ in range(10_000_000):     # a fake while(true) loop
+            count = 0
+            while(True):
+                count += 1
+                if sp.ser.in_waiting >= 2:
+                    bytes_rxd += sp.ser.read(sp.ser.in_waiting)
+                    break
+                if count > 25:
+                    time.sleep(1e-6)
+                    count = 0
+            sp.simple_serial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
             bytes_rxd.clear()
+            
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         cmd_proc.end_sweep()   # Send handshake signal to controller
         return SWEEP

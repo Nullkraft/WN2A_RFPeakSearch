@@ -123,6 +123,30 @@ class data_generator():
         self.LO2_ref1_lo_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_1) for freq in self.LO2_ref1_lo_freq_list]
         self.LO2_ref2_lo_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_2) for freq in self.LO2_ref2_lo_freq_list]
 
+    def dump_LO2_ref1_HI_freq(self):
+        with open('freq_LO2_ref1_HI.csv', 'w') as f:
+            for LO2_freq in self.LO2_ref1_hi_freq_list:
+                f.write(f'{LO2_freq}' + '\n')
+        breakpoint
+
+    def dump_LO2_ref2_HI_freq(self):
+        with open('freq_LO2_ref2_HI.csv', 'w') as f:
+            for LO2_freq in self.LO2_ref2_hi_freq_list:
+                f.write(f'{LO2_freq}' + '\n')
+        breakpoint
+
+    def dump_LO2_ref1_LO_freq(self):
+        with open('freq_LO2_ref1_LO.csv', 'w') as f:
+            for LO2_freq in self.LO2_ref1_lo_freq_list:
+                f.write(f'{LO2_freq}' + '\n')
+        breakpoint
+
+    def dump_LO2_ref2_LO_freq(self):
+        with open('freq_LO2_ref2_LO.csv', 'w') as f:
+            for LO2_freq in self.LO2_ref2_lo_freq_list:
+                f.write(f'{LO2_freq}' + '\n')
+        breakpoint
+
 
     def save_ref1_hi_control_file(self) -> None:
         LO1_n = self.LO1_ref1_N_list
@@ -191,18 +215,23 @@ class data_generator():
 
 if __name__ == '__main__':
     print()
-    import time
+    from time import perf_counter
 
     print(f'Fpfd values are {hw.cfg.Fpfd1} & {hw.cfg.Fpfd2}')
     dg = data_generator()
 
-    start = time.perf_counter()
+    start = perf_counter()
     dg.create_data()
+
+    dg.dump_LO2_ref1_HI_freq()
+    dg.dump_LO2_ref2_HI_freq()
+    dg.dump_LO2_ref1_LO_freq()
+    dg.dump_LO2_ref2_LO_freq()
     dg.save_ref1_hi_control_file()
     dg.save_ref2_hi_control_file()
     dg.save_ref1_lo_control_file()
     dg.save_ref2_lo_control_file()
-    print(f'Time to generate all the files = {round(time.perf_counter()-start, 6)} seconds')
+    print(f'Time to generate all the files = {round(perf_counter()-start, 6)} seconds')
     
     dg.dump_csv_control_files()
 

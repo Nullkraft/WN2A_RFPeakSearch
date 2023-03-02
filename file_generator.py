@@ -62,8 +62,9 @@ class data_generator():
         @return The LO1 frequency that steps by the Fpfd value
         @rtype float
         """
-        Fpfd = Fref/R     # Fpfd1 = reference clock_1 and Fpfd2 = reference clock_2
-        if RFin <= 2000:
+        Fpfd = Fref/R       # Fpfd1 = reference clock_1 and Fpfd2 = reference clock_2
+        """ Try (RFin = 66 * 29 + 28 = 1,942) where 28,000 is the offset. """
+        if RFin <= 1942:
             IF1 = 3800
         else:
             IF1 = 3700

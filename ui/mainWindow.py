@@ -51,16 +51,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super().__init__()
         pg.setConfigOptions(useOpenGL=True, enableExperimental=True)
         self.setupUi(self)  # Must come before self.graphWidget.plot()
-        self.graphWidget.setYRange(15.5, -55)     # dBm scale
-        self.graphWidget.setMouseEnabled(x=True, y=False)
-        self.dataLine = self.graphWidget.plot()
         # When zooming the graph this updates the x-axis start & stop frequencies
         self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
-##        self.graphWidget.enableMouse()
-##        self.graphWidget.lastMousePos()
-##        self.graphWidget.mousePressEvent()
-##        self.graphWidget.mousePressPos()
-        horiz_line_item = pg.InfiniteLine(pos=(1), angle=(0), pen=(255, 128, 255), movable=True, span=(0, 1))
+        self.graphWidget.setLabel('bottom', text='Frequency (MHz)')
+        self.graphWidget.setLabel('left', text='Amplitude', units='dBm')
+        self.graphWidget.setDefaultPadding(padding=0.0)
+        self.graphWidget.setMouseEnabled(x=True, y=False)
+        self.dataLine = self.graphWidget.plot()
+        self.graphWidget.setXRange(3.0, 3000.0)
+        self.graphWidget.setYRange(25, -62)     # dBm scale
+        horiz_line_item = pg.InfiniteLine(pos=(-60), angle=(0), pen=(255, 128, 255), movable=True, span=(0, 1))
         vert_line_item = pg.InfiniteLine(pos=(1), pen=(128, 255, 128), movable=True, span=(0, 1))
         self.graphWidget.addItem(horiz_line_item)
         self.graphWidget.addItem(vert_line_item)
@@ -121,16 +121,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
-
         start = perf_counter()
-
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
         sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
-        sweep_complete = sa.sa_control().sweep()
-
+        window_x_min, window_x_max = sa.get_plot_window_xrange()
+        sweep_complete = sa.sa_control().sweep(window_x_min, window_x_max)
         print(name(), line(), f'Sweep completed in {round(perf_counter()-start, 6)} seconds')
-
         if not sweep_complete:
            print(name(), line(), 'Sweep stopped by user')
         status_txt = f'Sweep complete, fwidth = {sa_ctl.filter_width}'
@@ -424,8 +421,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             voltage = ampl * sa.sa_control().adc_Vref()/(2**10-1)       # Convert 10 bit ADC counts to Voltage
             volts_list.append(voltage)
         return volts_list
-        
-        
+
     def plot_ampl_data(self, amplBytes):
         if amplBytes:
             self.x_axis.clear()
@@ -443,29 +439,32 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             print(name(), line(), 'Unable to plot. Missing amplitude data.')
 
-
-    def get_visible_plot_range(self, x_plot_data: list, y_plot_axis: list, plot_x_min: float, plot_x_max: float):
-        """ Limit the peak search to the visible points on the plot """
+    def get_visible_plot_range(self, x_plot_data: list, y_plot_data: list, window_x_min: float, window_x_max: float):
+        """ Get the list of visible plot points after zooming the plot window """
         # Get x_plot_min/max values nearest to the values from the plotWidget
-        plot_x_min = min(x_plot_data, key=lambda x:abs(x-plot_x_min))
-        plot_x_max = min(x_plot_data, key=lambda x:abs(x-plot_x_max))
-        if plot_x_min < x_plot_data[0]:
-            plot_x_min = x_plot_data[0]
-        if plot_x_max > x_plot_data[-1]:
-            plot_x_max = x_plot_data[-1]
+        visible_x_min = min(x_plot_data, key=lambda x_data: abs(x_data-window_x_min)) # x is iterated from x_plot_data
+        visible_x_max = min(x_plot_data, key=lambda x_data: abs(x_data-window_x_max))
+        print(name(), line())
+        x_data_min = x_plot_data[0]
+        x_data_max = x_plot_data[-1]
+        if visible_x_min < x_data_min:
+            visible_x_min = x_data_min
+        if visible_x_max > x_data_max:
+            visible_x_max = x_data_max
+        print(name(), line(), f'{window_x_min = }, {window_x_max = }')
+        print(name(), line(), f'{visible_x_min = }, {visible_x_max = }')
         # Find the indexes for the min/max values...
-        idx_min = x_plot_data.index(plot_x_min)
-        idx_max = x_plot_data.index(plot_x_max)
+        idx_min = x_plot_data.index(visible_x_min)
+        idx_max = x_plot_data.index(visible_x_max)
         # and return the portion of the list that is visible on the plot
         x_axis = x_plot_data[idx_min:idx_max]
-        y_axis = y_plot_axis[idx_min:idx_max]
+        y_axis = y_plot_data[idx_min:idx_max]
         return x_axis, y_axis
 
     @pyqtSlot()
     def on_btnPeakSearch_clicked(self):
-        plot_x_min = round(self.graphWidget.viewRange()[0][0], 3) # Read x-min value from plotWidget
-        plot_x_max = round(self.graphWidget.viewRange()[0][1], 3) # Read x-max value from plotWidget
-        x_axis, y_axis = self.get_visible_plot_range(self.x_axis, self.y_axis, plot_x_min, plot_x_max)
+        window_x_min, window_x_max = sa.get_plot_window_xrange()
+        x_axis, y_axis = self.get_visible_plot_range(self.x_axis, self.y_axis, window_x_min, window_x_max)
         self._clear_marker_text()
         self._clear_peak_markers()
         self._peak_search(x_axis, y_axis)
@@ -618,6 +617,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             last_center_MHz_value = self.dblCenterMHz.value()
         else:
             pass
+
+#    @pyqtSlot(PyQt_PyObject, PyQt_PyObject)
+    @pyqtSlot(sa_ctl, object)
+    def on_graphWidget_sigRangeChanged(self, sa_obj, p1):
+        """
+        Update the plot window x-axis min/max values when the plot
+        zoom level is changed.
+
+        @param sa_obj The Spectrum Analyzer object imported as sa_ctl
+        @type PyQt_PyObject
+        @param p1 The x-y range object from the pyqtgraph PlotWidget
+        @type PyQt_PyObject
+        """
+        x_min = round(p1[0][0], 3)
+        x_max = round(p1[0][1], 3)
+        sa.set_plot_window_xrange(x_min, x_max)
 
 
 

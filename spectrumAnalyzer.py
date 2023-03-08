@@ -222,21 +222,21 @@ class sa_control():
         for freq in self.swept_freq_list:
             if not SWEEP:                       # The user pressed the ESC key so time to bail out
                 break
+            """ Set hardware to next frequency """
             ref_code, LO1_N_code, LO2_fmn_code = self.all_frequencies_dict[freq]    # Get hardware control codes
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
             self.set_LO2(LO2_fmn_code)
-            # Prevent 100% CPU when reading the serial input
-#            for _ in range(10_000_000):     # a fake while(true) loop
-            count = 0
+            delay_count = 0     # Prevents 100% CPU when reading the serial input
+            """ Getting the amplitude data from the serial input """
             while(True):
-                count += 1
+                delay_count += 1
                 if sp.ser.in_waiting >= 2:
                     bytes_rxd += sp.ser.read(sp.ser.in_waiting)
                     break
-                if count > 25:
+                if delay_count > 25:
                     time.sleep(1e-6)
-                    count = 0
+                    delay_count = 0
             sp.simple_serial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
             bytes_rxd.clear()
             

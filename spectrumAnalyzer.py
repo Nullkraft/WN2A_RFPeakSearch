@@ -153,7 +153,7 @@ class sa_control():
         @return The new_code in ref_code so it can be saved to an external last_code
         """
         if ref_code != last_ref_code:
-            self.last_LO1_code = 0   # Force LO1 to update every time we select a new reference clock
+            self.last_LO1_code = 0   # Force LO1 to update each time a new ref_clock is selected
             cmd_proc.enable_ref_clock(ref_code)
             self.last_ref_code = ref_code
             time.sleep(0.02)  # Wait for the new reference clock to warm up

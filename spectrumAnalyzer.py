@@ -36,6 +36,9 @@ from hardware_cfg import cfg, spi_device
 import serial_port as sp
 
 
+window_x_max = 3000    # X-axis max MHz of the plot window
+window_x_min = 0       # X-axis min MHz of the plot window
+
 ref_clock = cfg.ref_clock_1
 
 last_sweep_start = 0.0
@@ -210,9 +213,14 @@ class sa_control():
         cmd_proc.set_LO3(control_code)      # Set to freq=control_code
 
 
-    def sweep(self):
+#    def sweep(self):
+    def sweep(self, window_x_min, window_x_max):
         """ Function sweep() : Search the RF input for any or all RF signals
         """
+        window_x_range = window_x_max - window_x_min
+        if window_x_range <= 1.5:   # 1500 kHz
+            """ Check for enabling LO3 and 45 MHz ADC """
+            pass
         global SWEEP
         SWEEP = True                            # ESC key makes SWEEP=False and cancels the sweep
         sp.ser.read(sp.ser.in_waiting)          # Clear the serial port buffer
@@ -251,6 +259,20 @@ class sa_control():
         pass
 
 
+def set_plot_window_xrange(x_min: float, x_max: float):
+    global window_x_min
+    global window_x_max
+    if (x_min is not None):
+        window_x_min = x_min   # X-axis min MHz of the plot window
+    if (x_max is not None):
+        window_x_max = x_max   # X-axis max MHz of the plot window
+
+def get_plot_window_xrange() -> float:
+    global window_x_min
+    global window_x_max
+    return (window_x_min, window_x_max)
+
+
 # Find the highest signal amplitudes in a spectrum plot.
 def peakSearch(amplitudeData, numPeaks):
     # Convert amplitudeData to a numpy.array so we can use argsort.
@@ -263,6 +285,7 @@ def peakSearch(amplitudeData, numPeaks):
     for i in idx:
         if is_peak(amp, i):
             peak_list.append(i)
+    print(name(), line(), f'{len(peak_list) = }')
     return(peak_list)
 
 

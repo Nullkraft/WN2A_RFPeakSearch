@@ -63,8 +63,7 @@ class data_generator():
         @rtype float
         """
         Fpfd = Fref/R       # Fpfd1 = reference clock_1 and Fpfd2 = reference clock_2
-        """ Try (RFin = 66 * 29 + 28 = 1,942) where 28,000 is the offset. """
-        if RFin <= 1942:
+        if RFin <= 2000:
             IF1 = 3800
         else:
             IF1 = 3700
@@ -106,32 +105,38 @@ class data_generator():
         self.LO1_ref1_freq_list = np.round(self.LO1_ref1_freq_list, decimals= 9)
         # Create the list of LO1 frequencies when using reference clock 2.
         self.LO1_ref2_freq_list = [self._LO1_frequency(RFin, hw.cfg.Fpfd2) for RFin in self.RFin_list]
-        self.LO1_ref2_freq_list = [round(x, 9) for x in self.LO1_ref2_freq_list]
-        with open('freq_LO1_ref1.csv', 'w') as f:
-            for LO1_freq in self.LO1_ref1_freq_list:
-                f.write(f'{LO1_freq}' + '\n')
-
-        with open('freq_LO1_ref2.csv', 'w') as f:
-            for LO1_freq in self.LO1_ref2_freq_list:
-                f.write(f'{LO1_freq}' + '\n')
+        self.LO1_ref2_freq_list = np.round(self.LO1_ref2_freq_list, decimals= 9)
         # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 1
-        self.LO1_ref1_N_list = [int(LO1_freq/hw.cfg.Fpfd1) for LO1_freq in self.LO1_ref1_freq_list]
+        self.LO1_ref1_N_list = np.divide(self.LO1_ref1_freq_list, hw.cfg.Fpfd1)
+        self.LO1_ref1_N_list = self.LO1_ref1_N_list.astype(int)
         # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 2
-        self.LO1_ref2_N_list = [int(LO1_freq/hw.cfg.Fpfd2) for LO1_freq in self.LO1_ref2_freq_list]
+        self.LO1_ref2_N_list = np.divide(self.LO1_ref2_freq_list, hw.cfg.Fpfd2)
+        self.LO1_ref2_N_list = self.LO1_ref2_N_list.astype(int)
         # Create the frequency lookup tables for LO1
         self.LO1_ref1_freq_dict = dict(zip(self.RFin_list, self.LO1_ref1_freq_list))
         self.LO1_ref2_freq_dict = dict(zip(self.RFin_list, self.LO1_ref2_freq_list))
         # Create the frequency lookup tables for LO2. (LO2_freq = LO1 - freq + hw.cfg.IF2)
-        self.LO2_ref1_hi_freq_list = [round(self._LO2_frequency(freq, "ref1", "HI"), 9) for freq in self.RFin_list]
-        self.LO2_ref2_hi_freq_list = [round(self._LO2_frequency(freq, "ref2", "HI"), 9) for freq in self.RFin_list]
-        self.LO2_ref1_lo_freq_list = [round(self._LO2_frequency(freq, "ref1", "LO"), 9) for freq in self.RFin_list]
-        self.LO2_ref2_lo_freq_list = [round(self._LO2_frequency(freq, "ref2", "LO"), 9) for freq in self.RFin_list]
-        # Create the LO2 control codes for setting the frequency of the MAX2871 chip for ref clocks 1 and 2
+        freq_func = lambda freq, ref, inj: self._LO2_frequency(freq, ref, inj)
+        vfunc = np.vectorize(freq_func)
+        self.LO2_ref1_hi_freq_list = np.round(vfunc(self.RFin_list, "ref1", "HI"), decimals=9)
+        self.LO2_ref1_lo_freq_list = np.round(vfunc(self.RFin_list, "ref1", "LO"), decimals=9)
+        self.LO2_ref2_hi_freq_list = np.round(vfunc(self.RFin_list, "ref2", "HI"), decimals=9)
+        self.LO2_ref2_lo_freq_list = np.round(vfunc(self.RFin_list, "ref2", "LO"), decimals=9)
+        # Create the LO2 control codes for setting the frequency of the MAX2871 chip for ref clocks
+
+        self.LO2_ref1_hi_fmn_list = []
+        self.LO2_ref2_hi_fmn_list = []
+        self.LO2_ref1_lo_fmn_list = []
+        self.LO2_ref2_lo_fmn_list = []
+        print('Starting .....')
+        fmn_start = perf_counter()
         self.LO2_ref1_hi_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_1) for freq in self.LO2_ref1_hi_freq_list]
         self.LO2_ref2_hi_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_2) for freq in self.LO2_ref2_hi_freq_list]
         self.LO2_ref1_lo_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_1) for freq in self.LO2_ref1_lo_freq_list]
         self.LO2_ref2_lo_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_2) for freq in self.LO2_ref2_lo_freq_list]
-
+        print(line(), f'fmn elapsed time = {round(perf_counter()-fmn_start, 3)} seconds')
+        print()
+        
     def dump_LO2_ref1_HI_freq(self):
         with open('freq_LO2_ref1_HI.csv', 'w') as f:
             for LO2_freq in self.LO2_ref1_hi_freq_list:

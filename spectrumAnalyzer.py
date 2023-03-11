@@ -213,7 +213,6 @@ class sa_control():
         cmd_proc.set_LO3(control_code)      # Set to freq=control_code
 
 
-#    def sweep(self):
     def sweep(self, window_x_min, window_x_max):
         """ Function sweep() : Search the RF input for any or all RF signals
         """

@@ -30,7 +30,7 @@ import pickle
 import numpy as np
 
 from PyQt6 import QtCore, QtGui
-from PyQt6.QtCore import pyqtSlot, QThread #, pyqtSignal, QObject
+from PyQt6.QtCore import pyqtSlot, QThread
 from PyQt6.QtWidgets import QMainWindow
 import pyqtgraph as pg
 from pathlib import Path
@@ -51,19 +51,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super().__init__()
         pg.setConfigOptions(useOpenGL=True, enableExperimental=True)
         self.setupUi(self)  # Must come before self.graphWidget.plot()
-        # When zooming the graph this updates the x-axis start & stop frequencies
-        self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
-        self.graphWidget.setLabel('bottom', text='Frequency (MHz)')
-        self.graphWidget.setLabel('left', text='Amplitude', units='dBm')
-        self.graphWidget.setDefaultPadding(padding=0.0)
-        self.graphWidget.setMouseEnabled(x=True, y=False)
-        self.dataLine = self.graphWidget.plot()
-        self.graphWidget.setXRange(3.0, 3000.0)
-        self.graphWidget.setYRange(25, -62)     # dBm scale
-        horiz_line_item = pg.InfiniteLine(pos=(-60), angle=(0), pen=(255, 128, 255), movable=True, span=(0, 1))
-        vert_line_item = pg.InfiniteLine(pos=(1), pen=(128, 255, 128), movable=True, span=(0, 1))
-        self.graphWidget.addItem(horiz_line_item)
-        self.graphWidget.addItem(vert_line_item)
+        self.setup_plot()
         #
         # MAX2871 chip will need to be initialized
         self.initialized = False
@@ -104,6 +92,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.RFin_list = pickle.load(f)
         # Loading the initial control file (in the background?)
         self.load_control_file('control.pickle')
+
+    def setup_plot(self):
+        """ Setting up the plot window """
+        # When zooming the graph this updates the x-axis start & stop frequencies
+        self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
+        self.graphWidget.setLabel('bottom', text='Frequency (MHz)')
+        self.graphWidget.setLabel('left', text='Amplitude', units='dBm')
+        self.graphWidget.setDefaultPadding(padding=0.0)
+        self.graphWidget.setMouseEnabled(x=True, y=False)
+        self.dataLine = self.graphWidget.plot()
+        self.graphWidget.setXRange(3.0, 3000.0)     # When starting set x-range from 3 to 3000 MHz
+        self.graphWidget.setYRange(25, -62)         # dBm scale
+        hor_line = pg.InfiniteLine(angle=(0), pen=(255, 128, 255), movable=True)
+        ver_line = pg.InfiniteLine(pos=(100), pen=(128, 255, 128), movable=True)
+        self.graphWidget.addItem(hor_line)
+        self.graphWidget.addItem(ver_line)
 
     def load_control_file(self, control_fname: str=None):
         if control_fname is None:
@@ -618,7 +622,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             pass
 
-#    @pyqtSlot(PyQt_PyObject, PyQt_PyObject)
     @pyqtSlot(sa_ctl, object)
     def on_graphWidget_sigRangeChanged(self, sa_obj, p1):
         """
@@ -633,6 +636,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         x_min = round(p1[0][0], 3)
         x_max = round(p1[0][1], 3)
         sa.set_plot_window_xrange(x_min, x_max)
+        print(name(), line(), f'x-range: {x_min = }, {x_max = }')
 
 
 

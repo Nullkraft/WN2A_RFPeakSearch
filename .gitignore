@@ -26,4 +26,4 @@ old*
 *pickle
 documentation/
 Auto_Py_config.json
-z_*.py
+zz_*

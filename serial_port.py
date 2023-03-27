@@ -51,6 +51,7 @@ class simple_serial(QObject):
 
 
     def __init__(self, parent=None):
+        super().__init__(parent)
         QObject.__init__(self, parent)
 #        self.data_buffer_in = bytearray()           # Incoming serial buffer
         self.end_of_stream = bytearray([255, 255])  # Arduino A2D is only 10 bits so we can safely use 0xffff
@@ -156,6 +157,13 @@ class simple_serial(QObject):
                 return [port, baud]
         else:
             print(name(), line(), f': Unable to read {self.config_fname}, file not found.')
+
+    def read(self, num_bytes: int=1):
+        return ser.read(num_bytes)
+
+    def write(self, data_buf):
+        ser.write(data_buf.to_bytes(4, 'little'))
+
 
 # End simple_serial() class
 

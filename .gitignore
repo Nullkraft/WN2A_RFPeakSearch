@@ -18,6 +18,7 @@ lib*
 pyvenv.cfg
 Primitive_Code/
 z_scratch.py
+z_junk.py
 .eric7project/
 .jedi/
 *wtf
@@ -27,3 +28,4 @@ old*
 documentation/
 Auto_Py_config.json
 zz_*
+

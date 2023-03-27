@@ -221,14 +221,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         start: int = self.RFin_list.index(round(self.floatStartMHz.value(), 3))
         stop: int = self.RFin_list.index(round(self.floatStopMHz.value(), 3))
         step: int = self.intStepKHz.value()
-#        next_stop = stop + step
-        
-#        steps_dict = self.sweep_control_dict[start:next_stop:step]
-#        print(name(), line(), f'{len(steps_dict) = } and {next_stop = }')
         # Fill the list with new sweep frequecies
         sa_ctl.swept_freq_list.clear()
         sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
         self.numFrequencySteps.setValue(len(sa_ctl.swept_freq_list))    # Display the number of steps to the user
+        start = self.floatStartMHz.value()
+        stop = self.floatStopMHz.value()
+        self.graphWidget.setXRange(start, stop)     # When starting set x-range from 3 to 3000 MHz
 
 
     def get_swept_freq_list(self, start: int, stop: int, step: int) -> list:
@@ -385,7 +384,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def update_start_stop(self):
         view_range = self.graphWidget.viewRange()
-#        print(name(), line(), f'View range = {view_range}')
         return view_range
 
     @pyqtSlot()
@@ -636,7 +634,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         x_min = round(p1[0][0], 3)
         x_max = round(p1[0][1], 3)
         sa.set_plot_window_xrange(x_min, x_max)
-        print(name(), line(), f'x-range: {x_min = }, {x_max = }')
 
 
 

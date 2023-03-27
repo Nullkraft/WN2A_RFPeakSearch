@@ -63,12 +63,12 @@ def on_release(key):
 # Key listener in non-blocking mode:
 listener = keyboard.Listener(on_release=on_release)
 listener.start()
-
+"""
 class DictionarySlicer(dict):
-    """ Add slicing to a dictionary. """
+    ''' Add slicing to a dictionary. '''
 
     def __init__(self, d_items: {}, k_list: []=None) -> None:
-        """
+        '''
         Constructor Store d_items and k_list. If k_list is None then _keys
                     will be created from d_items.keys(). The result of
                     indexing or slicing _keys is used to create a new
@@ -82,7 +82,7 @@ class DictionarySlicer(dict):
         @return None
         @rtype None
 
-        """
+        '''
         self.dict_slice = {}
         self._dict = d_items    # One data item = {RFin_freq: (RFin, LO1_N, LO2_FMN)}
         if k_list is None:
@@ -91,24 +91,23 @@ class DictionarySlicer(dict):
             self._keys = k_list             # Copy index list from the provided k_list
 
     def __len__(self) -> {}:
-        """
+        '''
         Special method Reports the length of the sliced dictionary result.
 
         @return Length of sliced dictionary.
         @rtype dict
-        """
+        '''
         return len(self.dict_slice)
 
     def __getitem__(self, key: None) -> {}:
-        """
+        '''
         Special method Get a slice or single item from a dictionary.
 
         @param key A slice = [start:stop:step], index = [int], or None.
         @type slice, int, or NoneType
         @return A subset of items sliced from the full dictionary or a single item.
         @rtype dict
-
-        """
+        '''
         if isinstance(key, type(None)):             # When slice == [::] or [:]
             self.dict_slice = self._dict
         if isinstance(key, int):                    # Getting a single item
@@ -298,7 +297,7 @@ def is_peak(amplitude_list, idx):
         return (amplitude_list[idx-1] + plus_delta) < amplitude_list[idx] > (amplitude_list[idx+1] + plus_delta)
 
 
-def fmn_to_MHz(fmn_word, Fpfd=66.0):
+def fmn_to_MHz(fmn_word, Fpfd=66.0, show_fmn: bool=False):
     """
     Function: fmn_to_freq is a utility for verifying that your fmn value
               correctly matches the frequency that you think it does.

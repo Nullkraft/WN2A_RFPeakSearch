@@ -367,8 +367,10 @@ def fmn_to_MHz(fmn_word, Fpfd=66.0, show_fmn: bool=False):
     if M == 0:
         M = 1
     N = fmn_word & 0xFF
-#    print(name(), line(), '\t', f'F = {F} : M = {M} : N = {N}')
-    return Fpfd * (N + F/M)
+    if show_fmn:
+        print(name(), line(), '\t', f'M:F:N = {M,F,N}')
+    freq_MHz = Fpfd * (N + F/M)
+    return freq_MHz
 
 
 def MHz_to_N(RFout_MHz, ref_clock, R: int=1) -> int:

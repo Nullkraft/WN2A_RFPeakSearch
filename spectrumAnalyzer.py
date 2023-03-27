@@ -266,19 +266,10 @@ class sa_control():
         cmd_proc.set_LO3(control_code)      # Set to freq=control_code
 
 
-    def sweep(self, window_x_min, window_x_max):
-        """ Function sweep() : Search the RF input for any or all RF signals
-        """
-        window_x_range = window_x_max - window_x_min
-        if window_x_range <= 1.5:   # 1500 kHz
-            """ Check for enabling LO3 and 45 MHz ADC """
-            pass
-        global SWEEP
-        SWEEP = True                            # ESC key makes SWEEP=False and cancels the sweep
-        sp.ser.read(sp.ser.in_waiting)          # Clear the serial port buffer
+    def sweep_315(self):
+        bytes_rxd = bytearray()
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
         time.sleep(.001)
-        bytes_rxd = bytearray()
         for freq in self.swept_freq_list:
             if not SWEEP:                       # The user pressed the ESC key so time to bail out
                 break
@@ -299,8 +290,22 @@ class sa_control():
                     delay_count = 0
             sp.simple_serial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
             bytes_rxd.clear()
-            
         self.set_LO2(cmd_proc.LO2_mux_tristate)
+
+
+    def sweep(self, window_x_min, window_x_max):
+        """ Function sweep() : Search the RF input for any or all RF signals
+        """
+        window_x_range = round(window_x_max - window_x_min, 9)
+        if window_x_range <= 4.0:   # 4000 kHz
+            """ Check for enabling LO3 and 45 MHz ADC """
+            print(name(), line(), f'{window_x_max = } : {window_x_min = } : width = {window_x_range}')
+        global SWEEP
+        SWEEP = True                            # ESC key makes SWEEP=False and cancels the sweep
+        sp.ser.read(sp.ser.in_waiting)          # Clear the serial port buffer
+        """ ********************************************************************* """
+        self.sweep_315()
+        """ ********************************************************************* """
         cmd_proc.end_sweep()   # Send handshake signal to controller
         return SWEEP
 

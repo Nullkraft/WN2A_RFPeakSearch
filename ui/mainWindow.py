@@ -143,6 +143,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnCalibrate_clicked(self):
+        default_min = 0
+        default_max = 3000
         start = perf_counter()
         self.label_sweep_status.setText("Amplitude cal in progress...")
         QtGui.QGuiApplication.processEvents()
@@ -152,13 +154,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_control_file('control_ref1_HI.pickle')
         self.set_steps()
         serial_buf.clear()     # Clear the serial data buffer before sweeping
-        calibration_complete = sa.sa_control().sweep()
-        if calibration_complete:
-            volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
-        else:
+        calibration_complete = sa.sa_control().sweep(default_min, default_max)
+        volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
+        if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref1_HI.pickle', 'wb') as f:
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+            print(name(), line(), f'Saved {f}')
         with open('amplitude_ref1_HI.csv', 'w') as f:
             for amplitude in volts_list:
                 f.write(f'{amplitude}' + '\n')
@@ -167,13 +169,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_control_file('control_ref2_HI.pickle')
         self.set_steps()
         serial_buf.clear()     # Clear the serial data buffer before sweeping
-        calibration_complete = sa.sa_control().sweep()
-        if calibration_complete:
-            volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
-        else:
+        calibration_complete = sa.sa_control().sweep(default_min, default_max)
+        volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
+        if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref2_HI.pickle', 'wb') as f:
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+            print(name(), line(), f'Saved {f}')
         with open('amplitude_ref2_HI.csv', 'w') as f:
             for amplitude in volts_list:
                 f.write(f'{amplitude}' + '\n')
@@ -182,13 +184,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_control_file('control_ref1_LO.pickle')
         self.set_steps()
         serial_buf.clear()     # Clear the serial data buffer before sweeping
-        calibration_complete = sa.sa_control().sweep()
-        if calibration_complete:
-            volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
-        else:
+        calibration_complete = sa.sa_control().sweep(default_min, default_max)
+        volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
+        if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref1_LO.pickle', 'wb') as f:
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+            print(name(), line(), f'Saved {f}')
         with open('amplitude_ref1_LO.csv', 'w') as f:
             for amplitude in volts_list:
                 f.write(f'{amplitude}' + '\n')
@@ -197,13 +199,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_control_file('control_ref2_LO.pickle')
         self.set_steps()
         serial_buf.clear()     # Clear the serial data buffer before sweeping
-        calibration_complete = sa.sa_control().sweep()
-        if calibration_complete:
-            volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
-        else:
+        calibration_complete = sa.sa_control().sweep(default_min, default_max)
+        volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
+        if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref2_LO.pickle', 'wb') as f:
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+            print(name(), line(), f'Saved {f}')
         with open('amplitude_ref2_LO.csv', 'w') as f:
             for amplitude in volts_list:
                 f.write(f'{amplitude}' + '\n')
@@ -225,9 +227,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sa_ctl.swept_freq_list.clear()
         sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
         self.numFrequencySteps.setValue(len(sa_ctl.swept_freq_list))    # Display the number of steps to the user
+        self.set_LO3_sweep()
+
+    def set_LO3_sweep(self):
+        # Find and set the center frequency used for sweeping LO3.
         start = self.floatStartMHz.value()
         stop = self.floatStopMHz.value()
         self.graphWidget.setXRange(start, stop)     # When starting set x-range from 3 to 3000 MHz
+        window_x_range = round(stop-start, 3)
+        window_center = int(window_x_range/2 * 1000) / 1000 + start
+        self.dblCenterMHz.setValue(window_center)
 
 
     def get_swept_freq_list(self, start: int, stop: int, step: int) -> list:

@@ -67,7 +67,8 @@ class data_generator():
             IF1 = 3800
         else:
             IF1 = 3700
-        LO1_freq = Fpfd * int((RFin + Fpfd + IF1 ) / Fpfd)
+##        LO1_freq = Fpfd * int((RFin + Fpfd + IF1 ) / Fpfd)
+        LO1_freq = Fpfd * round((RFin+IF1)/Fpfd, 0)    # This should be more accurate
         return LO1_freq
 
 

@@ -52,6 +52,7 @@ class cfg():
 
     IF1: float = 3600.0                 # First intermediate frequency in MHz
     IF2: float = 315.0                  # Second intermediate frequency in MHz
+    IF3: float = 45.0                   # Third intermediate frequency in MHz
 
     RFin_max_freq = 3000                # No control codes available beyond this frequency
 
@@ -68,7 +69,7 @@ def memoize(func):
     return wrapper
 
 
-@memoize
+#@memoize
 @njit(nogil=True)
 def MHz_to_fmn(LO2_target_freq_MHz: float, ref_clock: float) -> int:
     """ Form a 32 bit word containing F, M and N for the MAX2871.

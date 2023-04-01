@@ -175,6 +175,11 @@ def set_LO2(LO2_command: int) -> None:
     _send_command(LO2_command)
 
 
+def sel_LO3() -> None:
+    """Send command to select the LO2 chip for programming."""
+    _send_command(LO3_device_sel)
+
+
 def set_LO3(LO3_command) -> None:
     """Send the command to set the LO3 chip to a new frequency."""
     _send_command(LO3_command)

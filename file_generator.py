@@ -31,7 +31,7 @@ import pickle
 import numpy as np
 
 
-class data_generator():
+class DataGenerator():
     """ These files will be used by calibrate_sa.py for creating the
         control dictionaries needed by the calibration scripts.
     """
@@ -233,7 +233,7 @@ if __name__ == '__main__':
     from time import perf_counter
 
     print(f'Fpfd values are {hw.cfg.Fpfd1} & {hw.cfg.Fpfd2}')
-    dg = data_generator()
+    dg = DataGenerator()
 
     start = perf_counter()
     dg.create_data()

@@ -88,9 +88,9 @@ class DataGenerator():
         LO1_freq = select_dict[ref_clock]
         IF1_corrected = LO1_freq[RFin] - RFin       # Make correction to IF1
         if injection == "HI":
-            LO2_freq = IF1_corrected + hw.cfg.IF2   # High-side injection
+            LO2_freq = IF1_corrected + hw.Cfg.IF2   # High-side injection
         elif injection == "LO":
-            LO2_freq = IF1_corrected - hw.cfg.IF2   # Low-side injection
+            LO2_freq = IF1_corrected - hw.Cfg.IF2   # Low-side injection
         return LO2_freq
 
 
@@ -102,21 +102,21 @@ class DataGenerator():
 
     def create_data(self) -> None:
         # Create the list of LO1 frequencies when using reference clock 1.
-        self.LO1_ref1_freq_list = [self._LO1_frequency(RFin, hw.cfg.Fpfd1) for RFin in self.RFin_list]
+        self.LO1_ref1_freq_list = [self._LO1_frequency(RFin, hw.Cfg.Fpfd1) for RFin in self.RFin_list]
         self.LO1_ref1_freq_list = np.round(self.LO1_ref1_freq_list, decimals= 9)
         # Create the list of LO1 frequencies when using reference clock 2.
-        self.LO1_ref2_freq_list = [self._LO1_frequency(RFin, hw.cfg.Fpfd2) for RFin in self.RFin_list]
+        self.LO1_ref2_freq_list = [self._LO1_frequency(RFin, hw.Cfg.Fpfd2) for RFin in self.RFin_list]
         self.LO1_ref2_freq_list = np.round(self.LO1_ref2_freq_list, decimals= 9)
         # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 1
-        self.LO1_ref1_N_list = np.divide(self.LO1_ref1_freq_list, hw.cfg.Fpfd1)
+        self.LO1_ref1_N_list = np.divide(self.LO1_ref1_freq_list, hw.Cfg.Fpfd1)
         self.LO1_ref1_N_list = self.LO1_ref1_N_list.astype(int)
         # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 2
-        self.LO1_ref2_N_list = np.divide(self.LO1_ref2_freq_list, hw.cfg.Fpfd2)
+        self.LO1_ref2_N_list = np.divide(self.LO1_ref2_freq_list, hw.Cfg.Fpfd2)
         self.LO1_ref2_N_list = self.LO1_ref2_N_list.astype(int)
         # Create the frequency lookup tables for LO1
         self.LO1_ref1_freq_dict = dict(zip(self.RFin_list, self.LO1_ref1_freq_list))
         self.LO1_ref2_freq_dict = dict(zip(self.RFin_list, self.LO1_ref2_freq_list))
-        # Create the frequency lookup tables for LO2. (LO2_freq = LO1 - freq + hw.cfg.IF2)
+        # Create the frequency lookup tables for LO2. (LO2_freq = LO1 - freq + hw.Cfg.IF2)
         freq_func = lambda freq, ref, inj: self._LO2_frequency(freq, ref, inj)
         vfunc = np.vectorize(freq_func)
         self.LO2_ref1_hi_freq_list = np.round(vfunc(self.RFin_list, "ref1", "HI"), decimals=9)
@@ -131,10 +131,10 @@ class DataGenerator():
         self.LO2_ref2_lo_fmn_list = []
         print('Starting .....')
         fmn_start = perf_counter()
-        self.LO2_ref1_hi_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_1) for freq in self.LO2_ref1_hi_freq_list]
-        self.LO2_ref2_hi_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_2) for freq in self.LO2_ref2_hi_freq_list]
-        self.LO2_ref1_lo_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_1) for freq in self.LO2_ref1_lo_freq_list]
-        self.LO2_ref2_lo_fmn_list = [hw.MHz_to_fmn(freq, hw.cfg.ref_clock_2) for freq in self.LO2_ref2_lo_freq_list]
+        self.LO2_ref1_hi_fmn_list = [hw.MHz_to_fmn(freq, hw.Cfg.ref_clock_1) for freq in self.LO2_ref1_hi_freq_list]
+        self.LO2_ref2_hi_fmn_list = [hw.MHz_to_fmn(freq, hw.Cfg.ref_clock_2) for freq in self.LO2_ref2_hi_freq_list]
+        self.LO2_ref1_lo_fmn_list = [hw.MHz_to_fmn(freq, hw.Cfg.ref_clock_1) for freq in self.LO2_ref1_lo_freq_list]
+        self.LO2_ref2_lo_fmn_list = [hw.MHz_to_fmn(freq, hw.Cfg.ref_clock_2) for freq in self.LO2_ref2_lo_freq_list]
         print(line(), f'fmn elapsed time = {round(perf_counter()-fmn_start, 3)} seconds')
         print()
         
@@ -232,7 +232,7 @@ if __name__ == '__main__':
     print()
     from time import perf_counter
 
-    print(f'Fpfd values are {hw.cfg.Fpfd1} & {hw.cfg.Fpfd2}')
+    print(f'Fpfd values are {hw.Cfg.Fpfd1} & {hw.Cfg.Fpfd2}')
     dg = DataGenerator()
 
     start = perf_counter()

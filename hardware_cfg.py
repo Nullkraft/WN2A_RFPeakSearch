@@ -39,7 +39,7 @@ class SPI_Device(Enum):
 
 
 @dataclass
-class cfg():
+class Cfg():
     max_error = 2**32
     Vref = 2.595 #5.0                   # Controller ADC reference voltage
 

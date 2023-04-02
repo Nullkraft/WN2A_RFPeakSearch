@@ -32,14 +32,14 @@ import time
 import numpy as np
 
 import command_processor as cmd_proc
-from hardware_cfg import cfg, SPI_Device, MHz_to_fmn
+from hardware_cfg import Cfg, SPI_Device, MHz_to_fmn
 import serial_port as sp
 
 
 window_x_max = 3000    # X-axis max MHz of the plot window
 window_x_min = 0       # X-axis min MHz of the plot window
 
-ref_clock = cfg.ref_clock_1
+ref_clock = Cfg.ref_clock_1
 
 last_sweep_start = 0.0
 last_sweep_stop = 9999.0
@@ -131,7 +131,7 @@ class sa_control():
 
     
     def adc_Vref(self):
-        return cfg.Vref
+        return Cfg.Vref
 
 
     def set_reference_clock(self, ref_code: int, last_ref_code: int=0):
@@ -218,21 +218,21 @@ class sa_control():
         mid_freq = freq_steps[len(freq_steps)//2]
         ref_code, _, _ = self.all_frequencies_dict[mid_freq]    # Which reference clock is active
         if ref_code == 3327:
-            ref_clock = cfg.ref_clock_1
+            ref_clock = Cfg.ref_clock_1
         else:
-            ref_clock = cfg.ref_clock_2
+            ref_clock = Cfg.ref_clock_2
         ''' Convert freq steps in x into LO3 control codes '''
         for RFin in freq_steps:
             ref_code, LO1_N_code, LO2_fmn_code = self.all_frequencies_dict[RFin]    # Get hardware control codes
             if ref_code == 3327:
-                ref_clock = cfg.ref_clock_1
+                ref_clock = Cfg.ref_clock_1
             else:
-                ref_clock = cfg.ref_clock_2
-            LO1 = LO1_N_code * (ref_clock / cfg.ref_divider)
+                ref_clock = Cfg.ref_clock_2
+            LO1 = LO1_N_code * (ref_clock / Cfg.ref_divider)
             IF1 = LO1 - RFin
             LO2_real = round(fmn_to_MHz(LO2_fmn_code), 6)
             IF2 = round(LO2_real, 3) - IF1
-            LO3 = IF2 - cfg.IF3
+            LO3 = IF2 - Cfg.IF3
             fmn = MHz_to_fmn(LO3, ref_clock)
             LO3_fmn_codes.append(fmn)
         print(name(), line(), f'{len(LO3_fmn_codes) = }')
@@ -408,10 +408,10 @@ def set_reference_clock(clock_id):
         ref_clock = None
         cmd_proc.disable_all_ref_clocks()       # Stop both ref clocks before enabling one of them
     if clock_id == 1:
-        ref_clock = cfg.ref_clock_1
+        ref_clock = Cfg.ref_clock_1
         cmd_proc.enable_ref_clock(cmd_proc.ref_clock1_enable)
     if clock_id == 2:
-        ref_clock = cfg.ref_clock_2
+        ref_clock = Cfg.ref_clock_2
         cmd_proc.enable_ref_clock(cmd_proc.ref_clock2_enable)
     return ref_clock
 

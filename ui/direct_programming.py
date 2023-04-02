@@ -29,7 +29,7 @@ from PyQt6.QtCore import pyqtSlot
 from PyQt6.QtWidgets import QDialog
 
 from .Ui_direct_programming import Ui_Dialog
-from hardware_cfg import cfg
+from hardware_cfg import Cfg
 import command_processor as cp
 
 
@@ -67,7 +67,7 @@ class Dialog(QDialog, Ui_Dialog):
     def on_direct_btn_step_clicked(self):
         """ Walk through the 315 MHz filter by stepping the LO2 """
         start_freq = round(self.direct_start_freq_mhz.value(), 3)
-        fmn = cfg.MHz_to_fmn(start_freq, cfg.ref_clock_1)
+        fmn = Cfg.MHz_to_fmn(start_freq, Cfg.ref_clock_1)
         if not self.selected:
             cp.sel_LO2()
             self.selected = True

@@ -134,7 +134,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print(name(), line(), f'Sweep completed in {round(perf_counter()-start, 6)} seconds')
         if not sweep_complete:
            print(name(), line(), 'Sweep stopped by user')
-        status_txt = f'Sweep complete, fwidth = {sa_ctl.filter_width}'
+        status_txt = f'Sweep complete, fwidth = {sa_ctl.lowpass_filter_width}'
         self.label_sweep_status.setText(status_txt)
         if self.chk_plot_enable.isChecked() and sweep_complete:
             self.plot_ampl_data(sp.simple_serial.data_buffer_in)
@@ -240,13 +240,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
     def get_swept_freq_list(self, start: int, stop: int, step: int) -> list:
-        ''' control_fname is the filename of a control dictionary. A control dictionary has
-            freq: (ref_clock_code, LO1_N, LO2_FMN) as key and values in a tuple. When making
-            the list of sweep frequencies it will need to be sorted by ref_clock_code if the
-            file contains more than one code. However, switching between reference clocks
-            requires as much as 20 milliseconds for the new clock to settle so we would like
-            to only switch once during a sweep. The resulting sweep list can be sorted by
-            ref1 and ref2 control codes. 
+        ''' A control dictionary has freq: (ref_clock_code, LO1_N, LO2_FMN) as
+        key and values in a tuple. When making the list of sweep frequencies it
+        will need to be sorted by ref_clock_code if the file contains more than
+        one code. However, switching between reference clocks requires as much
+        as 20 milliseconds for the new clock to settle so we would like to only
+        switch once during a sweep. The resulting sweep list can be sorted by
+        ref1 and ref2 control codes.
         '''
         ref1_sweep_freq_list = []
         ref2_sweep_freq_list = []

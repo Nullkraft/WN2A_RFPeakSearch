@@ -56,10 +56,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # MAX2871 chip will need to be initialized
         self.initialized = False
         self.amplitude = []     # Declare amplitude storage that will allow appending
-        self.r1_hi_ampl_list = []
-        self.r1_lo_ampl_list = []
-        self.r2_hi_ampl_list = []
-        self.r2_lo_ampl_list = []
+        self.r1_hi_amplitudes = []
+        self.r1_lo_amplitudes = []
+        self.r2_hi_amplitudes = []
+        self.r2_lo_amplitudes = []
         self.x_axis = []
         self.y_axis = []
         #
@@ -277,19 +277,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         control codes for that frequency are copied to the control_dict.
         '''
         sa_ctl.all_frequencies_dict.clear()
+        ''' If one of these files is missing there is no need to check the others '''
         ampl_file_1 = Path('amplitude_ref1_HI.pickle')
         ampl_file_2 = Path('amplitude_ref2_HI.pickle')
         if ampl_file_1.exists() and ampl_file_2.exists():
-            if not self.r1_hi_ampl_list:    # List is empty or does not exist
-                """ List(s) of amplitudes collected from ref1 and ref2 full sweeps with NO RFin """
+            if not self.r1_hi_amplitudes:    # If this list is missing so are all the others
+                ''' The contents of the amplitude files need to be compared to see which one
+                has the lowest level of noise. Each entry depends on its position in the file,
+                e.g. Line 132427 in the file came from the frequency 132.427 MHz RFin '''
                 with open('amplitude_ref1_HI.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
-                    self.r1_hi_ampl_list = pickle.load(f)
+                    self.r1_hi_amplitudes = pickle.load(f)
                 with open('amplitude_ref1_LO.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
-                    self.r1_lo_ampl_list = pickle.load(f)
+                    self.r1_lo_amplitudes = pickle.load(f)
                 with open('amplitude_ref2_HI.pickle', 'rb') as f:   # 3 million amplitudes collected with ref2
-                    self.r2_hi_ampl_list = pickle.load(f)
+                    self.r2_hi_amplitudes = pickle.load(f)
                 with open('amplitude_ref2_LO.pickle', 'rb') as f:   # 3 million amplitudes collected with ref2
-                    self.r2_lo_ampl_list = pickle.load(f)
+                    self.r2_lo_amplitudes = pickle.load(f)
+                ''' These are the controls associated with the amplitude files. When the lowest
+                noise level has been found then the control associated with that amplitude file
+                is assigned to a single full_control dictionary, e.g. We found Line 132427 was
+                lowest in amplitude_ref1_LO so the control from control_ref1_LO is copied into
+                the full_control dictionary. '''
                 with open('control_ref1_HI.pickle', 'rb') as f:
                     control_ref1_hi_dict = pickle.load(f)
                 with open('control_ref1_LO.pickle', 'rb') as f:
@@ -299,26 +307,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 with open('control_ref2_LO.pickle', 'rb') as f:
                     control_ref2_lo_dict = pickle.load(f)
 
-            def lp_filt(half_window: int, index: int = 0) -> float:
-                """ Using a Centered Moving Average to smooth out the amplitude data """
+            def lp_filt(active_list, half_window: int, index: int = 0) -> float:
+                """ A Centered Moving Average is is used to smooth out the amplitude data.
+                Otherwise random noise levels cause random control selection. This shows
+                up as a comb effect when performing actual sweeps.
+                """
                 start = index - half_window
                 stop = index + half_window
                 if start < 0:                   # too close to the start of the list
                     start = 0
-                if stop > len(self.active_list):       # too close to the end of the list
-                    stop = len(self.active_list)
-                avg_value = round(np.average(self.active_list[start:stop]),3)
+                if stop > len(active_list):       # too close to the end of the list
+                    stop = len(active_list)
+                avg_value = round(np.average(active_list[start:stop]),3)
                 return avg_value
 
             """ We need smoothed amplitude data for performing the amplitude comparison step
-                The lp_filt() def uses self.r1_lo_ampl_list, etc., directly. It's faster
+                The lp_filt() def uses self.r1_lo_amplitudes, etc., directly. It's faster
                 than passing the entire list.
             """
-            window = sa_ctl.filter_width
-            a1_filtered = [lp_filt(window, idx) for idx, _ in enumerate(self.r1_hi_ampl_list)]
-            a2_filtered = [lp_filt(window, idx) for idx, _ in enumerate(self.r1_lo_ampl_list)]
-            a3_filtered = [lp_filt(window, idx) for idx, _ in enumerate(self.r2_hi_ampl_list)]
-            a4_filtered = [lp_filt(window, idx) for idx, _ in enumerate(self.r2_lo_ampl_list)]
+            window = sa_ctl.lowpass_filter_width
+            a1_filtered = [lp_filt(self.r1_hi_amplitudes, window, idx) for idx, _ in enumerate(self.r1_hi_amplitudes)]
+            a2_filtered = [lp_filt(self.r1_lo_amplitudes, window, idx) for idx, _ in enumerate(self.r1_lo_amplitudes)]
+            a3_filtered = [lp_filt(self.r2_hi_amplitudes, window, idx) for idx, _ in enumerate(self.r2_hi_amplitudes)]
+            a4_filtered = [lp_filt(self.r2_lo_amplitudes, window, idx) for idx, _ in enumerate(self.r2_lo_amplitudes)]
 
             for idx, freq in enumerate(self.RFin_list):
                 """ For each RFin select the control code that generated the best (lowest) amplitude. """

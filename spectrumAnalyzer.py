@@ -32,7 +32,7 @@ import time
 import numpy as np
 
 import command_processor as cmd_proc
-from hardware_cfg import cfg, spi_device, MHz_to_fmn
+from hardware_cfg import cfg, SPI_Device, MHz_to_fmn
 import serial_port as sp
 
 
@@ -124,7 +124,7 @@ class sa_control():
     all_frequencies_dict = dict()   # ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
 
     def __init__(self):
-        self.selected_device = spi_device.LO2   # Spectrum Analyzer chip we're talking to
+        self.selected_device = SPI_Device.LO2   # Spectrum Analyzer chip we're talking to
         self.last_ref_code = 0      # Decide if a new ref_code is to be sent
         self.last_LO1_code = 0      # Decide if a new LO1_code is to be sent
         self.last_LO2_code = 0      # Decide if a new LO2_code is to be sent
@@ -153,7 +153,7 @@ class sa_control():
 
     def set_attenuator(self, dB):
         cmd_proc.set_attenuator(dB)
-        self.selected_device = spi_device.ATTENUATOR   # Update currently selected device to Attenuator
+        self.selected_device = SPI_Device.ATTENUATOR   # Update currently selected device to Attenuator
 
     
     def set_LO1(self, control_code: int, last_control_code: int=0):
@@ -171,7 +171,7 @@ class sa_control():
             cmd_proc.set_LO1(cmd_proc.LO1_neg4dBm, control_code) # Set to -4 dBm & freq=control_code
             time.sleep(0.002)                       # Wait 1 ms for LO1 to lock
             self.last_LO1_code = control_code
-            self.selected_device = spi_device.LO1   # Update currently selected device to LO1
+            self.selected_device = SPI_Device.LO1   # Update currently selected device to LO1
 
     def set_LO2(self, control_code: int, last_control_code: int=0):
         """
@@ -183,9 +183,9 @@ class sa_control():
         @type int (optional)
         """
         if control_code != last_control_code:
-            if self.selected_device is not spi_device.LO2:
+            if self.selected_device is not SPI_Device.LO2:
                 cmd_proc.sel_LO2()
-                self.selected_device = spi_device.LO2   # Update currently selected device to LO2
+                self.selected_device = SPI_Device.LO2   # Update currently selected device to LO2
             cmd_proc.set_LO2(control_code)      # Set to freq=control_code
 
     
@@ -198,9 +198,9 @@ class sa_control():
         @param last_control_code prevents sending FMN if it's the same as last time (defaults to 0)
         @type int (optional)
         """
-        if self.selected_device is not spi_device.LO3:
+        if self.selected_device is not SPI_Device.LO3:
             cmd_proc.sel_LO3()
-            self.selected_device = spi_device.LO3   # Update currently selected device to LO3
+            self.selected_device = SPI_Device.LO3   # Update currently selected device to LO3
         cmd_proc.set_LO3(control_code)      # Set to freq=control_code
 
 

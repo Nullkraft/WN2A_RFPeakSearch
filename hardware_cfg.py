@@ -30,7 +30,7 @@ from numba import njit
 from enum import Enum, auto
 from functools import wraps
 
-class spi_device(Enum):
+class SPI_Device(Enum):
     """ Tracks which of the SPI capable chips is selected """
     ATTENUATOR = auto()
     LO1 = auto()

@@ -37,7 +37,7 @@ from pathlib import Path
 
 from .Ui_mainWindow import Ui_MainWindow
 import spectrumAnalyzer as sa
-from spectrumAnalyzer import sa_control as sa_ctl
+from spectrumAnalyzer import SA_Control as sa_ctl
 import serial_port as sp
 
 
@@ -130,7 +130,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         QtGui.QGuiApplication.processEvents()
         sp.SimpleSerial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
         window_x_min, window_x_max = sa.get_plot_window_xrange()
-        sweep_complete = sa.sa_control().sweep(window_x_min, window_x_max)
+        sweep_complete = sa.SA_Control().sweep(window_x_min, window_x_max)
         print(name(), line(), f'Sweep completed in {round(perf_counter()-start, 6)} seconds')
         if not sweep_complete:
            print(name(), line(), 'Sweep stopped by user')
@@ -154,7 +154,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_control_file('control_ref1_HI.pickle')
         self.set_steps()
         serial_buf.clear()     # Clear the serial data buffer before sweeping
-        calibration_complete = sa.sa_control().sweep(default_min, default_max)
+        calibration_complete = sa.SA_Control().sweep(default_min, default_max)
         volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
         if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
@@ -169,7 +169,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_control_file('control_ref2_HI.pickle')
         self.set_steps()
         serial_buf.clear()     # Clear the serial data buffer before sweeping
-        calibration_complete = sa.sa_control().sweep(default_min, default_max)
+        calibration_complete = sa.SA_Control().sweep(default_min, default_max)
         volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
         if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
@@ -184,7 +184,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_control_file('control_ref1_LO.pickle')
         self.set_steps()
         serial_buf.clear()     # Clear the serial data buffer before sweeping
-        calibration_complete = sa.sa_control().sweep(default_min, default_max)
+        calibration_complete = sa.SA_Control().sweep(default_min, default_max)
         volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
         if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
@@ -199,7 +199,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_control_file('control_ref2_LO.pickle')
         self.set_steps()
         serial_buf.clear()     # Clear the serial data buffer before sweeping
-        calibration_complete = sa.sa_control().sweep(default_min, default_max)
+        calibration_complete = sa.SA_Control().sweep(default_min, default_max)
         volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
         if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
@@ -440,7 +440,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 hi_byte = (hi_byte & 15)        # Store the amplitude value despite it not locking
                 print(name(), line(), f'WARNING:: PLL failed to lock at {sa_ctl.swept_freq_list[idx]} Mhz')
             ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
-            voltage = ampl * sa.sa_control().adc_Vref()/(2**10-1)       # Convert 10 bit ADC counts to Voltage
+            voltage = ampl * sa.SA_Control().adc_Vref()/(2**10-1)       # Convert 10 bit ADC counts to Voltage
             volts_list.append(voltage)
         return volts_list
 
@@ -600,7 +600,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         @type double
         """
         dB = float(self.dbl_attenuator_dB.value())      # Read attenuator value from user control
-        sa.sa_control().set_attenuator(dB)
+        sa.SA_Control().set_attenuator(dB)
 
     @pyqtSlot()
     def on_btn_open_serial_port_clicked(self):

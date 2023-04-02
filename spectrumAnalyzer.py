@@ -118,7 +118,7 @@ class DictionarySlicer(dict):
 
 
 
-class sa_control():
+class SA_Control():
     lowpass_filter_width = 20       # Sets the +/- amplitude calibration smoothing half_window
     swept_freq_list = list()        # The list of frequencies that the user requested to be swept
     all_frequencies_dict = dict()   # ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps

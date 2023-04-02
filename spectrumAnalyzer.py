@@ -119,7 +119,7 @@ class DictionarySlicer(dict):
 
 
 class sa_control():
-    filter_width = 20               # Sets the +/- amplitude calibration smoothing half_window
+    lowpass_filter_width = 20       # Sets the +/- amplitude calibration smoothing half_window
     swept_freq_list = list()        # The list of frequencies that the user requested to be swept
     all_frequencies_dict = dict()   # ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
 
@@ -290,8 +290,8 @@ class sa_control():
                     delay_count = 0
             sp.simple_serial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
             bytes_rxd.clear()
-            if freq % 5 == 0:
-                print(f'Progress {freq = }')
+#            if freq % 5 == 0:
+#                print(f'Progress {freq = }')
         self.set_LO2(cmd_proc.LO2_mux_tristate)
 
 

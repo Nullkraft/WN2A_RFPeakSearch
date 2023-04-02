@@ -34,9 +34,9 @@ from PyQt6.QtCore import QObject, pyqtSignal
 
 # Serial port object that can be shared across source files.
 """ NOTE: Investigate to see if we can used Dependency inversion
-    to move this serial object outside the simple_serial class.
+    to move this serial object outside the SimpleSerial class.
     
-    1. Make simple_serial independent of the comms channel, eg. it
+    1. Make SimpleSerial independent of the comms channel, eg. it
        could be serial, ethernet or even GPIB.
     
     2. YouTube Tutorial - Dependency INVERSION vs dependency INJECTION
@@ -44,7 +44,7 @@ from PyQt6.QtCore import QObject, pyqtSignal
 """
 ser = serial.Serial()
 
-class simple_serial(QObject):
+class SimpleSerial(QObject):
     finished = pyqtSignal(bytearray)
     progress = pyqtSignal(int)
     data_buffer_in = bytearray()           # Incoming serial buffer
@@ -165,7 +165,7 @@ class simple_serial(QObject):
         ser.write(data_buf.to_bytes(4, 'little'))
 
 
-# End simple_serial() class
+# End SimpleSerial() class
 
 
 
@@ -181,8 +181,8 @@ class simple_serial(QObject):
 
 if __name__ == '__main__':
     print("")
-    print(simple_serial().get_baud_rate_list())
-    print(simple_serial().get_serial_port_list())
+    print(SimpleSerial().get_baud_rate_list())
+    print(SimpleSerial().get_serial_port_list())
 
 
 

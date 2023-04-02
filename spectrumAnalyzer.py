@@ -262,7 +262,7 @@ class sa_control():
             if delay_count > 25:
                 time.sleep(1e-6)
                 delay_count = 0
-            sp.simple_serial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
+            sp.SimpleSerial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
             bytes_rxd.clear()
         self.set_LO3(cmd_proc.LO3_mux_tristate)
 
@@ -288,7 +288,7 @@ class sa_control():
                 if delay_count > 25:
                     time.sleep(1e-6)
                     delay_count = 0
-            sp.simple_serial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
+            sp.SimpleSerial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
             bytes_rxd.clear()
 #            if freq % 5 == 0:
 #                print(f'Progress {freq = }')

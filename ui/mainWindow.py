@@ -66,17 +66,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Request the list of available serial ports and use it to
         # populate the user 'Serial Port' drop-down selection list.
         ''' ~~~~~~ Setup serial port ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
-        serial_ports = sp.simple_serial().get_serial_port_list()
+        serial_ports = sp.SimpleSerial().get_serial_port_list()
         self.cbxSerialPortSelection.addItems(serial_ports)
         #
         # Populate the 'User serial speed drop-down selection list'
-        serial_speeds = sp.simple_serial().get_baud_rate_list()
+        serial_speeds = sp.SimpleSerial().get_baud_rate_list()
         for baud in serial_speeds:
             self.cbxSerialSpeedSelection.addItem(str(baud), baud)
         # Check for, and reopen, the last serial port that was used.
-        sp.simple_serial().port_open()
+        sp.SimpleSerial().port_open()
         # GUI dropdowns should display port and speed values from the port that was opened
-        serial_port, serial_speed = sp.simple_serial().read_config()
+        serial_port, serial_speed = sp.SimpleSerial().read_config()
         port_index = self.cbxSerialPortSelection.findText(serial_port)
         if (port_index >= 0):
             self.cbxSerialPortSelection.setCurrentIndex(port_index)
@@ -128,7 +128,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         start = perf_counter()
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
-        sp.simple_serial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
+        sp.SimpleSerial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
         window_x_min, window_x_max = sa.get_plot_window_xrange()
         sweep_complete = sa.sa_control().sweep(window_x_min, window_x_max)
         print(name(), line(), f'Sweep completed in {round(perf_counter()-start, 6)} seconds')
@@ -137,7 +137,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         status_txt = f'Sweep complete, fwidth = {sa_ctl.lowpass_filter_width}'
         self.label_sweep_status.setText(status_txt)
         if self.chk_plot_enable.isChecked() and sweep_complete:
-            self.plot_ampl_data(sp.simple_serial.data_buffer_in)
+            self.plot_ampl_data(sp.SimpleSerial.data_buffer_in)
         QtGui.QGuiApplication.processEvents()
 
 
@@ -148,7 +148,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         start = perf_counter()
         self.label_sweep_status.setText("Amplitude cal in progress...")
         QtGui.QGuiApplication.processEvents()
-        serial_buf = sp.simple_serial.data_buffer_in
+        serial_buf = sp.SimpleSerial.data_buffer_in
 
         ''' Run ref1 HI calibrations '''
         self.load_control_file('control_ref1_HI.pickle')
@@ -384,7 +384,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         if sp.ser.is_open:
             self.thread = QThread()                               # Create a separate thread for serial reads
-            self.worker = sp.simple_serial()                      # Function for reading from the serial port
+            self.worker = sp.SimpleSerial()                      # Function for reading from the serial port
             self.worker.moveToThread(self.thread)                 # Serial reads happen inside its own thread
             self.thread.started.connect(self.worker.read_serial)  # Connect to signals...
             self.worker.progress.connect(self.progress_report)
@@ -410,7 +410,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_btnRefreshPortsList_clicked(self):
         for x in range(10):
             self.cbxSerialPortSelection.removeItem(0)
-        ports = sp.simple_serial().get_serial_port_list()
+        ports = sp.SimpleSerial().get_serial_port_list()
         self.cbxSerialPortSelection.addItems(ports)
 
     @pyqtSlot(int)
@@ -609,7 +609,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         sel_baud = self.cbxSerialSpeedSelection.currentText()
         sel_port = self.cbxSerialPortSelection.currentText()
-        sp.simple_serial().port_open(baud_rate=sel_baud, port=sel_port)
+        sp.SimpleSerial().port_open(baud_rate=sel_baud, port=sel_port)
         sleep(2)
     
     

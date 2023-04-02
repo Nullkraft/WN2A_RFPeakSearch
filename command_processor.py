@@ -238,7 +238,7 @@ def _send_command(command) -> None:
     """Send the selected command to the controller."""
     try:
         if sp.ser.is_open:
-            sp.simple_serial.write(object, command)
+            sp.SimpleSerial.write(object, command)
     except:
         print(name(), line(), f': Open the serial port before sending a command <{command.__name__}>.')
 

@@ -243,25 +243,26 @@ class SA_Control():
         LO2_fmn_code, LO3_fmn_codes = self.create_LO3_sweep_list(x_min, x_max, x_range)
         self.set_LO2(cmd_proc.LO2_mux_tristate)
         """ Set hardware to next frequency """
-        RFin = round((x_min + x_max) / 2)
-        ref_code, LO1_N_code, LO2_fmn_code = self.all_frequencies_dict[RFin]    # Get hardware control codes
+        RFin_center_freq = round((x_min + x_max) / 2)
+        ref_code, LO1_N_code, LO2_fmn_code = self.all_frequencies_dict[RFin_center_freq]    # Get hardware control codes
         self.set_reference_clock(ref_code, self.last_ref_code);
         self.set_LO1(LO1_N_code, self.last_LO1_code)
         self.set_LO2(LO2_fmn_code, self.last_LO2_code)
         time.sleep(.001)
         sp.ser.read(sp.ser.in_waiting)  # Clear out the serial buffer.
         delay_count = 0     # Prevents 100% CPU when reading the serial input
+        print(name(), line(), f'{LO3_fmn_codes = }')
         for fmn in LO3_fmn_codes:
             self.set_LO3(fmn)
-        """ Read the amplitude data from the serial input """
-        while(True):
-            delay_count += 1
-            if sp.ser.in_waiting >= 2:
-                bytes_rxd += sp.ser.read(sp.ser.in_waiting)
-                break
-            if delay_count > 25:
-                time.sleep(1e-6)
-                delay_count = 0
+            """ Read the amplitude data from the serial input """
+            while(True):
+                delay_count += 1
+                if sp.ser.in_waiting >= 2:
+                    bytes_rxd += sp.ser.read(sp.ser.in_waiting)
+                    break
+                if delay_count > 25:
+                    time.sleep(1e-6)
+                    delay_count = 0
             sp.SimpleSerial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
             bytes_rxd.clear()
         self.set_LO3(cmd_proc.LO3_mux_tristate)

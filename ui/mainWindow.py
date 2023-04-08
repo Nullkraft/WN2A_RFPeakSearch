@@ -28,6 +28,7 @@ import sys
 from time import sleep, perf_counter
 import pickle
 import numpy as np
+import threading
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread
@@ -90,8 +91,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print(name(), line(), f'Missing RFin file "{RFin_file}"')
         with open('RFin_steps.pickle', 'rb') as f:
             self.RFin_list = pickle.load(f)
-        # Loading the initial control file (in the background?)
-        self.load_control_file('control.pickle')
+        # Loading the initial control file in a background thread
+        control_thread = threading.Thread(target=self.load_controls, args=('control.pickle',))
+        control_thread.start()
 
     def setup_plot(self):
         """ Setting up the plot window """
@@ -109,16 +111,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.graphWidget.addItem(hor_line)
         self.graphWidget.addItem(ver_line)
 
-    def load_control_file(self, control_fname: str=None):
+    def load_controls(self, control_fname: str=None):
         if control_fname is None:
             print(name(), line(), 'You must enter a control file name')
         else:
             sa_ctl.all_frequencies_dict.clear()     # get ready for a new set of control codes
             control_file = Path(control_fname)      # Filename containting new control codes
         if control_file.exists():
-            with open(control_file, 'rb') as f:
+            ctrl_start = perf_counter()
+            with open(control_file, 'rb', buffering=65536) as f:
                 sa_ctl.all_frequencies_dict = pickle.load(f)
-                print(name(), line(), f'Control file "{control_file}" loaded')
+                delta = round(perf_counter()-ctrl_start, 2)
+                print(name(), line(), f'Control file "{control_file}" loaded in {delta} seconds')
         else:
             print(name(), line(), f'Missing control file "{control_file}"')
 
@@ -151,7 +155,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         serial_buf = sp.SimpleSerial.data_buffer_in
 
         ''' Run ref1 HI calibrations '''
-        self.load_control_file('control_ref1_HI.pickle')
+        self.load_controls('control_ref1_HI.pickle')
         self.set_steps()
         serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.SA_Control().sweep(default_min, default_max)
@@ -166,7 +170,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 f.write(f'{amplitude}' + '\n')
 
         ''' Run ref2 HI calibrations '''
-        self.load_control_file('control_ref2_HI.pickle')
+        self.load_controls('control_ref2_HI.pickle')
         self.set_steps()
         serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.SA_Control().sweep(default_min, default_max)
@@ -181,7 +185,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 f.write(f'{amplitude}' + '\n')
 
         ''' Run ref1 LO calibrations '''
-        self.load_control_file('control_ref1_LO.pickle')
+        self.load_controls('control_ref1_LO.pickle')
         self.set_steps()
         serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.SA_Control().sweep(default_min, default_max)
@@ -196,7 +200,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 f.write(f'{amplitude}' + '\n')
 
         ''' Run ref2 LO calibrations '''
-        self.load_control_file('control_ref2_LO.pickle')
+        self.load_controls('control_ref2_LO.pickle')
         self.set_steps()
         serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.SA_Control().sweep(default_min, default_max)
@@ -556,7 +560,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnExit_clicked(self):
-        sys.exit()
+        QCoreApplication.quit()
+        print(name(), line(), 'Program exit.')
+#        sys.exit()     # Not thread safe
+        
 
     @pyqtSlot(bool)
     def on_chkShowGrid_toggled(self, checked):

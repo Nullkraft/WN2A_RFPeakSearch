@@ -31,7 +31,7 @@ import numpy as np
 import threading
 
 from PyQt6 import QtCore, QtGui
-from PyQt6.QtCore import pyqtSlot, QThread
+from PyQt6.QtCore import pyqtSlot, QThread, QCoreApplication
 from PyQt6.QtWidgets import QMainWindow
 import pyqtgraph as pg
 from pathlib import Path
@@ -42,11 +42,11 @@ from spectrumAnalyzer import SA_Control as sa_ctl
 import serial_port as sp
 
 
-last_center_MHz_value = 0
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     last_N = -1     # for monitoring the amount of data from serial_read()
+    last_center_MHz_value = 0
 
     def __init__(self):
         super().__init__()
@@ -470,15 +470,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Get x_plot_min/max values nearest to the values from the plotWidget
         visible_x_min = min(x_plot_data, key=lambda x_data: abs(x_data-window_x_min)) # x is iterated from x_plot_data
         visible_x_max = min(x_plot_data, key=lambda x_data: abs(x_data-window_x_max))
-        print(name(), line())
         x_data_min = x_plot_data[0]
         x_data_max = x_plot_data[-1]
         if visible_x_min < x_data_min:
             visible_x_min = x_data_min
         if visible_x_max > x_data_max:
             visible_x_max = x_data_max
-        print(name(), line(), f'{window_x_min = }, {window_x_max = }')
-        print(name(), line(), f'{visible_x_min = }, {visible_x_max = }')
         # Find the indexes for the min/max values...
         idx_min = x_plot_data.index(visible_x_min)
         idx_max = x_plot_data.index(visible_x_max)
@@ -640,10 +637,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         Public slot What happens if I try to run it a second time.
         """
-        global last_center_MHz_value
-        if self.dblCenterMHz.value() != last_center_MHz_value:
+        if self.dblCenterMHz.value() != MainWindow.last_center_MHz_value:
             sa.sa_ctl().set_center_freq(self.dblCenterMHz.value())
-            last_center_MHz_value = self.dblCenterMHz.value()
+            MainWindow.last_center_MHz_value = self.dblCenterMHz.value()
         else:
             pass
 

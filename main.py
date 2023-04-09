@@ -39,20 +39,11 @@ def main():
     sys.exit(app.exec())    # Using sys.exit() takes the return code from app.exec() and sends
                             # it to the command line while app.exec() starts the event loop.
 
+#    How To Reduce Coupling With Facade (Adding an abstraction layer)
+#    https://www.youtube.com/watch?v=jjoLejA4iAE
 
 # Start Qt event loop unless running in interactive mode or using pyside.
 if __name__ == '__main__':
     print()
     main()
-
-
-'''
-    How To Reduce Coupling With Facade (Adding an abstraction layer)
-    https://www.youtube.com/watch?v=jjoLejA4iAE
-'''
-
-
-
-
-
-
+    print()

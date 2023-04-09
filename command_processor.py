@@ -234,8 +234,9 @@ def end_sweep() -> None:
     _send_command(sweep_end)
 
 
-def _send_command(command) -> None:
+def _send_command(cmd) -> None:
     """Send the selected command to the controller."""
+    command = int(cmd)
     try:
         if sp.ser.is_open:
             sp.SimpleSerial.write(object, command)

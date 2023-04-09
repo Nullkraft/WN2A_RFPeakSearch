@@ -51,7 +51,7 @@ class SimpleSerial(QObject):
 
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+#        super().__init__(parent)          # This is causing a segfault on exit from interpreter
         QObject.__init__(self, parent)
 #        self.data_buffer_in = bytearray()           # Incoming serial buffer
         self.end_of_stream = bytearray([255, 255])  # Arduino A2D is only 10 bits so we can safely use 0xffff

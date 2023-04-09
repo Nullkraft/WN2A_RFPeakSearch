@@ -557,8 +557,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnExit_clicked(self):
+        print(name(), line(), 'Before QCoreApplication.quit()...')
         QCoreApplication.quit()
-        print(name(), line(), 'Program exit.')
+        print(name(), line(), 'After QCoreApplication.quit()...')
 #        sys.exit()     # Not thread safe
         
 

@@ -36,10 +36,9 @@ def main():
     window = MainWindow()
     print(name(), line(), f'INFO::Startup took {round(perf_counter()-start, 6)} seconds')
     window.show()
-    print(name(), line(), "Almost exited ...")
     sys.exit(app.exec())    # Using sys.exit() takes the return code from app.exec() and sends
                             # it to the command line while app.exec() starts the event loop.
-    print(name(), line(), "End of ...")
+
 #    How To Reduce Coupling With Facade (Adding an abstraction layer)
 #    https://www.youtube.com/watch?v=jjoLejA4iAE
 

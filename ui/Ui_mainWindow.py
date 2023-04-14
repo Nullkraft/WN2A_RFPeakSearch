@@ -255,6 +255,7 @@ class Ui_MainWindow(object):
         self.numFrequencySteps.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignTrailing|QtCore.Qt.AlignmentFlag.AlignVCenter)
         self.numFrequencySteps.setMinimum(2)
         self.numFrequencySteps.setMaximum(3100000)
+        self.numFrequencySteps.setProperty("value", 401)
         self.numFrequencySteps.setObjectName("numFrequencySteps")
         self.gridLayout_3.addWidget(self.numFrequencySteps, 5, 5, 1, 1)
         spacerItem7 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Minimum)

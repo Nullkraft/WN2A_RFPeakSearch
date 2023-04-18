@@ -44,7 +44,7 @@ def line() -> str:
     return f'line {str(sys._getframe(1).f_lineno)},'
 
 
-name = f'File \"{__name__}.py\",'
+name = f"File \'{__name__}.py\',"
 
 
 class Dialog(QDialog, Ui_Dialog):

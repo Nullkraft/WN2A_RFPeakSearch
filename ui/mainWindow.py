@@ -42,11 +42,10 @@ from spectrumAnalyzer import SA_Control as sa_ctl
 import serial_port as sp
 
 
-
-
 class MainWindow(QMainWindow, Ui_MainWindow):
     last_N = -1     # for monitoring the amount of data from serial_read()
     last_center_MHz_value = 0
+    PROGSTART = True
 
     def __init__(self):
         super().__init__()
@@ -63,6 +62,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.r2_lo_amplitudes = []
         self.x_axis = []
         self.y_axis = []
+        #
+        self.num_steps = 3_000_001  # Number of Spectrum Analyzer 1kHz steps
         #
         # Request the list of available serial ports and use it to
         # populate the user 'Serial Port' drop-down selection list.
@@ -96,7 +97,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         control_thread.start()
 
     def setup_plot(self):
-        """ Setting up the plot window """
+        ''' Setting up the plot window '''
         # When zooming the graph this updates the x-axis start & stop frequencies
         self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
         self.graphWidget.setLabel('bottom', text='Frequency (MHz)')
@@ -126,24 +127,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             print(name(), line(), f'Missing control file "{control_file}"')
 
-
     @pyqtSlot()
     def on_btnSweep_clicked(self):
         start = perf_counter()
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
         sp.SimpleSerial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
-        window_x_min, window_x_max = sa.get_plot_window_xrange()
-        sweep_complete = sa.SA_Control().sweep(window_x_min, window_x_max)
+        window_x_min, window_x_max, _ = sa_ctl().get_x_range()
+        sweep_complete = sa_ctl().sweep()
         print(name(), line(), f'Sweep completed in {round(perf_counter()-start, 6)} seconds')
         if not sweep_complete:
-           print(name(), line(), 'Sweep stopped by user')
+            print(name(), line(), 'Sweep stopped by user')
         status_txt = f'Sweep complete, fwidth = {sa_ctl.lowpass_filter_width}'
         self.label_sweep_status.setText(status_txt)
         if self.chk_plot_enable.isChecked() and sweep_complete:
             self.plot_ampl_data(sp.SimpleSerial.data_buffer_in)
         QtGui.QGuiApplication.processEvents()
-
 
     @pyqtSlot()
     def on_btnCalibrate_clicked(self):
@@ -153,10 +152,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_sweep_status.setText("Amplitude cal in progress...")
         QtGui.QGuiApplication.processEvents()
         serial_buf = sp.SimpleSerial.data_buffer_in
-
         ''' Run ref1 HI calibrations '''
         self.load_controls('control_ref1_HI.pickle')
-        self.set_steps()
+        self.set_steps(num_steps=3_000_001)
         serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.SA_Control().sweep(default_min, default_max)
         volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
@@ -165,13 +163,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         with open('amplitude_ref1_HI.pickle', 'wb') as f:
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
             print(name(), line(), f'Saved {f}')
-        with open('amplitude_ref1_HI.csv', 'w') as f:
-            for amplitude in volts_list:
-                f.write(f'{amplitude}' + '\n')
-
+#        with open('amplitude_ref1_HI.csv', 'w') as f:
+#            for amplitude in volts_list:
+#                f.write(f'{amplitude}' + '\n')
         ''' Run ref2 HI calibrations '''
         self.load_controls('control_ref2_HI.pickle')
-        self.set_steps()
+        self.set_steps(num_steps=3_000_001)
         serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.SA_Control().sweep(default_min, default_max)
         volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
@@ -180,13 +177,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         with open('amplitude_ref2_HI.pickle', 'wb') as f:
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
             print(name(), line(), f'Saved {f}')
-        with open('amplitude_ref2_HI.csv', 'w') as f:
-            for amplitude in volts_list:
-                f.write(f'{amplitude}' + '\n')
-
+#        with open('amplitude_ref2_HI.csv', 'w') as f:
+#            for amplitude in volts_list:
+#                f.write(f'{amplitude}' + '\n')
         ''' Run ref1 LO calibrations '''
         self.load_controls('control_ref1_LO.pickle')
-        self.set_steps()
+        self.set_steps(num_steps=3_000_001)
         serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.SA_Control().sweep(default_min, default_max)
         volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
@@ -195,13 +191,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         with open('amplitude_ref1_LO.pickle', 'wb') as f:
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
             print(name(), line(), f'Saved {f}')
-        with open('amplitude_ref1_LO.csv', 'w') as f:
-            for amplitude in volts_list:
-                f.write(f'{amplitude}' + '\n')
-
+#        with open('amplitude_ref1_LO.csv', 'w') as f:
+#            for amplitude in volts_list:
+#                f.write(f'{amplitude}' + '\n')
         ''' Run ref2 LO calibrations '''
         self.load_controls('control_ref2_LO.pickle')
-        self.set_steps()
+        self.set_steps(num_steps=3_000_001)
         serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.SA_Control().sweep(default_min, default_max)
         volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
@@ -210,28 +205,50 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         with open('amplitude_ref2_LO.pickle', 'wb') as f:
             pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
             print(name(), line(), f'Saved {f}')
-        with open('amplitude_ref2_LO.csv', 'w') as f:
-            for amplitude in volts_list:
-                f.write(f'{amplitude}' + '\n')
-
-        self.label_sweep_status.setText("Calibration complete")
+#        with open('amplitude_ref2_LO.csv', 'w') as f:
+#            for amplitude in volts_list:
+#                f.write(f'{amplitude}' + '\n')
+        self.label_sweep_status.setText('Calibration complete')
         QtGui.QGuiApplication.processEvents()
         print(name(), line(), f'Calibration of {len(volts_list)} data points took {round(perf_counter()-start, 6)} seconds')
 
-
-    def set_steps(self):
-        """
-            Public method Create a list of frequencies for sweeping
-        """
+    def set_steps(self, num_steps: int = 401):
+        '''
+        Public method I want this function to get the frequencies and indexes
+        that will be used to slice the all_controls dictionary. It should be
+        based upon the width, or x range, of the plot window.
+        - First is to grab the start/stop/step from the user controls
+        - I can get the start and stop freqs from the plot window x range.
+        - Then I can access the indexes by feeding the freqs into the RFin_list
+          where the RFin_list is populated at prgram startup.
+        - Finally, populate the sweep control dictionary for this x range in
+          the Spectrum Analyzer module.
+        '''
+        # Frequencies:  Grab start/stop freqs and step size from the user controls
+        start_freq_mhz = round(self.floatStartMHz.value(), 3)
+        stop_freq_mhz = round(self.floatStopMHz.value(), 3)
+        band_width = (stop_freq_mhz - start_freq_mhz) * 1000    # Convert MHz to kHz step size
+        ''' 401 prevents calibration from working '''
+        step_size_khz = int(band_width / num_steps)
+        num_steps_actual = int(band_width / step_size_khz)
+        self.numFrequencySteps.setValue(num_steps_actual)   # Display the num_steps to the user
+        self.intStepKHz.setValue(step_size_khz)
+        # Indexes:  At program start RFin_list doesn't exist so use the following
+        # method to get the indexes.
+        control_start_idx = int(start_freq_mhz * 1000)
+        control_stop_idx = int(stop_freq_mhz * 1000)
+        # Update the start/stop/step values in the Spectrum Analyzer module
+        sa_ctl.window_x_min = control_start_idx
+        sa_ctl.window_x_max = control_stop_idx
+        sa_ctl.window_x_range = sa_ctl.window_x_max - sa_ctl.window_x_min
         # Get the start and stop indexes for the sweep frequencies list
-        start: int = self.RFin_list.index(round(self.floatStartMHz.value(), 3))
-        stop: int = self.RFin_list.index(round(self.floatStopMHz.value(), 3))
+        start: int = sa_ctl().window_x_min
+        stop: int = sa_ctl().window_x_max
         step: int = self.intStepKHz.value()
         # Fill the list with new sweep frequecies
         sa_ctl.swept_freq_list.clear()
-        sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
-        self.numFrequencySteps.setValue(len(sa_ctl.swept_freq_list))    # Display the number of steps to the user
-        self.set_LO3_sweep()
+        if not self.PROGSTART:
+            sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
 
     def set_LO3_sweep(self):
         # Find and set the center frequency used for sweeping LO3.
@@ -241,7 +258,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         window_x_range = round(stop-start, 3)
         window_center = int(window_x_range/2 * 1000) / 1000 + start
         self.dblCenterMHz.setValue(window_center)
-
 
     def get_swept_freq_list(self, start: int, stop: int, step: int) -> list:
         ''' A control dictionary has freq: (ref_clock_code, LO1_N, LO2_FMN) as
@@ -268,8 +284,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 ref1_sweep_freq_list.append(freq)           # Find all the freqs associated with ref_clock 1
             elif ref_code == 0x14FF:                        # ref_clock_2 control code = 0x14FF
                 ref2_sweep_freq_list.append(freq)           # Find all the freqs associated with ref_clock 2
-        return ref1_sweep_freq_list + ref2_sweep_freq_list  # Return the list of frequencies to be swept
-
+        return ref1_sweep_freq_list + ref2_sweep_freq_list  # Return freqs sorted by ref_clock
 
     @pyqtSlot()
     def on_btn_make_control_dict_clicked(self):
@@ -360,7 +375,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         with open('control.pickle', 'wb') as f:
             pickle.dump(sa_ctl.all_frequencies_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
-            
+
         with open('control.csv', 'w') as fcsv:
             for f in sa_ctl.all_frequencies_dict:
                 r, LO1_N, LO2_FMN = sa_ctl.all_frequencies_dict[f]
@@ -420,7 +435,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot(int)
     def on_selectReferenceOscillator_currentIndexChanged(self, selected_ref_clock):
         sa.set_reference_clock(selected_ref_clock)
-        
+
     def _volts_to_dBm(self, voltage: float) -> float:
         '''
         Protected method Convert ADC results from Volts to dBm for the y_axis
@@ -433,7 +448,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         x = voltage
         dBm = (((((((-9.460927*x + 110.57352)*x - 538.8610489)*x + 1423.9059205)*x - 2219.08322)*x + 2073.3123)*x - 1122.5121)*x + 355.7665)*x - 112.663
         return dBm
-    
+
     def _amplitude_bytes_to_volts(self, amplBytes) -> list:
         volts_list = []
         # Convert two 8-bit serial bytes into one 16 bit amplitude
@@ -486,7 +501,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnPeakSearch_clicked(self):
-        window_x_min, window_x_max = sa.get_plot_window_xrange()
+        window_x_min, window_x_max, _ = sa_ctl().get_x_range()
         x_axis, y_axis = self.get_visible_plot_range(self.x_axis, self.y_axis, window_x_min, window_x_max)
         self._clear_marker_text()
         self._clear_peak_markers()
@@ -559,7 +574,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_btnExit_clicked(self):
         QCoreApplication.quit()
 #        sys.exit()     # Not thread safe
-        
 
     @pyqtSlot(bool)
     def on_chkShowGrid_toggled(self, checked):
@@ -614,28 +628,36 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sel_port = self.cbxSerialPortSelection.currentText()
         sp.SimpleSerial().port_open(baud_rate=sel_baud, port=sel_port)
         sleep(2)
-    
-    
+
     @pyqtSlot()
     def on_floatStartMHz_editingFinished(self):
         self.set_steps()
-
+        self.PROGSTART = False
 
     @pyqtSlot()
     def on_floatStopMHz_editingFinished(self):
         self.set_steps()
+        self.PROGSTART = False
 
-    
     @pyqtSlot()
     def on_intStepKHz_editingFinished(self):
-        self.set_steps()
+        start_freq = self.floatStartMHz.value()
+        stop_freq = self.floatStopMHz.value()
+        step_size = self.intStepKHz.value()
+#        step_size = int(self.intStepKHz.value())
+        band_width = (stop_freq - start_freq) * 1000
+        print(name(), line(), f"{band_width = }")
+        num_steps = round(band_width / step_size, 3)
 
+        self.numFrequencySteps.setValue(num_steps)
+        self.set_steps(num_steps)
+        self.PROGSTART = False
 
     @pyqtSlot()
     def on_dblCenterMHz_editingFinished(self):
-        """
+        '''
         Public slot What happens if I try to run it a second time.
-        """
+        '''
         if self.dblCenterMHz.value() != MainWindow.last_center_MHz_value:
             sa.sa_ctl().set_center_freq(self.dblCenterMHz.value())
             MainWindow.last_center_MHz_value = self.dblCenterMHz.value()
@@ -652,20 +674,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         @type PyQt_PyObject
         @param p1 The x-y range object from the pyqtgraph PlotWidget
         @type PyQt_PyObject
-        """
+        '''
         x_min = round(p1[0][0], 3)
         x_max = round(p1[0][1], 3)
-        sa.set_plot_window_xrange(x_min, x_max)
+        self.floatStartMHz.setValue(x_min)
+        self.floatStopMHz.setValue(x_max)
+        self.set_steps()  # Default arg num_steps=401
 
+    @pyqtSlot(int)
+    def on_numFrequencySteps_valueChanged(self, p0):
+        print(name(), line(), f'Num Freq steps changed to {p0}')
 
 
 if __name__ == '__main__':
     print()
 #    freeze_support()
-
-
-
-
-
-
-

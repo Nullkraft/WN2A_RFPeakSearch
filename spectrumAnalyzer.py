@@ -33,10 +33,8 @@ import numpy as np
 import command_processor as cmd_proc
 from hardware_cfg import Cfg, SPI_Device, MHz_to_fmn
 import serial_port as sp
+import dictionary_slice as ds
 
-
-window_x_max = 3000    # X-axis max MHz of the plot window
-window_x_min = 0       # X-axis min MHz of the plot window
 
 ref_clock = Cfg.ref_clock_1
 
@@ -117,10 +115,13 @@ class DictionarySlicer(dict):
 
 
 
-class SA_Control():
+class SA_Control:
     lowpass_filter_width = 20       # Sets the +/- amplitude calibration smoothing half_window
     swept_freq_list = list()        # The list of frequencies that the user requested to be swept
     all_frequencies_dict = dict()   # ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
+    window_x_min = 0.0
+    window_x_max = 3000.0
+    window_x_range = 3000
 
     def __init__(self):
         self.selected_device = SPI_Device.LO2   # Spectrum Analyzer chip we're talking to
@@ -132,6 +133,21 @@ class SA_Control():
     def adc_Vref(self):
         return Cfg.Vref
 
+    def get_x_range(self) -> float:
+        if self.window_x_range is None:
+            return 0, 3000, 3000
+        else:
+            return self.window_x_min, self.window_x_max, self.window_x_range
+
+    def set_x_range(self, window_x_min: float = None, window_x_max: float = None):
+        """The intent with this function is to have mainWindow set
+        the min, max, and range values.
+        """
+        if window_x_min is not None:
+            self.window_x_min = window_x_min  # X-axis min MHz of the plot window
+        if window_x_max is not None:
+            self.window_x_max = window_x_max  # X-axis min MHz of the plot window
+        self.window_x_range = self.window_x_max - self.window_x_min
 
     def set_reference_clock(self, ref_code: int, last_ref_code: int=0):
         """

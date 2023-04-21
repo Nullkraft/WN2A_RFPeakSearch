@@ -61,60 +61,6 @@ def on_release(key):
 listener = keyboard.Listener(on_release=on_release)
 listener.start()
 
-class DictionarySlicer(dict):
-    ''' Add slicing to a dictionary. '''
-
-    def __init__(self, d_items: {}) -> None:
-        '''
-        Constructor Store d_items. The keys of d_items are used to create a new
-        list called self._keys that will return a subset of the values in d_items
-        when indexed or sliced.
-
-        @param d_items The dictionary that you want to slice.
-        @type {}
-        @return None
-        @rtype None
-        '''
-        self.dict_slice = {}
-        self._dict = d_items    # One data item = {RFin_freq: (RFin, LO1_N, LO2_FMN)}
-        self._keys = list(self._dict)   # Create index list from dictionary keys
-
-    def __len__(self) -> {}:
-        '''
-        Special method Reports the length of the sliced dictionary result.
-
-        @return Length of sliced dictionary.
-        @rtype dict
-        '''
-        return len(self.dict_slice)
-
-    def __getitem__(self, key: None) -> {}:
-        '''
-        Special method Get a slice or single item from a dictionary.
-
-        @param key A slice = [start:stop:step], index = [int], or None.
-        @type slice, int, or NoneType
-        @return A subset of items sliced from the full dictionary or a single item.
-        @rtype dict
-        '''
-        if isinstance(key, type(None)):             # When slice == [::] or [:]
-            self.dict_slice = self._dict
-        if isinstance(key, int):                    # Getting a single item
-            try:
-                self.dict_slice = {f: self._dict[f] for f in self._keys[key:key+1]}
-            except TypeError:
-                if not isinstance(self._dict, dict):
-                    raise TypeError(f' d_items must be a type dict. d_items == {type(self._dict)}')
-        if isinstance(key, slice):                  # Getting a range of items
-            try:
-                self.dict_slice = {f: self._dict[f] for f in self._keys[key.start:key.stop:key.step]}
-            except TypeError:
-                if not isinstance(self._dict, dict):
-                    raise TypeError(f' d_items must be a type dict. d_items == {type(self._dict)}')
-        return self.dict_slice
-
-
-
 class SA_Control:
     lowpass_filter_width = 20       # Sets the +/- amplitude calibration smoothing half_window
     swept_freq_list = list()        # The list of frequencies that the user requested to be swept

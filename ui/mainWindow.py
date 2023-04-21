@@ -327,10 +327,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     control_ref2_lo_dict = pickle.load(f)
 
             def lp_filt(active_list, half_window: int, index: int = 0) -> float:
-                """ A Centered Moving Average is is used to smooth out the amplitude data.
+                ''' A Centered Moving Average is is used to smooth out the amplitude data.
                 Otherwise random noise levels cause random control selection. This shows
                 up as a comb effect when performing actual sweeps.
-                """
+                '''
                 start = index - half_window
                 stop = index + half_window
                 if start < 0:                   # too close to the start of the list
@@ -340,10 +340,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 avg_value = round(np.average(active_list[start:stop]),3)
                 return avg_value
 
-            """ We need smoothed amplitude data for performing the amplitude comparison step
+            ''' We need smoothed amplitude data for performing the amplitude comparison step
                 The lp_filt() def uses self.r1_lo_amplitudes, etc., directly. It's faster
                 than passing the entire list.
-            """
+            '''
             window = sa_ctl.lowpass_filter_width
             a1_filtered = [lp_filt(self.r1_hi_amplitudes, window, idx) for idx, _ in enumerate(self.r1_hi_amplitudes)]
             a2_filtered = [lp_filt(self.r1_lo_amplitudes, window, idx) for idx, _ in enumerate(self.r1_lo_amplitudes)]
@@ -351,7 +351,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             a4_filtered = [lp_filt(self.r2_lo_amplitudes, window, idx) for idx, _ in enumerate(self.r2_lo_amplitudes)]
 
             for idx, freq in enumerate(self.RFin_list):
-                """ For each RFin select the control code that generated the best (lowest) amplitude. """
+                ''' For each RFin select the control code that generated the best (lowest) amplitude. '''
                 a1 = a1_filtered[idx]
                 a2 = a2_filtered[idx]
                 a3 = a3_filtered[idx]
@@ -364,7 +364,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     sa_ctl.all_frequencies_dict[freq] = control_ref2_hi_dict[freq]
                 elif a4 < a1 and a4 < a2 and a4 < a3:
                     sa_ctl.all_frequencies_dict[freq] = control_ref2_lo_dict[freq]
-                """ Special cases requiring manual input """
+                ''' Special cases requiring manual input '''
                 if 208 < freq < 210.35:
                     sa_ctl.all_frequencies_dict[freq] = control_ref2_lo_dict[freq]
                 if 359.9 < freq < 360.1:
@@ -385,35 +385,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 LO2 = str(LO2_FMN)
                 fcsv.write(f'{freq}:({ref_clock},{LO1},{LO2})\n')
 
-
     def progress_report(self, n):
         if n != self.last_N:
             self.last_N = n
 #            print(name(), line(), f'Len in_buff = {n}')
         pass
-    
-    
+
     def clear_last_N(self):
         self.last_n = -1
 
-
     def serial_read_thread(self):
-        """
-        Read back data points in a separate thread so we don't block the gui.
-        """
+        ''' Read back data points in a separate thread so we don't block the gui. '''
         if sp.ser.is_open:
-            self.thread = QThread()                               # Create a separate thread for serial reads
-            self.worker = sp.SimpleSerial()                      # Function for reading from the serial port
-            self.worker.moveToThread(self.thread)                 # Serial reads happen inside its own thread
-            self.thread.started.connect(self.worker.read_serial)  # Connect to signals...
+            self.thread = QThread()                 # Create a separate thread for serial reads
+            self.worker = sp.SimpleSerial()         # Function for reading from the serial port
+            self.worker.moveToThread(self.thread)   # Serial reads happen inside its own thread
+            self.thread.started.connect(self.worker.read_serial)    # Connect to signals...
             self.worker.progress.connect(self.progress_report)
             self.worker.finished.connect(self.clear_last_N)
             self.worker.finished.connect(self.thread.quit)
             self.worker.finished.connect(self.plot_ampl_data)
             self.worker.finished.connect(self.worker.deleteLater)
             self.thread.finished.connect(self.thread.deleteLater)
-            self.thread.start()                                   # After starting the thread...
-#            self.btnSweep.setEnabled(False)                       # disable the sweep button until we're done
+            self.thread.start()                     # After starting the thread...
+#            self.btnSweep.setEnabled(False)         # disable the sweep button until we're done
             self.thread.finished.connect(lambda: self.btnSweep.setEnabled(True))
         else:
             print('')
@@ -591,7 +586,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_line_edit_cmd_returnPressed(self):
-        """ Create command name for disble LO3? """
+        ''' Create command name for disble LO3? '''
         cmd_str = self.line_edit_cmd.text()
         cmd_int = int(cmd_str, 16)
         tmp_bytes = cmd_int.to_bytes(4, byteorder='little')

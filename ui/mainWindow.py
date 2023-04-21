@@ -134,7 +134,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         QtGui.QGuiApplication.processEvents()
         sp.SimpleSerial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
         window_x_min, window_x_max, _ = sa_ctl().get_x_range()
-        sweep_complete = sa_ctl().sweep()
+        sweep_complete = sa_ctl().sweep(window_x_min, window_x_max)
         print(name(), line(), f'Sweep completed in {round(perf_counter()-start, 6)} seconds')
         if not sweep_complete:
             print(name(), line(), 'Sweep stopped by user')
@@ -481,7 +481,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print(name(), line(), 'Unable to plot. Missing amplitude data.')
 
     def get_visible_plot_range(self, x_plot_data: list, y_plot_data: list, window_x_min: float, window_x_max: float):
-        """ Get the list of visible plot points after zooming the plot window """
+        ''' Get the list of visible plot points after zooming the plot window '''
         # Get x_plot_min/max values nearest to the values from the plotWidget
         visible_x_min = min(x_plot_data, key=lambda x_data: abs(x_data-window_x_min)) # x is iterated from x_plot_data
         visible_x_max = min(x_plot_data, key=lambda x_data: abs(x_data-window_x_max))
@@ -666,7 +666,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot(sa_ctl, object)
     def on_graphWidget_sigRangeChanged(self, sa_obj, p1):
-        """
+        '''
         Update the plot window x-axis min/max values when the plot
         zoom level is changed.
 

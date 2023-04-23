@@ -403,26 +403,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_selectReferenceOscillator_currentIndexChanged(self, selected_ref_clock):
         sa.set_reference_clock(selected_ref_clock)
 
-    def _volts_to_dBm(self, voltage: float) -> float:
-        '''
-        Protected method Convert ADC results from Volts to dBm for the y_axis
-
-        @param voltage Found based on the number of ADC bits and reference voltage
-        @type float
-        @return Output power in the range of -80 to +20 dBm
-        @rtype float
-        '''
-        x = voltage
-        dBm = (((((((-9.460927*x + 110.57352)*x - 538.8610489)*x + 1423.9059205)*x - 2219.08322)*x + 2073.3123)*x - 1122.5121)*x + 355.7665)*x - 112.663
-        return dBm
-
     def plot_ampl_data(self, amplBytes):
         if amplBytes:
             self.x_axis.clear()
             self.y_axis.clear()
             self.amplitude.clear()
             volts_list = api._amplitude_bytes_to_volts(amplBytes)
-            self.amplitude = [self._volts_to_dBm(voltage) for voltage in volts_list]
+            self.amplitude = [api._volts_to_dBm(voltage) for voltage in volts_list]
             argsort_index_nparray = sa.np.argsort(sa_ctl.swept_freq_list)
             for idx in argsort_index_nparray:
                 self.x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order

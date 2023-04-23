@@ -157,7 +157,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.set_steps(num_steps=3_000_001)
         serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.SA_Control().sweep(default_min, default_max)
-        volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
+        volts_list = [round(v, 3) for v in api._amplitude_bytes_to_volts(serial_buf)]
         if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref1_HI.pickle', 'wb') as f:
@@ -171,7 +171,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.set_steps(num_steps=3_000_001)
         serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.SA_Control().sweep(default_min, default_max)
-        volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
+        volts_list = [round(v, 3) for v in api._amplitude_bytes_to_volts(serial_buf)]
         if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref2_HI.pickle', 'wb') as f:
@@ -185,7 +185,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.set_steps(num_steps=3_000_001)
         serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.SA_Control().sweep(default_min, default_max)
-        volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
+        volts_list = [round(v, 3) for v in api._amplitude_bytes_to_volts(serial_buf)]
         if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref1_LO.pickle', 'wb') as f:
@@ -199,7 +199,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.set_steps(num_steps=3_000_001)
         serial_buf.clear()     # Clear the serial data buffer before sweeping
         calibration_complete = sa.SA_Control().sweep(default_min, default_max)
-        volts_list = [round(v, 3) for v in self._amplitude_bytes_to_volts(serial_buf)]
+        volts_list = [round(v, 3) for v in api._amplitude_bytes_to_volts(serial_buf)]
         if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
         with open('amplitude_ref2_LO.pickle', 'wb') as f:
@@ -416,26 +416,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         dBm = (((((((-9.460927*x + 110.57352)*x - 538.8610489)*x + 1423.9059205)*x - 2219.08322)*x + 2073.3123)*x - 1122.5121)*x + 355.7665)*x - 112.663
         return dBm
 
-    def _amplitude_bytes_to_volts(self, amplBytes) -> list:
-        volts_list = []
-        # Convert two 8-bit serial bytes into one 16 bit amplitude
-        hi_byte_list = amplBytes[::2]
-        lo_byte_list = amplBytes[1::2]
-        for idx, (hi_byte, lo_byte) in enumerate(zip(hi_byte_list, lo_byte_list)):
-            if hi_byte > 3:
-                hi_byte = (hi_byte & 15)        # Store the amplitude value despite it not locking
-                print(name(), line(), f'WARNING:: PLL failed to lock at {sa_ctl.swept_freq_list[idx]} Mhz')
-            ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
-            voltage = ampl * sa.SA_Control().adc_Vref()/(2**10-1)       # Convert 10 bit ADC counts to Voltage
-            volts_list.append(voltage)
-        return volts_list
-
     def plot_ampl_data(self, amplBytes):
         if amplBytes:
             self.x_axis.clear()
             self.y_axis.clear()
             self.amplitude.clear()
-            volts_list = self._amplitude_bytes_to_volts(amplBytes)
+            volts_list = api._amplitude_bytes_to_volts(amplBytes)
             self.amplitude = [self._volts_to_dBm(voltage) for voltage in volts_list]
             argsort_index_nparray = sa.np.argsort(sa_ctl.swept_freq_list)
             for idx in argsort_index_nparray:

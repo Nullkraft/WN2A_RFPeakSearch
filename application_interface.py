@@ -70,3 +70,18 @@ def get_visible_plot_range(x_plot_data: list, y_plot_data: list, window_x_min: f
     x_axis = x_plot_data[idx_min:idx_max]
     y_axis = y_plot_data[idx_min:idx_max]
     return x_axis, y_axis
+
+def _amplitude_bytes_to_volts(amplBytes) -> list:
+    volts_list = []
+    # Convert two 8-bit serial bytes into one 16 bit amplitude
+    hi_byte_list = amplBytes[::2]
+    lo_byte_list = amplBytes[1::2]
+    for idx, (hi_byte, lo_byte) in enumerate(zip(hi_byte_list, lo_byte_list)):
+        if hi_byte > 3:
+            hi_byte = (hi_byte & 15)        # Store the amplitude value despite it not locking
+            print(name(), line(), f'WARNING:: PLL failed to lock at {sa_ctl.swept_freq_list[idx]} Mhz')
+        ampl = (hi_byte << 8) | lo_byte     # Combine MSByte/LSByte into an amplitude word
+        voltage = ampl * sa.SA_Control().adc_Vref()/(2**10-1)       # Convert 10 bit ADC counts to Voltage
+        volts_list.append(voltage)
+    return volts_list
+

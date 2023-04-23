@@ -217,7 +217,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         stop_freq = round(self.floatStopMHz.value(), 3)
         step_size = self.intStepKHz.value()
         start, stop, step, num_steps_actual = api.freq_steps(start_freq, stop_freq, step_size, num_steps)
-        self.numFrequencySteps.setValue(num_steps_actual)   # Display the num_steps to the user
+        self.numFrequencySteps.setValue(num_steps_actual)      # Update 'Data Points' for user
         self.intStepKHz.setValue(step)
         if not self.PROGSTART:
             sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
@@ -616,7 +616,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print(name(), line(), f"{band_width = }")
         num_steps = round(band_width / step_size, 3)
 
-        self.numFrequencySteps.setValue(num_steps)
+        self.numFrequencySteps.setValue(num_steps)      # Update 'Data Points' for user
         self.set_steps(num_steps)
         self.PROGSTART = False
 

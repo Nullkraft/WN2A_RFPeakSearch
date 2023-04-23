@@ -51,3 +51,22 @@ def freq_steps(startMHz, stopMHz, step_size, num_steps):
         # Fill the list with new sweep frequecies
         sa_ctl.swept_freq_list.clear()
         return start, stop, step_size_khz, num_steps_actual   # Return to display the num_steps to the user
+
+def get_visible_plot_range(x_plot_data: list, y_plot_data: list, window_x_min: float, window_x_max: float):
+    ''' Get the list of visible plot points after zooming the plot window '''
+    # Get x_plot_min/max values nearest to the values from the plotWidget
+    visible_x_min = min(x_plot_data, key=lambda x_data: abs(x_data-window_x_min)) # x is iterated from x_plot_data
+    visible_x_max = min(x_plot_data, key=lambda x_data: abs(x_data-window_x_max))
+    x_data_min = x_plot_data[0]
+    x_data_max = x_plot_data[-1]
+    if visible_x_min < x_data_min:
+        visible_x_min = x_data_min
+    if visible_x_max > x_data_max:
+        visible_x_max = x_data_max
+    # Find the indexes for the min/max values...
+    idx_min = x_plot_data.index(visible_x_min)
+    idx_max = x_plot_data.index(visible_x_max)
+    # and return the portion of the list that is visible on the plot
+    x_axis = x_plot_data[idx_min:idx_max]
+    y_axis = y_plot_data[idx_min:idx_max]
+    return x_axis, y_axis

@@ -447,29 +447,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             print(name(), line(), 'Unable to plot. Missing amplitude data.')
 
-    def get_visible_plot_range(self, x_plot_data: list, y_plot_data: list, window_x_min: float, window_x_max: float):
-        ''' Get the list of visible plot points after zooming the plot window '''
-        # Get x_plot_min/max values nearest to the values from the plotWidget
-        visible_x_min = min(x_plot_data, key=lambda x_data: abs(x_data-window_x_min)) # x is iterated from x_plot_data
-        visible_x_max = min(x_plot_data, key=lambda x_data: abs(x_data-window_x_max))
-        x_data_min = x_plot_data[0]
-        x_data_max = x_plot_data[-1]
-        if visible_x_min < x_data_min:
-            visible_x_min = x_data_min
-        if visible_x_max > x_data_max:
-            visible_x_max = x_data_max
-        # Find the indexes for the min/max values...
-        idx_min = x_plot_data.index(visible_x_min)
-        idx_max = x_plot_data.index(visible_x_max)
-        # and return the portion of the list that is visible on the plot
-        x_axis = x_plot_data[idx_min:idx_max]
-        y_axis = y_plot_data[idx_min:idx_max]
-        return x_axis, y_axis
 
     @pyqtSlot()
     def on_btnPeakSearch_clicked(self):
         window_x_min, window_x_max, _ = sa_ctl().get_x_range()
-        x_axis, y_axis = self.get_visible_plot_range(self.x_axis, self.y_axis, window_x_min, window_x_max)
+        x_axis, y_axis = api.get_visible_plot_range(self.x_axis, self.y_axis, window_x_min, window_x_max)
         self._clear_marker_text()
         self._clear_peak_markers()
         self._peak_search(x_axis, y_axis)

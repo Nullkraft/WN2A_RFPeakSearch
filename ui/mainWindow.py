@@ -124,8 +124,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnCalibrate_clicked(self):
-        default_min = 0
-        default_max = 3000
+        cal_start = 0
+        cal_stop = 3000
         start = perf_counter()
         self.label_sweep_status.setText("Amplitude cal in progress...")
         QtGui.QGuiApplication.processEvents()
@@ -134,7 +134,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_controls('control_ref1_HI.pickle')
         self.set_steps(num_steps=3_000_001)
         serial_buf.clear()     # Clear the serial data buffer before sweeping
-        calibration_complete = sa.SA_Control().sweep(default_min, default_max)
+        calibration_complete = sa.SA_Control().sweep(cal_start, cal_stop)
         volts_list = [round(v, 3) for v in api._amplitude_bytes_to_volts(serial_buf)]
         if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
@@ -148,7 +148,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_controls('control_ref2_HI.pickle')
         self.set_steps(num_steps=3_000_001)
         serial_buf.clear()     # Clear the serial data buffer before sweeping
-        calibration_complete = sa.SA_Control().sweep(default_min, default_max)
+        calibration_complete = sa.SA_Control().sweep(cal_start, cal_stop)
         volts_list = [round(v, 3) for v in api._amplitude_bytes_to_volts(serial_buf)]
         if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
@@ -162,7 +162,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_controls('control_ref1_LO.pickle')
         self.set_steps(num_steps=3_000_001)
         serial_buf.clear()     # Clear the serial data buffer before sweeping
-        calibration_complete = sa.SA_Control().sweep(default_min, default_max)
+        calibration_complete = sa.SA_Control().sweep(cal_start, cal_stop)
         volts_list = [round(v, 3) for v in api._amplitude_bytes_to_volts(serial_buf)]
         if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')
@@ -176,7 +176,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_controls('control_ref2_LO.pickle')
         self.set_steps(num_steps=3_000_001)
         serial_buf.clear()     # Clear the serial data buffer before sweeping
-        calibration_complete = sa.SA_Control().sweep(default_min, default_max)
+        calibration_complete = sa.SA_Control().sweep(cal_start, cal_stop)
         volts_list = [round(v, 3) for v in api._amplitude_bytes_to_volts(serial_buf)]
         if calibration_complete == False:
             print(name(), line(), 'Calibration cancelled by user')

@@ -113,15 +113,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
-        start = perf_counter()
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
-        sp.SimpleSerial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
-        window_x_min, window_x_max, _ = sa_ctl().get_x_range()
-        sweep_complete = sa_ctl().sweep(window_x_min, window_x_max)
-        print(name(), line(), f'Sweep completed in {round(perf_counter()-start, 6)} seconds')
-        if not sweep_complete:
-            print(name(), line(), 'Sweep stopped by user')
+        sweep_complete = api.sweep()
         status_txt = f'Sweep complete, fwidth = {sa_ctl.lowpass_filter_width}'
         self.label_sweep_status.setText(status_txt)
         if self.chk_plot_enable.isChecked() and sweep_complete:

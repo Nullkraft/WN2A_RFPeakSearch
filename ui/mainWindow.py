@@ -92,7 +92,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         with open('RFin_steps.pickle', 'rb') as f:
             self.RFin_list = pickle.load(f)
         # Loading the initial control file in a background thread
-        control_thread = threading.Thread(target=self.load_controls, args=('control.pickle',))
+        control_thread = threading.Thread(target=api.load_controls, args=('control.pickle',))
         control_thread.start()
 
     def setup_plot(self):
@@ -110,21 +110,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ver_line = pg.InfiniteLine(pos=(100), pen=(128, 255, 128), movable=True)
         self.graphWidget.addItem(hor_line)
         self.graphWidget.addItem(ver_line)
-
-    def load_controls(self, control_fname: str=None):
-        if control_fname is None:
-            print(name(), line(), 'You must enter a control file name')
-        else:
-            sa_ctl.all_frequencies_dict.clear()     # get ready for a new set of control codes
-            control_file = Path(control_fname)      # Filename containting new control codes
-        if control_file.exists():
-            ctrl_start = perf_counter()
-            with open(control_file, 'rb', buffering=65536) as f:
-                sa_ctl.all_frequencies_dict = pickle.load(f)
-                delta = round(perf_counter()-ctrl_start, 2)
-                print(name(), line(), f'Control file "{control_file}" loaded in {delta} seconds')
-        else:
-            print(name(), line(), f'Missing control file "{control_file}"')
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):

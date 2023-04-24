@@ -200,3 +200,18 @@ def make_control_dictionary(RFin_list):
             LO1 = str(LO1_N)
             LO2 = str(LO2_FMN)
             fcsv.write(f'{freq}:({ref_clock},{LO1},{LO2})\n')
+
+def load_controls(control_fname: str=None):
+    if control_fname is None:
+        print(name(), line(), 'You must enter a control file name')
+    else:
+        sa_ctl.all_frequencies_dict.clear()     # get ready for a new set of control codes
+        control_file = Path(control_fname)      # Filename containting new control codes
+    if control_file.exists():
+        ctrl_start = perf_counter()
+        with open(control_file, 'rb', buffering=65536) as f:
+            sa_ctl.all_frequencies_dict = pickle.load(f)
+            delta = round(perf_counter()-ctrl_start, 2)
+            print(name(), line(), f'Control file "{control_file}" loaded in {delta} seconds')
+    else:
+        print(name(), line(), f'Missing control file "{control_file}"')

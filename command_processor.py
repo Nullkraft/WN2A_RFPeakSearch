@@ -112,7 +112,12 @@ reset_and_report  = 0x2FFF   # Reset the Spectrum Analyzer to default settings
 # Attenuator Command & Control
 def set_attenuator(decibels: float = 31.75) -> None:
     """
-    Function Attenuate the RFin signal from 0 to 31.75 dB.
+    Function Attenuate the RFin signal from 0 to 31.75 dB. From the
+    spec-sheet: To get the binary value for programming the register
+    multiply the target dB attenuation by 4.
+    Ex. 12.5 dB * 4 = 50 binary
+    The 16 bit left shift moves the result to the 2 high bytes so
+    the controller can decode it as Data.
 
     @param decibels DESCRIPTION (defaults to 31.75)
     @type float (optional)

@@ -18,8 +18,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Utility functions used for displaying the name and the line number
-# of the source file. Requires: import sys
+# Use these functions in all your print statements to display the filename 
+# and the line number of the source file. Requires: import sys
 name = lambda: f"File \'{__name__}.py\',"
 line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
 

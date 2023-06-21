@@ -1,0 +1,113 @@
+import torch
+import numpy as np
+import sys
+
+line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
+
+np.set_printoptions(precision=8)
+# torch.set_printoptions(sci_mode=False)
+torch.set_printoptions(threshold=float('inf'))
+R = 2
+ref_clock = 66.0
+Fpfd = ref_clock / R
+div_range = torch.arange(8)
+div = 2**div_range
+div = div.cuda()
+M_range = range(2, 4096)
+
+
+def fmn_to_MHz(fmn_word, Fpfd: float=33.0, show_fmn: bool=False):
+  F = fmn_word >> 20
+  M = (fmn_word & 0xFFFFF) >> 8
+  if M == 0:
+      M = 1
+  N = fmn_word & 0xFF
+  if show_fmn:
+      print('\t', f'M:F:N = {M.item(),F.item(),N.item()}')
+  freq_MHz = Fpfd * (N + F/M)
+  return freq_MHz
+
+def MHz_to_fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float16=33.0):
+  """ Form a 32 bit word consisting of 12 bits of F, 12 bits of M and 8 bits of N for the MAX2871. """
+  target_freqs = target_freqs.to(torch.float64).view(-1, 1)
+  Fvco_targs = (div * target_freqs)
+  div_mask = (Fvco_targs >= 3000).to(torch.int)
+  indices = torch.argmax(div_mask, dim=1).view(-1, 1)
+  target_Fvcos = Fvco_targs.gather(1, indices)
+#  target_Fvcos = torch.round(Fvco_targs.gather(1, indices), decimals=3)
+  """ Fpfd is the bandwidth of a step and dividing Fvco by Fpfd gives our total number of steps
+  plus a small fraction. This needs to be separated into the integer and decimal parts for
+  programming the MAX2871 registers, N and F, respectively.
+  """
+  N = (target_Fvcos/Fpfd).to(torch.int8)  # Integer portion of the step size for register N
+  step_fract = (target_Fvcos/Fpfd - N)    # Decimal portion of the step size
+  """ F must be 64 bit to prevent overflow when left-shifting 20 bits at *return* """
+  F = (M * step_fract).to(torch.int64)    # Convert decimal part for register F
+  actual_Fvcos = Fpfd * (N + F/M).to(torch.float64)
+#  actual_Fvcos = torch.round(Fpfd * (N + F/M).to(torch.float64), decimals=3)
+  Fvco_differences = torch.abs(target_Fvcos - actual_Fvcos)
+  indices = torch.argmin(Fvco_differences, dim=1).view(-1, 1) # Overwrite previous indices
+  best_M = M[indices]
+  best_F = F.gather(1, indices)           # indices is the index that results in best_F
+  return best_F<<20 | best_M<<8 | N
+
+
+if __name__ == '__main__':
+  from time import perf_counter
+  from torch.utils.data import DataLoader
+  print()
+  torch.set_printoptions(sci_mode=False)
+
+  M = (torch.arange(2, 4096)).to(torch.int32).cuda()
+
+  num_steps = 1000
+  num_steps_disp = 1000
+#  start = 4082.0
+  start = 4047.0
+  end = 4148.0
+  step_size = (end - start)/num_steps
+  end = end + step_size/10
+  steps = np.round(np.arange(start, end, step_size), decimals=3)
+#  print(f'steps = {steps[32:35]}\n')
+
+  ret_gpu = []
+  target_freqs_gpu = torch.arange(start, end, step_size).cuda()
+  batchloader = DataLoader(target_freqs_gpu, batch_size=2000)
+  start = perf_counter()
+  for batch in batchloader:
+    ret_gpu = MHz_to_fmn(batch, M).cpu().numpy()
+#    ret_gpu = MHz_to_fmn(target_freqs_gpu, M).cpu().numpy()
+#  ret_gpu = MHz_to_fmn(target_freqs_gpu, M).view(-1).cpu().numpy()
+  print(line(), f'Interval = {round(perf_counter()-start, 6)} seconds\n')
+  print(f'FMN = {ret_gpu[33]}')
+
+  freqs = [fmn_to_MHz(fmn) for fmn in ret_gpu]
+#  freqs = [np.round(fmn_to_MHz(fmn), decimals=3) for fmn in ret_gpu]
+  freqs = np.round(np.array(freqs), decimals=3)
+  n = len(steps)
+  freqs = freqs.flatten()
+  for i in range(n):
+#    print(line(), f'{steps[i] = }\t{freqs[i] = }')
+    if not np.array_equal(steps[i], freqs[i]):
+      print(line(), f'steps[{i}] = {steps[i]}\tfmn_to_MHz[{i}] = {freqs[i]}')
+
+#  ret_gpu = ret_gpu.cpu().squeeze()
+  if np.array_equal(steps, freqs.flatten()):
+    print(line(), 'Pass')
+  else:
+    print(line(), 'Fail')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

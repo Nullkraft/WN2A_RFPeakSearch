@@ -44,20 +44,11 @@ def MHz_to_fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float16=
   N = (target_Fvcos/Fpfd).to(torch.int8)  # Integer portion of the step size for register N
   step_fract = (target_Fvcos/Fpfd - N)    # Decimal portion of the step size
   """ F must be 64 bit to prevent overflow when left-shifting 20 bits at *return* """
-
-  print(line(), f'1) Peak mem = {torch.cuda.max_memory_allocated()/10**6} MB')
-
   F = (M * step_fract).to(torch.int64)    # Convert decimal part for register F
-#  F = (M * step_fract).to(torch.int64)    # Convert decimal part for register F
-
-#  print(line(), f'1) Peak mem = {torch.cuda.max_memory_allocated()/10**9} GB')
-
-#  actual_Fvcos = Fpfd * (N + F/M).to(torch.float64)
 
   print(line(), f'1) Peak mem = {torch.cuda.max_memory_allocated()/10**9} GB')
 
-  Fvco_differences = torch.abs(target_Fvcos - (Fpfd * (N + F/M).to(torch.float64)))
-#  Fvco_differences = torch.abs(target_Fvcos - actual_Fvcos)
+  Fvco_differences = torch.abs(target_Fvcos - (Fpfd * (N + F/M)))
 
   print(line(), f'1) Peak mem = {torch.cuda.max_memory_allocated()/10**9} GB')
 

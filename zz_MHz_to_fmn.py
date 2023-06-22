@@ -30,29 +30,25 @@ def fmn_to_MHz(fmn_word, Fpfd: float=33.0, show_fmn: bool=False):
 
 def MHz_to_fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float16=33.0):
   """ Form a 32 bit word consisting of 12 bits of F, 12 bits of M and 8 bits of N for the MAX2871. """
-#  target_freqs = target_freqs.to(torch.float64).view(-1, 1)
-#  Fvco_targs = (div * target_freqs)
   Fvco_targs = (div * target_freqs.view(-1, 1))
-  div_mask = (Fvco_targs >= 3000).to(torch.int)
-  indices = torch.argmax(div_mask, dim=1).view(-1, 1)
-  target_Fvcos = Fvco_targs.gather(1, indices)
-#  target_Fvcos = torch.round(Fvco_targs.gather(1, indices), decimals=3)
+#  div_mask = (Fvco_targs >= 3000).to(torch.int)
+  indices = torch.argmax((Fvco_targs >= 3000).to(torch.int), dim=1).view(-1, 1)
+#  indices = torch.argmax(div_mask, dim=1).view(-1, 1)
+  Fvco_targs = Fvco_targs.gather(1, indices)
   """ Fpfd is the bandwidth of a step and dividing Fvco by Fpfd gives our total number of steps
   plus a small fraction. This needs to be separated into the integer and decimal parts for
   programming the MAX2871 registers, N and F, respectively.
   """
-  N = (target_Fvcos/Fpfd).to(torch.int8)  # Integer portion of the step size for register N
-  step_fract = (target_Fvcos/Fpfd - N)    # Decimal portion of the step size
+  N = (Fvco_targs/Fpfd).to(torch.int8)  # Integer portion of the step size for register N
+  step_fract = (Fvco_targs/Fpfd - N)    # Decimal portion of the step size
+
   """ F must be 64 bit to prevent overflow when left-shifting 20 bits at *return* """
   F = (M * step_fract).to(torch.int64)    # Convert decimal part for register F
-
   print(line(), f'1) Peak mem = {torch.cuda.max_memory_allocated()/10**9} GB')
-
-  Fvco_differences = torch.abs(target_Fvcos - (Fpfd * (N + F/M)))
-
+  Fvco_differences = torch.abs(Fvco_targs - (Fpfd * (N + F/M)))
   print(line(), f'1) Peak mem = {torch.cuda.max_memory_allocated()/10**9} GB')
-
-  indices = torch.argmin(Fvco_differences, dim=1).view(-1, 1) # Overwrite previous indices
+  """ Reusing indices """
+  indices = torch.argmin(Fvco_differences, dim=1).view(-1, 1)
   best_M = M[indices]
   best_F = F.gather(1, indices)           # indices is the index that results in best_F
   return best_F<<20 | best_M<<8 | N
@@ -88,13 +84,14 @@ if __name__ == '__main__':
   dataset = FrequencyDataset(target_freqs_gpu)
   chunk_size = 2000
   dataloader = DataLoader(target_freqs_gpu, batch_size=chunk_size)
-#  start = perf_counter()
+  start = perf_counter()
 
 #  for chunk in dataloader:
 #    ret_gpu = MHz_to_fmn(chunk, M).cpu().numpy()
 #  ret_gpu = [MHz_to_fmn(chunk, M).cpu().numpy() for chunk in dataloader]
   ret_gpu = MHz_to_fmn(target_freqs_gpu, M).cpu().numpy()
-#  print(line(), f'Interval = {round(perf_counter()-start, 6)} seconds\n')
+  print()
+  print(line(), f'Interval = {round(perf_counter()-start, 6)} seconds\n')
   print()
 
   freqs = [fmn_to_MHz(fmn) for fmn in ret_gpu]

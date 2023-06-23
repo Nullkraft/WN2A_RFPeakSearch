@@ -1,18 +1,12 @@
 import torch
-from torch.utils.data import DataLoader, Dataset
 import numpy as np
 import sys
 
 line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
 
-np.set_printoptions(precision=8)
-# torch.set_printoptions(sci_mode=False)
-torch.set_printoptions(threshold=float('inf'))
 R = 2
 ref_clock = 66.0
 Fpfd = ref_clock / R
-M_range = range(2, 4096)
-
 
 def fmn_to_MHz(fmn_word, Fpfd: float=33.0, show_fmn: bool=False):
   F_ = fmn_word >> 20
@@ -25,101 +19,53 @@ def fmn_to_MHz(fmn_word, Fpfd: float=33.0, show_fmn: bool=False):
   freq_MHz = Fpfd * (N_ + F_/M_)
   return freq_MHz
 
-def MHz_to_fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float16=33.0, device: str='cuda'):
+def MHz_to_fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float16=33.0, device='cpu'):
   """ Form a 32 bit word consisting of 12 bits of F, 12 bits of M and 8 bits of N for the MAX2871. """
-  div = 2**torch.arange(8)
-  if device == 'cuda' and torch.cuda.is_available():
-    div = div.cuda()
-    target_freqs = target_freqs.cuda()
-    M = M.cuda()
+  div = 2**torch.arange(8).to(device)
+  target_freqs = target_freqs.cuda().to(device)
+  M = M.cuda().to(device)
   Fvco_targs = (div * target_freqs.view(-1, 1))
   div_mask = (Fvco_targs >= 3000).to(torch.int)
-  indices = torch.argmax(div_mask, dim=1).view(-1, 1)
+  indices = torch.argmax(div_mask, dim=1).view(-1, 1)   # Using indices for Fvco mask >3000
   Fvco_targs = Fvco_targs.gather(1, indices)
-  """ Fpfd is the bandwidth of a step and dividing Fvco by Fpfd gives our total number of steps
-  plus a small fraction. This needs to be separated into the integer and decimal parts for
+  """ Fpfd is the step bandwidth and dividing Fvco by Fpfd gives the total number of steps
+  with a small fraction. This will need to be separated into an integer and a decimal for
   programming the MAX2871 registers, N and F, respectively.
   """
   N = (Fvco_targs/Fpfd).to(torch.int8)  # Integer portion of the step size for register N
   step_fract = (Fvco_targs/Fpfd - N)    # Decimal portion of the step size
-                                                                                                      
   """ F must be 64 bit to prevent overflow when left-shifting 20 bits at *return* """
-  F = (M * step_fract).to(torch.int64)    # Convert decimal part for register F
-  print(line(), f'1) Peak mem = {torch.cuda.max_memory_allocated()/10**9} GB')
+  F = (M * step_fract).to(torch.int64)  # Convert decimal part for register F
   Fvco_differences = torch.abs(Fvco_targs - (Fpfd * (N + F/M)))
-  print(line(), f'1) Peak mem = {torch.cuda.max_memory_allocated()/10**9} GB')
-
-  """ Reusing indices """
-  indices = torch.argmin(Fvco_differences, dim=1).view(-1, 1)
+  indices = torch.argmin(Fvco_differences, dim=1).view(-1, 1)   # Reuse indices for Least Error
   best_M = M[indices]
-  best_F = F.gather(1, indices)           # indices is the index that results in best_F
-
-  print(line(), f'{Fvco_targs.device = }')
-  print(line(), f'{div_mask.device = }')
-  print(line(), f'{indices.device = }')
-  print(line(), f'{N.device = }')
-  print(line(), f'{step_fract.device = }')
-  print(line(), f'{F.device = }')
-  print(line(), f'{Fvco_differences.device = }')
-  print(line(), f'{best_F.device = }')
-  print(line(), f'{best_M.device = }')
-
+  best_F = F.gather(1, indices)         # indices is the index that results in best_F
   return best_F<<20 | best_M<<8 | N
 
-class FrequencyDataset(Dataset):
-  def __init__(self, frequencies):
-    self.frequencies = frequencies
-  
-  def __len__(self):
-    return len(self.frequencies)
-  
-  def __getitem__(self, idx):
-    return self.frequencies[idx]
-
-
 if __name__ == '__main__':
-  from time import perf_counter
-  torch.set_printoptions(sci_mode=False)
   print()
 
   M = (torch.arange(2, 4096)).to(torch.int32)
-#  M = (torch.arange(2, 4096)).to(torch.int32).cuda()
-
   num_steps = 66_000
   num_steps_disp = 66_000
   start = 4082.0
   end = 4148.0
   step_size = (end - start)/num_steps
   end = end + step_size/10
+
   steps = np.round(np.arange(start, end, step_size), decimals=3)
-
-  ret_gpu = []
   target_freqs_gpu = torch.arange(start, end, step_size)
-#  target_freqs_gpu = torch.arange(start, end, step_size).cuda()
-  dataset = FrequencyDataset(target_freqs_gpu)
-  chunk_size = 2000
-  dataloader = DataLoader(target_freqs_gpu, batch_size=chunk_size)
-  start = perf_counter()
 
-#  for chunk in dataloader:
-#    ret_gpu = MHz_to_fmn(chunk, M).cpu().numpy()
-#  ret_gpu = [MHz_to_fmn(chunk, M).cpu().numpy() for chunk in dataloader]
-  ret_gpu = MHz_to_fmn(target_freqs_gpu, M, device='cpu').cpu().numpy()
-  print()
-  print(line(), f'Interval = {round(perf_counter()-start, 6)} seconds\n')
-  print()
+  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+  ret_gpu = MHz_to_fmn(target_freqs_gpu, M, device=device).cpu().numpy()
 
-  freqs = [fmn_to_MHz(fmn) for fmn in ret_gpu]
-  freqs = np.round(np.array(freqs), decimals=3)
-  n = len(freqs)
-  freqs = freqs.flatten()
-  for i in range(n):
-    if not np.array_equal(steps[i], freqs[i]):
-      delta = round(abs((steps[i]-freqs[i])), 3)
+  freqs = [fmn_to_MHz(fmn) for fmn in ret_gpu]  # Verify results by converting back to frequency
+  freqs = np.round(np.array(freqs), decimals=3).flatten()
+  for i, freq in enumerate(freqs):
+    if not np.array_equal(steps[i], freq):
+      delta = round(abs((steps[i]-freq)), 3)
       if delta > 0.007:
-#        print(line(), f'FREQUENCY ERROR AT INDEX [{i}]')
-#        print(line(), f'steps[{i}] = {steps[i]}\tfmn_to_MHz[{i}] = {freqs[i]}')
-        print(line(), f'delta [{i}] = {delta}')
+        print(line(), f'Frequency step {i} = {steps[i]}\t\tfmn_to_MHz[{i}] = {freqs[i]}\t\t{delta = }')
 
 
 

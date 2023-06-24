@@ -9,7 +9,7 @@ R = 2
 ref_clock = 66.0
 Fpfd = ref_clock / R
 
-def fmn_to_MHz(fmn_word, Fpfd: float=33.0, show_fmn: bool=False):
+def fmn_to_MHz(fmn_word, Fpfd, show_fmn: bool=False):
   F_ = fmn_word >> 20
   M_= (fmn_word & 0xFFFFF) >> 8
   if M_ == 0:
@@ -33,7 +33,7 @@ def MHz_to_fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float16=
   with a small fraction. This will need to be separated into an integer and a decimal for
   programming the MAX2871 registers, N and F, respectively.
   """
-  N = (Fvco_targs/Fpfd).to(torch.int8)  # Integer portion of the step size for register N
+  N = (Fvco_targs/Fpfd).to(torch.int16)  # Integer portion of the step size for register N
   step_fract = (Fvco_targs/Fpfd - N)    # Decimal portion of the step size
   """ F must be 64 bit to prevent overflow when left-shifting 20 bits at *return* """
   F = (M * step_fract).to(torch.int64)  # Convert decimal part for register F

@@ -37,7 +37,8 @@ from pathlib import Path
 
 from .Ui_mainWindow import Ui_MainWindow
 import spectrumAnalyzer as sa
-from spectrumAnalyzer import SA_Control as sa_ctl
+from command_processor import CommandProcessor
+from spectrumAnalyzer import SA_Control
 import serial_port as sp
 import application_interface as api
 
@@ -51,6 +52,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         pg.setConfigOptions(useOpenGL=True, enableExperimental=True)
         self.setupUi(self)  # Must come before self.graphWidget.plot()
         self.setup_plot()
+        cmd_proc = CommandProcessor()
+        self.sa_ctrl = SA_Control(cmd_proc)
         #
         # MAX2871 chip will need to be initialized
         self.initialized = False
@@ -116,7 +119,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()
         sweep_complete = api.sweep()
-        status_txt = f'Sweep complete, fwidth = {sa_ctl.lowpass_filter_width}'
+        status_txt = f'Sweep complete, fwidth = {self.sa_ctrl.lowpass_filter_width}'
         self.label_sweep_status.setText(status_txt)
         if self.chk_plot_enable.isChecked() and sweep_complete:
             self.plot_ampl_data(sp.SimpleSerial.data_buffer_in)
@@ -198,7 +201,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.numFrequencySteps.setValue(num_steps_actual)      # Update 'Data Points' for user
         self.intStepKHz.setValue(step)
         if not self.PROGSTART:
-            sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
+            self.sa_ctrl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
 
     def set_LO3_sweep(self):
         # Find and set the center frequency used for sweeping LO3.
@@ -224,7 +227,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         freq_steps.append(stop)                             # Include the stop value
         for idx in freq_steps:
             freq = self.RFin_list[idx]                      # freq is the key for accessing the all_frequencies_dict
-            ref_code, _, _ = sa_ctl.all_frequencies_dict[freq]  # We need the ref_code from all_frequencies_dict
+            ref_code, _, _ = self.sa_ctrl.all_frequencies_dict[freq]  # We need the ref_code from all_frequencies_dict
             ''' Selecting by ref_clock because all_frequencies_dict was already
                 calibrated. If you are running a calibration then the sorting 
                 has no effect. All the control codes will either be for ref1 or
@@ -293,9 +296,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.amplitude.clear()
             volts_list = api._amplitude_bytes_to_volts(amplBytes)
             self.amplitude = [api._volts_to_dBm(voltage) for voltage in volts_list]
-            argsort_index_nparray = sa.np.argsort(sa_ctl.swept_freq_list)
+            argsort_index_nparray = sa.np.argsort(self.sa_ctrl.swept_freq_list)
             for idx in argsort_index_nparray:
-                self.x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order
+                self.x_axis.append(self.sa_ctrl.swept_freq_list[idx])  # Sort the frequency data in ascending order
                 self.y_axis.append(self.amplitude[idx])          # And make the amplitude match the same order
             self.graphWidget.setXRange(self.x_axis[0], self.x_axis[-1])   # Limit plot to user selected frequency range
             color = {"purple": (75, 50, 255), "yellow": (150, 255, 150)}
@@ -306,7 +309,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnPeakSearch_clicked(self):
-        window_x_min, window_x_max, _ = sa_ctl().get_x_range()
+        window_x_min, window_x_max, _ = self.sa_ctrl.get_x_range()
         x_axis, y_axis = api.get_visible_plot_range(self.x_axis, self.y_axis, window_x_min, window_x_max)
         self._clear_marker_text()
         self._clear_peak_markers()
@@ -464,18 +467,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Public slot What happens if I try to run it a second time.
         '''
         if self.dblCenterMHz.value() != MainWindow.last_center_MHz_value:
-            sa.sa_ctl().set_center_freq(self.dblCenterMHz.value())
+            sa.SA_Control().set_center_freq(self.dblCenterMHz.value())
             MainWindow.last_center_MHz_value = self.dblCenterMHz.value()
         else:
             pass
 
-    @pyqtSlot(sa_ctl, object)
+    @pyqtSlot(SA_Control, object)
     def on_graphWidget_sigRangeChanged(self, sa_obj, p1):
         '''
         Update the plot window x-axis min/max values when the plot
         zoom level is changed.
 
-        @param sa_obj The Spectrum Analyzer object imported as sa_ctl
+        @param sa_obj The Spectrum Analyzer object imported as sa_ctrl
         @type PyQt_PyObject
         @param p1 The x-y range object from the pyqtgraph PlotWidget
         @type PyQt_PyObject

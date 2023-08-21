@@ -22,28 +22,28 @@
 """Assign hex values to constants used for controlling the IC's on the spectrum analyzer hardware.
 
 Classes:
-    none
+  none
 Functions:
-    set_attenuator(decibels: float=31.75)
-    set_max2871_freq(fmn: int)
-    disable_LO2_RFout()
-    disable_LO3_RFout()
-    set_LO1(LO1_command, int_N: int=54)
-    sel_LO2()
-    set_LO2(LO2_command)
-    set_LO3(LO3_command)
-    LO_device_register(device_command: int)
-    LED_on()
-    LED_off()
-    get_version_message()
-    disable_all_ref_clocks()
-    enable_ref_clock(ref_clock_command)
-    sweep_end()
-    _send_command(command)
+  set_attenuator(decibels: float=31.75)
+  set_max2871_freq(fmn: int)
+  disable_LO2_RFout()
+  disable_LO3_RFout()
+  set_LO1(LO1_command, int_N: int=54)
+  sel_LO2()
+  set_LO2(LO2_command)
+  set_LO3(LO3_command)
+  LO_device_register(device_command: int)
+  LED_on()
+  LED_off()
+  get_version_message()
+  disable_all_ref_clocks()
+  enable_ref_clock(ref_clock_command)
+  sweep_end()
+  _send_command(command)
 Misc variables:
-    __version__
-    format_version
-    compatible_formats
+  __version__
+  format_version
+  compatible_formats
 
 """
 
@@ -65,9 +65,9 @@ attenuator_sel = 0x00FF   # Attenuates the RFinput from 0 to 31.75dB
 LO1_device_sel    = 0x01FF   # Select device before sending a General Command
 LO1_RF_off        = 0x09FF   # Specific commands
 LO1_neg4dBm       = 0x11FF   # Change power and num freq steps
-LO1_neg1dBm       = 0x19FF   #         .
-LO1_pos2dBm       = 0x21FF   #         .
-LO1_pos5dBm       = 0x29FF   #         .
+LO1_neg1dBm       = 0x19FF   #     .
+LO1_pos2dBm       = 0x21FF   #     .
+LO1_pos5dBm       = 0x29FF   #     .
 LO1_no_change     = 0x31FF   # Select LO1 without changing the RF output power level
 LO1_mux_tristate  = 0x39FF   # Disable or rather set tristate on the mux pin
 LO1_mux_dig_lock  = 0x41FF   # Enable digital lock detect on the mux pin
@@ -75,9 +75,9 @@ LO1_mux_dig_lock  = 0x41FF   # Enable digital lock detect on the mux pin
 LO2_device_sel    = 0x02FF   # Select device before sending a General Command
 LO2_RF_off        = 0x0AFF   # Specific commands
 LO2_neg4dBm       = 0x12FF   # Change power and num freq steps
-LO2_neg1dBm       = 0x1AFF   #         .
-LO2_pos2dBm       = 0x22FF   #         .
-LO2_pos5dBm       = 0x2AFF   #         .
+LO2_neg1dBm       = 0x1AFF   #     .
+LO2_pos2dBm       = 0x22FF   #     .
+LO2_pos5dBm       = 0x2AFF   #     .
 LO2_num_steps     = 0x32FF   # Change num freq steps only
 LO2_mux_tristate  = 0x3AFF   # Set tristate on the mux pin
 LO2_mux_dig_lock  = 0x42FF   # Enable digital lock detect on the mux pin
@@ -86,9 +86,9 @@ LO2_divider_mode  = 0x4AFF   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 
 LO3_device_sel    = 0x03FF   # Select device before sending a General Command
 LO3_RF_off        = 0x0BFF   # Specific commands
 LO3_neg4dBm       = 0x13FF   # Change power and num freq steps
-LO3_neg1dBm       = 0x1BFF   #         .
-LO3_pos2dBm       = 0x23FF   #         .
-LO3_pos5dBm       = 0x2BFF   #         .
+LO3_neg1dBm       = 0x1BFF   #     .
+LO3_pos2dBm       = 0x23FF   #     .
+LO3_pos5dBm       = 0x2BFF   #     .
 LO3_num_steps     = 0x33FF   # Change num freq steps only
 LO3_mux_tristate  = 0x3BFF   # Set tristate on the mux pin
 LO3_mux_dig_lock  = 0x43FF   # Enable digital lock detect on the mux pin
@@ -109,69 +109,69 @@ reset_and_report  = 0x2FFF   # Reset the Spectrum Analyzer to default settings
 
 
 class CmdProcInterface(ABC):
-    @abstractmethod
-    def set_attenuator(self, decibels: float):
-        pass
+  @abstractmethod
+  def set_attenuator(self, decibels: float):
+    pass
 
-    @abstractmethod
-    def set_max2871_freq(self, fmn: int):
-        pass
+  @abstractmethod
+  def set_max2871_freq(self, fmn: int):
+    pass
 
-    @abstractmethod
-    def disable_LO2_RFout(self):
-        pass
+  @abstractmethod
+  def disable_LO2_RFout(self):
+    pass
 
-    @abstractmethod
-    def disable_LO3_RFout(self):
-        pass
+  @abstractmethod
+  def disable_LO3_RFout(self):
+    pass
 
-    @abstractmethod
-    def set_LO1(self, LO1_command: int, int_N: int):
-        pass
+  @abstractmethod
+  def set_LO1(self, LO1_command: int, int_N: int):
+    pass
 
-    @abstractmethod
-    def sel_LO2(self):
-        pass
+  @abstractmethod
+  def sel_LO2(self):
+    pass
 
-    @abstractmethod
-    def set_LO2(self, LO2_command: int):
-        pass
+  @abstractmethod
+  def set_LO2(self, LO2_command: int):
+    pass
 
-    @abstractmethod
-    def sel_LO3(self):
-        pass
+  @abstractmethod
+  def sel_LO3(self):
+    pass
 
-    @abstractmethod
-    def set_LO3(self, LO3_command):
-        pass
+  @abstractmethod
+  def set_LO3(self, LO3_command):
+    pass
 
-    @abstractmethod
-    def LO_device_register(self, device_command: int):
-        pass
+  @abstractmethod
+  def LO_device_register(self, device_command: int):
+    pass
 
-    @abstractmethod
-    def LED_on(self):
-        pass
+  @abstractmethod
+  def LED_on(self):
+    pass
 
-    @abstractmethod
-    def LED_off(self):
-        pass
+  @abstractmethod
+  def LED_off(self):
+    pass
 
-    @abstractmethod
-    def get_version_message(self) -> str:
-        pass
+  @abstractmethod
+  def get_version_message(self) -> str:
+    pass
 
-    @abstractmethod
-    def disable_all_ref_clocks(self):
-        pass
+  @abstractmethod
+  def disable_all_ref_clocks(self):
+    pass
 
-    @abstractmethod
-    def enable_ref_clock(self, ref_clock_command):
-        pass
+  @abstractmethod
+  def enable_ref_clock(self, ref_clock_command):
+    pass
 
-    @abstractmethod
-    def end_sweep(self):
-        pass
+  @abstractmethod
+  def end_sweep(self):
+    pass
 
 
 class CommandProcessor(CmdProcInterface):
@@ -288,7 +288,7 @@ class CommandProcessor(CmdProcInterface):
     sp.ser.read(sp.ser.in_waiting)  # Clear out the serial buffer.
     self._send_command(version_message)  # Request software report from controller
     time.sleep(0.01)
-    return sp.ser.read(64)          # Collect the report(s)
+    return sp.ser.read(64)      # Collect the report(s)
 
 
   def disable_all_ref_clocks(self) -> None:

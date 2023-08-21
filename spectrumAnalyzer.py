@@ -49,13 +49,13 @@ SWEEP: bool             # Flag to test for ESC key during a sweep
 from pynput import keyboard
 
 def on_release(key):
-    global SWEEP
-    if key == keyboard.Key.esc:
-        SWEEP = False
-#        print(name(), line(), f'{key} pressed by user.')
-    if key == 'q':
-        # Exit the key listener - for testing only
-        return False
+  global SWEEP
+  if key == keyboard.Key.esc:
+    SWEEP = False
+#    print(name(), line(), f'{key} pressed by user.')
+  if key == 'q':
+    # Exit the key listener - for testing only
+    return False
 
 # Key listener in non-blocking mode:
 listener = keyboard.Listener(on_release=on_release)

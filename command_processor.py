@@ -193,10 +193,10 @@ class CommandProcessor(CmdProcInterface):
 
     """
     level = int(decibels * 4) << 16
-    _send_command(level | attenuator_sel)
+    self._send_command(level | attenuator_sel)
 
 
-def set_max2871_freq(fmn: int) -> None:
+  def set_max2871_freq(self, fmn: int) -> None:
     """
     Function Set LO2 or LO3 to a new frequency.
 
@@ -204,20 +204,20 @@ def set_max2871_freq(fmn: int) -> None:
     @type int
 
     """
-    _send_command(fmn)
+    self._send_command(fmn)
 
 
-def disable_LO2_RFout() -> None:
+  def disable_LO2_RFout(self) -> None:
     """Function LO2 Command and Control."""
-    _send_command(LO2_RF_off)
+    self._send_command(LO2_RF_off)
 
 
-def disable_LO3_RFout() -> None:
+  def disable_LO3_RFout(self) -> None:
     """LO3 Command & Control."""
-    _send_command(LO3_RF_off)
+    self._send_command(LO3_RF_off)
 
 
-def set_LO1(LO1_command: int, int_N: int = 54) -> None:
+  def set_LO1(self, LO1_command: int, int_N: int = 54) -> None:
     """
     Function Set the LO1 chip to a new frequency.
 
@@ -228,36 +228,36 @@ def set_LO1(LO1_command: int, int_N: int = 54) -> None:
 
     """
     if int_N is not None:
-        if (53 <= int_N <= 102):
-            N = int_N << 16
-        else:
-            logging.error(f'{name}, {line()}, N ({int_N}) exceeds the limits of the ADF4356 (LO1)')
+      if (53 <= int_N <= 102):
+        N = int_N << 16
+      else:
+        logging.error(f'{name}, {line()}, N ({int_N}) exceeds the limits of the ADF4356 (LO1)')
     else:
-        N = 0
-    _send_command(LO1_command | N)
+      N = 0
+    self._send_command(LO1_command | N)
 
 
-def sel_LO2() -> None:
+  def sel_LO2(self) -> None:
     """Send command to select the LO2 chip for programming."""
-    _send_command(LO2_device_sel)
+    self._send_command(LO2_device_sel)
 
 
-def set_LO2(LO2_command: int) -> None:
+  def set_LO2(self, LO2_command: int) -> None:
     """Send the command to set the LO2 chip to a new frequency."""
-    _send_command(LO2_command)
+    self._send_command(LO2_command)
 
 
-def sel_LO3() -> None:
+  def sel_LO3(self) -> None:
     """Send command to select the LO2 chip for programming."""
-    _send_command(LO3_device_sel)
+    self._send_command(LO3_device_sel)
 
 
-def set_LO3(LO3_command) -> None:
+  def set_LO3(self, LO3_command) -> None:
     """Send the command to set the LO3 chip to a new frequency."""
-    _send_command(LO3_command)
+    self._send_command(LO3_command)
 
 
-def LO_device_register(device_command: int) -> None:
+  def LO_device_register(self, device_command: int) -> None:
     """
     Function LO_device_register.
 
@@ -265,20 +265,20 @@ def LO_device_register(device_command: int) -> None:
     @type TYPE
 
     """
-    _send_command(device_command)
+    self._send_command(device_command)
 
 
-def LED_on() -> None:
+  def LED_on(self) -> None:
     """Command for testing communication with the controller board."""
-    _send_command(Arduino_LED_on)
+    self._send_command(Arduino_LED_on)
 
 
-def LED_off() -> None:
+  def LED_off(self) -> None:
     """Command for testing communication with the controller board."""
-    _send_command(Arduino_LED_off)
+    self._send_command(Arduino_LED_off)
 
 
-def get_version_message() -> str:
+  def get_version_message(self) -> str:
     """
     Get the firmaware version string from the controller.
 
@@ -286,34 +286,34 @@ def get_version_message() -> str:
 
     """
     sp.ser.read(sp.ser.in_waiting)  # Clear out the serial buffer.
-    _send_command(version_message)  # Request software report from controller
+    self._send_command(version_message)  # Request software report from controller
     time.sleep(0.01)
     return sp.ser.read(64)          # Collect the report(s)
 
 
-def disable_all_ref_clocks() -> None:
+  def disable_all_ref_clocks(self) -> None:
     """Disable both reference clocks for testing."""
-    _send_command(all_ref_disable)
+    self._send_command(all_ref_disable)
 
 
-def enable_ref_clock(ref_clock_command) -> None:
+  def enable_ref_clock(self, ref_clock_command) -> None:
     """Turn on the selected reference clock. The controller automatically turns off the other."""
-    _send_command(ref_clock_command)
+    self._send_command(ref_clock_command)
 
 
-def end_sweep() -> None:
+  def end_sweep(self) -> None:
     """Serial data stream stop command when done sweeping LO2 or LO3."""
-    _send_command(sweep_end)
+    self._send_command(sweep_end)
 
 
-def _send_command(cmd) -> None:
+  def _send_command(self, cmd) -> None:
     """Send the selected command to the controller."""
     command = int(cmd)
     try:
-        if sp.ser.is_open:
-            sp.SimpleSerial.write(object, command)
+      if sp.ser.is_open:
+        sp.SimpleSerial.write(object, command)
     except:
-        print(name(), line(), f': Open the serial port before sending a command <{command.__name__}>.')
+      print(name(), line(), f': Open the serial port before sending a command <{command.__name__}>.')
 
 
 

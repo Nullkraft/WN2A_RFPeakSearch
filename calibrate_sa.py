@@ -23,16 +23,16 @@
 """Combine two sets of sweep readings into a single calbrated chip control file.
 
 Classes:
-    calibrate
+  calibrate
 Functions:
-    dump(object, file)
-    dumps(object) -> string
-    load(file) -> object
-    loads(bytes) -> object
+  dump(object, file)
+  dumps(object) -> string
+  load(file) -> object
+  loads(bytes) -> object
 Misc variables:
-    __version__
-    format_version
-    compatible_formats
+  __version__
+  format_version
+  compatible_formats
 
 """
 
@@ -47,59 +47,59 @@ import sys
 
 class Calibrate():
 
+  """
+  Best spurs calibration class combines the best control codes from references 1 and 2.
+
+  ...
+
+  Attributes
+  ----------
+  name : dict
+    calibrated_dict
+  file_1 : str
+    Filename of the ref1 hardware control file.
+  file_2 : str
+    Filename of the ref2 hardware control file.
+  age : int
+    age of the person
+
+  Methods
+  -------
+  info(additional=""):
+    Prints the person's name and age.
+
+  """
+
+  def __init__(self, fname: str) -> None:
     """
-    Best spurs calibration class combines the best control codes from references 1 and 2.
+    Constructor.
 
-    ...
-
-    Attributes
-    ----------
-    name : dict
-        calibrated_dict
-    file_1 : str
-        Filename of the ref1 hardware control file.
-    file_2 : str
-        Filename of the ref2 hardware control file.
-    age : int
-        age of the person
-
-    Methods
-    -------
-    info(additional=""):
-        Prints the person's name and age.
+    @param fname The file to save the calibrated dictionary to.
+    @type str
+    @return DESCRIPTION
+    @rtype None
 
     """
+    self.calibrated_dict = {}
+    pass
 
-    def __init__(self, fname: str) -> None:
-        """
-        Constructor.
+  def combine(self, file_1: str, file_2: str) -> dict:
+    """
+    Public method Combine file_1 and file_2 to create the calibrated hardware control dict.
 
-        @param fname The file to save the calibrated dictionary to.
-        @type str
-        @return DESCRIPTION
-        @rtype None
+    @param file_1 Uncalibrated hardware control dict for ref_clock_1.
+    @type str
+    @param file_2 Uncalibrated hardware control dict for ref_clock_2.
+    @type str
+    @return Calibrated hardware control dictionary.
+    @rtype dict
 
-        """
-        self.calibrated_dict = {}
-        pass
-
-    def combine(self, file_1: str, file_2: str) -> dict:
-        """
-        Public method Combine file_1 and file_2 to create the calibrated hardware control dict.
-
-        @param file_1 Uncalibrated hardware control dict for ref_clock_1.
-        @type str
-        @param file_2 Uncalibrated hardware control dict for ref_clock_2.
-        @type str
-        @return Calibrated hardware control dictionary.
-        @rtype dict
-
-        """
-        return self.calibrated_dict
+    """
+    return self.calibrated_dict
 
 
 if __name__ == '__main__':
-    print()
+  print()
 
 
-    print('Calibraion complete')
+  print('Calibraion complete')

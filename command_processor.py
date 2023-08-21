@@ -57,7 +57,7 @@ import serial_port as sp
 import sys
 import time
 import logging
-
+from abc import ABC, abstractmethod
 
 # Arduino and Device Commands
 attenuator_sel = 0x00FF   # Attenuates the RFinput from 0 to 31.75dB
@@ -108,9 +108,76 @@ sweep_end         = 0x27FF   # Tell the Arduino that all data has been sent
 reset_and_report  = 0x2FFF   # Reset the Spectrum Analyzer to default settings
 
 
+class CmdProcInterface(ABC):
+    @abstractmethod
+    def set_attenuator(self, decibels: float):
+        pass
 
-# Attenuator Command & Control
-def set_attenuator(decibels: float = 31.75) -> None:
+    @abstractmethod
+    def set_max2871_freq(self, fmn: int):
+        pass
+
+    @abstractmethod
+    def disable_LO2_RFout(self):
+        pass
+
+    @abstractmethod
+    def disable_LO3_RFout(self):
+        pass
+
+    @abstractmethod
+    def set_LO1(self, LO1_command: int, int_N: int):
+        pass
+
+    @abstractmethod
+    def sel_LO2(self):
+        pass
+
+    @abstractmethod
+    def set_LO2(self, LO2_command: int):
+        pass
+
+    @abstractmethod
+    def sel_LO3(self):
+        pass
+
+    @abstractmethod
+    def set_LO3(self, LO3_command):
+        pass
+
+    @abstractmethod
+    def LO_device_register(self, device_command: int):
+        pass
+
+    @abstractmethod
+    def LED_on(self):
+        pass
+
+    @abstractmethod
+    def LED_off(self):
+        pass
+
+    @abstractmethod
+    def get_version_message(self) -> str:
+        pass
+
+    @abstractmethod
+    def disable_all_ref_clocks(self):
+        pass
+
+    @abstractmethod
+    def enable_ref_clock(self, ref_clock_command):
+        pass
+
+    @abstractmethod
+    def end_sweep(self):
+        pass
+
+
+class CommandProcessor(CmdProcInterface):
+
+  # Attenuator Command & Control
+  def set_attenuator(self, decibels: float = 31.75) -> None:
     """
     Function Attenuate the RFin signal from 0 to 31.75 dB. From the
     spec-sheet: To get the binary value for programming the register

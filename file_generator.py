@@ -101,6 +101,9 @@ class DataGenerator():
         
 
     def create_data(self) -> None:
+        """ REVIEW: Packing/Unpacking may be a cleaner solution here...
+            https://www.geeksforgeeks.org/packing-and-unpacking-arguments-in-python/
+        """
         # Create the list of LO1 frequencies when using reference clock 1.
         self.LO1_ref1_freq_list = [self._LO1_frequency(RFin, hw.Cfg.Fpfd1) for RFin in self.RFin_list]
         self.LO1_ref1_freq_list = np.round(self.LO1_ref1_freq_list, decimals= 9)

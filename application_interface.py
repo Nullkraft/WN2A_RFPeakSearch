@@ -6,16 +6,18 @@ name = lambda: f'File "{__name__}.py",'
 line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
 
 import sys
-from time import sleep, perf_counter
 import pickle
 import numpy as np
-import threading
 from pathlib import Path
 
 import spectrumAnalyzer as sa
-from spectrumAnalyzer import SA_Control as sa_ctl
+from command_processor import CommandProcessor
+from spectrumAnalyzer import SA_Control
 import serial_port as sp
+from time import perf_counter
 
+cmd_proc = CommandProcessor()
+sa_ctl = SA_Control(cmd_proc)
 
 def freq_steps(startMHz, stopMHz, step_size, num_steps):
     '''
@@ -47,8 +49,8 @@ def freq_steps(startMHz, stopMHz, step_size, num_steps):
     sa_ctl.window_x_max = control_stop_idx
     sa_ctl.window_x_range = sa_ctl.window_x_max - sa_ctl.window_x_min
     # Get the start and stop indexes for the sweep frequencies list
-    start: int = sa_ctl().window_x_min
-    stop: int = sa_ctl().window_x_max
+    start: int = sa_ctl.window_x_min
+    stop: int = sa_ctl.window_x_max
     # Fill the list with new sweep frequecies
     sa_ctl.swept_freq_list.clear()
     return start, stop, step_size_khz, num_steps_actual   # Return to display the num_steps to the user

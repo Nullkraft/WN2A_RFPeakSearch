@@ -67,7 +67,7 @@ class Dialog(QDialog, Ui_Dialog):
     def on_direct_btn_step_clicked(self):
         """ Walk through the 315 MHz filter by stepping the LO2 """
         start_freq = round(self.direct_start_freq_mhz.value(), 3)
-        fmn = Cfg.MHz_to_fmn(start_freq, Cfg.ref_clock_1)
+        fmn, _ = Cfg.MHz_to_fmn(start_freq, Cfg.ref_clock_1)
         if not self.selected:
             cp.sel_LO2()
             self.selected = True

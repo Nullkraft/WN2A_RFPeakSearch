@@ -71,7 +71,7 @@ def memoize(func):
 
 #@memoize
 @njit(nogil=True)
-def MHz_to_fmn(LO2_target_freq_MHz: float, ref_clock: float) -> int:
+def MHz_to_fmn(LO2_target_freq_MHz: float, ref_clock: float):
   """ Form a 32 bit word containing F, M and N for the MAX2871.
       Frac F is the fractional division value (0 to MOD-1)
       Mod M is the modulus value
@@ -99,7 +99,7 @@ def MHz_to_fmn(LO2_target_freq_MHz: float, ref_clock: float) -> int:
       best_F = F
       best_M = M
 #  print(name(), line(), f'F = {best_F} : M = {best_M} : N = {N}')
-  return best_F<<20 | best_M<<8 | N
+  return best_F<<20 | best_M<<8 | N, Fvco 
 
 
 

@@ -196,7 +196,7 @@ class SA_Control:
       LO2_real = round(fmn_to_MHz(LO2_fmn_code), 6)
       IF2 = round(LO2_real, 3) - IF1
       LO3 = IF2 - Cfg.IF3
-      fmn = MHz_to_fmn(LO3, ref_clock)
+      fmn, _ = MHz_to_fmn(LO3, ref_clock)
       LO3_fmn_codes.append(fmn)
     print(name(), line(), f'{len(LO3_fmn_codes) = }')
     return LO2_fmn_code, LO3_fmn_codes

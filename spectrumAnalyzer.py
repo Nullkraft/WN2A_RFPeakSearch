@@ -71,10 +71,12 @@ class SA_Control:
   window_x_range = 3000
 
   def __init__(self, cmd_proc: CmdProcInterface):
+#    print(name(), line(), 'SA_Control.__init__ was called')
     self.selected_device = SPI_Device.LO2   # Spectrum Analyzer chip we're talking to
     self.last_ref_code = 0      # Decide if a new ref_code is to be sent
     self.last_LO1_code = 0      # Decide if a new LO1_code is to be sent
     self.last_LO2_code = 0      # Decide if a new LO2_code is to be sent
+    self.cmd_proc = cmd_proc
 
   
   def adc_Vref(self):

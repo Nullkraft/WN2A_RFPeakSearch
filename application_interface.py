@@ -9,17 +9,10 @@ import sys
 import pickle
 import numpy as np
 from pathlib import Path
-
-import spectrumAnalyzer as sa
-from command_processor import CommandProcessor
-from spectrumAnalyzer import SA_Control
 import serial_port as sp
 from time import perf_counter
 
-cmd_proc = CommandProcessor()
-sa_ctl = SA_Control(cmd_proc)
-
-def freq_steps(startMHz, stopMHz, step_size, num_steps):
+def freq_steps(sa_ctl, startMHz, stopMHz, step_size, num_steps):
   '''
   Public method I want this function to get the frequencies and indexes
   that will be used to slice the all_controls dictionary. It should be
@@ -74,7 +67,7 @@ def get_visible_plot_range(x_plot_data: list, y_plot_data: list, window_x_min: f
   y_axis = y_plot_data[idx_min:idx_max]
   return x_axis, y_axis
 
-def _amplitude_bytes_to_volts(amplBytes) -> list:
+def _amplitude_bytes_to_volts(sa_ctl, amplBytes) -> list:
   volts_list = []
   # Convert two 8-bit serial bytes into one 16 bit amplitude
   hi_byte_list = amplBytes[::2]
@@ -84,7 +77,7 @@ def _amplitude_bytes_to_volts(amplBytes) -> list:
       hi_byte = (hi_byte & 15)    # Store the amplitude value despite it not locking
       print(name(), line(), f'WARNING:: PLL failed to lock at {sa_ctl.swept_freq_list[idx]} Mhz')
     ampl = (hi_byte << 8) | lo_byte   # Combine MSByte/LSByte into an amplitude word
-    voltage = ampl * sa.SA_Control().adc_Vref()/(2**10-1)     # Convert 10 bit ADC counts to Voltage
+    voltage = ampl * sa_ctl.adc_Vref()/(2**10-1)     # Convert 10 bit ADC counts to Voltage
     volts_list.append(voltage)
   return volts_list
 
@@ -101,7 +94,7 @@ def _volts_to_dBm(voltage: float) -> float:
   dBm = (((((((-9.460927*x + 110.57352)*x - 538.8610489)*x + 1423.9059205)*x - 2219.08322)*x + 2073.3123)*x - 1122.5121)*x + 355.7665)*x - 112.663
   return dBm
 
-def make_control_dictionary(RFin_list):
+def make_control_dictionary(sa_ctl, RFin_list):
   '''
   The full control dictionary is used for programming
   the 3 LO chips on the Spectrum Analyzer board. The dictionary is created
@@ -203,7 +196,7 @@ def make_control_dictionary(RFin_list):
       LO2 = str(LO2_FMN)
       fcsv.write(f'{freq}:({ref_clock},{LO1},{LO2})\n')
 
-def load_controls(control_fname: str=None):
+def load_controls(sa_ctl, control_fname: str=None):
   if control_fname is None:
     print(name(), line(), 'You must enter a control file name')
   else:
@@ -218,11 +211,11 @@ def load_controls(control_fname: str=None):
   else:
     print(name(), line(), f'Missing control file "{control_file}"')
 
-def sweep():
+def sweep(sa_ctl):
   start = perf_counter()
   sp.SimpleSerial.data_buffer_in.clear()   # Clear the serial data buffer before sweeping
-  window_x_min, window_x_max, _ = sa_ctl().get_x_range()
-  sweep_complete = sa_ctl().sweep(window_x_min, window_x_max)
+  window_x_min, window_x_max, _ = sa_ctl.get_x_range()
+  sweep_complete = sa_ctl.sweep(window_x_min, window_x_max)
   print(name(), line(), f'Sweep completed in {round(perf_counter()-start, 6)} seconds')
   if not sweep_complete:
     print(name(), line(), 'Sweep stopped by user')

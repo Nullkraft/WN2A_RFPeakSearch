@@ -59,56 +59,56 @@ import time
 import logging
 from abc import ABC, abstractmethod
 
-# Arduino and Device Commands
-attenuator_sel = 0x00FF   # Attenuates the RFinput from 0 to 31.75dB
-
-LO1_device_sel    = 0x01FF   # Select device before sending a General Command
-LO1_RF_off        = 0x09FF   # Specific commands
-LO1_neg4dBm       = 0x11FF   # Change power and num freq steps
-LO1_neg1dBm       = 0x19FF   #     .
-LO1_pos2dBm       = 0x21FF   #     .
-LO1_pos5dBm       = 0x29FF   #     .
-LO1_no_change     = 0x31FF   # Select LO1 without changing the RF output power level
-LO1_mux_tristate  = 0x39FF   # Disable or rather set tristate on the mux pin
-LO1_mux_dig_lock  = 0x41FF   # Enable digital lock detect on the mux pin
-
-LO2_device_sel    = 0x02FF   # Select device before sending a General Command
-LO2_RF_off        = 0x0AFF   # Specific commands
-LO2_neg4dBm       = 0x12FF   # Change power and num freq steps
-LO2_neg1dBm       = 0x1AFF   #     .
-LO2_pos2dBm       = 0x22FF   #     .
-LO2_pos5dBm       = 0x2AFF   #     .
-LO2_num_steps     = 0x32FF   # Change num freq steps only
-LO2_mux_tristate  = 0x3AFF   # Set tristate on the mux pin
-LO2_mux_dig_lock  = 0x42FF   # Enable digital lock detect on the mux pin
-LO2_divider_mode  = 0x4AFF   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 16, 32, 64, or 128
-
-LO3_device_sel    = 0x03FF   # Select device before sending a General Command
-LO3_RF_off        = 0x0BFF   # Specific commands
-LO3_neg4dBm       = 0x13FF   # Change power and num freq steps
-LO3_neg1dBm       = 0x1BFF   #     .
-LO3_pos2dBm       = 0x23FF   #     .
-LO3_pos5dBm       = 0x2BFF   #     .
-LO3_num_steps     = 0x33FF   # Change num freq steps only
-LO3_mux_tristate  = 0x3BFF   # Set tristate on the mux pin
-LO3_mux_dig_lock  = 0x43FF   # Enable digital lock detect on the mux pin
-LO3_divider_mode  = 0x4BFF   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 16, 32, 64, or 128
-
-# Reference clock Device Commands
-all_ref_disable   = 0x04FF
-ref_clock1_enable = 0x0CFF   # Enables 66.000 MHz reference and disables 66.666 MHz reference
-ref_clock2_enable = 0x14FF   # Enables 66.666 MHz reference and disables 66.000 MHz reference
-
-# Arduino status
-Arduino_LED_off   = 0x07FF
-Arduino_LED_on    = 0x0FFF   # LED blink test - The 'Hello World' of embedded dev
-version_message   = 0x17FF   # Query Arduino type and Software version
-sweep_start       = 0x1FFF   # Serial communication flow control
-sweep_end         = 0x27FF   # Tell the Arduino that all data has been sent
-reset_and_report  = 0x2FFF   # Reset the Spectrum Analyzer to default settings
-
-
 class CmdProcInterface(ABC):
+  def __init__(self):
+    # Arduino and Device Commands
+    self.attenuator_sel    = 0x00FF   # Attenuates the RFinput from 0 to 31.75dB
+
+    self.LO1_device_sel    = 0x01FF   # Select device before sending a General Command
+    self.LO1_RF_off        = 0x09FF   # Specific commands
+    self.LO1_neg4dBm       = 0x11FF   # Change power and num freq steps
+    self.LO1_neg1dBm       = 0x19FF   #     .
+    self.LO1_pos2dBm       = 0x21FF   #     .
+    self.LO1_pos5dBm       = 0x29FF   #     .
+    self.LO1_no_change     = 0x31FF   # Select LO1 without changing the RF output power level
+    self.LO1_mux_tristate  = 0x39FF   # Disable or rather set tristate on the mux pin
+    self.LO1_mux_dig_lock  = 0x41FF   # Enable digital lock detect on the mux pin
+
+    self.LO2_device_sel    = 0x02FF   # Select device before sending a General Command
+    self.LO2_RF_off        = 0x0AFF   # Specific commands
+    self.LO2_neg4dBm       = 0x12FF   # Change power and num freq steps
+    self.LO2_neg1dBm       = 0x1AFF   #     .
+    self.LO2_pos2dBm       = 0x22FF   #     .
+    self.LO2_pos5dBm       = 0x2AFF   #     .
+    self.LO2_num_steps     = 0x32FF   # Change num freq steps only
+    self.LO2_mux_tristate  = 0x3AFF   # Set tristate on the mux pin
+    self.LO2_mux_dig_lock  = 0x42FF   # Enable digital lock detect on the mux pin
+    self.LO2_divider_mode  = 0x4AFF   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 16, 32, 64, or 128
+
+    self.LO3_device_sel    = 0x03FF   # Select device before sending a General Command
+    self.LO3_RF_off        = 0x0BFF   # Specific commands
+    self.LO3_neg4dBm       = 0x13FF   # Change power and num freq steps
+    self.LO3_neg1dBm       = 0x1BFF   #     .
+    self.LO3_pos2dBm       = 0x23FF   #     .
+    self.LO3_pos5dBm       = 0x2BFF   #     .
+    self.LO3_num_steps     = 0x33FF   # Change num freq steps only
+    self.LO3_mux_tristate  = 0x3BFF   # Set tristate on the mux pin
+    self.LO3_mux_dig_lock  = 0x43FF   # Enable digital lock detect on the mux pin
+    self.LO3_divider_mode  = 0x4BFF   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 16, 32, 64, or 128
+
+    # Reference clock Device Commands
+    self.all_ref_disable   = 0x04FF
+    self.ref_clock1_enable = 0x0CFF   # Enables 66.000 MHz reference and disables 66.666 MHz reference
+    self.ref_clock2_enable = 0x14FF   # Enables 66.666 MHz reference and disables 66.000 MHz reference
+
+    # Arduino status
+    self.Arduino_LED_off   = 0x07FF
+    self.Arduino_LED_on    = 0x0FFF   # LED blink test - The 'Hello World' of embedded dev
+    self.version_message   = 0x17FF   # Query Arduino type and Software version
+    self.sweep_start       = 0x1FFF   # Serial communication flow control
+    self.sweep_end         = 0x27FF   # Tell the Arduino that all data has been sent
+    self.reset_and_report  = 0x2FFF   # Reset the Spectrum Analyzer to default settings
+
   @abstractmethod
   def set_attenuator(self, decibels: float):
     pass
@@ -193,7 +193,7 @@ class CommandProcessor(CmdProcInterface):
 
     """
     level = int(decibels * 4) << 16
-    self._send_command(level | attenuator_sel)
+    self._send_command(level | self.attenuator_sel)
 
 
   def set_max2871_freq(self, fmn: int) -> None:
@@ -209,12 +209,12 @@ class CommandProcessor(CmdProcInterface):
 
   def disable_LO2_RFout(self) -> None:
     """Function LO2 Command and Control."""
-    self._send_command(LO2_RF_off)
+    self._send_command(self.LO2_RF_off)
 
 
   def disable_LO3_RFout(self) -> None:
     """LO3 Command & Control."""
-    self._send_command(LO3_RF_off)
+    self._send_command(self.LO3_RF_off)
 
 
   def set_LO1(self, LO1_command: int, int_N: int = 54) -> None:
@@ -239,7 +239,7 @@ class CommandProcessor(CmdProcInterface):
 
   def sel_LO2(self) -> None:
     """Send command to select the LO2 chip for programming."""
-    self._send_command(LO2_device_sel)
+    self._send_command(self.LO2_device_sel)
 
 
   def set_LO2(self, LO2_command: int) -> None:
@@ -249,7 +249,7 @@ class CommandProcessor(CmdProcInterface):
 
   def sel_LO3(self) -> None:
     """Send command to select the LO2 chip for programming."""
-    self._send_command(LO3_device_sel)
+    self._send_command(self.LO3_device_sel)
 
 
   def set_LO3(self, LO3_command) -> None:
@@ -270,12 +270,12 @@ class CommandProcessor(CmdProcInterface):
 
   def LED_on(self) -> None:
     """Command for testing communication with the controller board."""
-    self._send_command(Arduino_LED_on)
+    self._send_command(self.Arduino_LED_on)
 
 
   def LED_off(self) -> None:
     """Command for testing communication with the controller board."""
-    self._send_command(Arduino_LED_off)
+    self._send_command(self.Arduino_LED_off)
 
 
   def get_version_message(self) -> str:
@@ -286,14 +286,14 @@ class CommandProcessor(CmdProcInterface):
 
     """
     sp.ser.read(sp.ser.in_waiting)  # Clear out the serial buffer.
-    self._send_command(version_message)  # Request software report from controller
+    self._send_command(self.version_message)  # Request software report from controller
     time.sleep(0.01)
     return sp.ser.read(64)      # Collect the report(s)
 
 
   def disable_all_ref_clocks(self) -> None:
     """Disable both reference clocks for testing."""
-    self._send_command(all_ref_disable)
+    self._send_command(self.all_ref_disable)
 
 
   def enable_ref_clock(self, ref_clock_command) -> None:
@@ -303,7 +303,7 @@ class CommandProcessor(CmdProcInterface):
 
   def end_sweep(self) -> None:
     """Serial data stream stop command when done sweeping LO2 or LO3."""
-    self._send_command(sweep_end)
+    self._send_command(self.sweep_end)
 
 
   def _send_command(self, cmd) -> None:

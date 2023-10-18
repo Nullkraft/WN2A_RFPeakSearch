@@ -491,7 +491,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
   @pyqtSlot(int)
   def on_numFrequencySteps_valueChanged(self, p0):
-    print(name(), line(), f'Num Freq steps changed to {p0}')
+    print(name(), line(), f'Data points changed to {p0}')
 
 
 if __name__ == '__main__':

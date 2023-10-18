@@ -203,7 +203,7 @@ class Ui_MainWindow(object):
         self.intStepKHz.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignTrailing|QtCore.Qt.AlignmentFlag.AlignVCenter)
         self.intStepKHz.setMinimum(1)
         self.intStepKHz.setMaximum(3000000)
-        self.intStepKHz.setProperty("value", 250)
+        self.intStepKHz.setProperty("value", 7472)
         self.intStepKHz.setObjectName("intStepKHz")
         self.gridLayout_3.addWidget(self.intStepKHz, 3, 5, 1, 1)
         self.floatStopMHz = QtWidgets.QDoubleSpinBox(self.groupBox_2)

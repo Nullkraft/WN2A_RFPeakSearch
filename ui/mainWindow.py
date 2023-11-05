@@ -455,7 +455,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     step_size = self.intStepKHz.value()
     band_width = (stop_freq - start_freq) * 1000
     print(name(), line(), f"{band_width = }")
-    num_steps = round(band_width / step_size, 3)
+    num_steps = int(band_width / step_size)
 
     self.numFrequencySteps.setValue(num_steps)    # Update 'Data Points' for user
     self.set_steps(num_steps)

@@ -70,8 +70,8 @@ def memoize(func):
 
 
 #@memoize
-@njit(nogil=True)
-def MHz_to_fmn(LO2_target_freq_MHz: float, ref_clock: float):
+#@njit(nogil=True)
+def MHz_to_fmn(target_freq_MHz: float, ref_clock: float):
   """ Form a 32 bit word containing F, M and N for the MAX2871.
       Frac F is the fractional division value (0 to MOD-1)
       Mod M is the modulus value
@@ -79,10 +79,10 @@ def MHz_to_fmn(LO2_target_freq_MHz: float, ref_clock: float):
   """
   R = 1
   max_error = 2**32
-  for div_range in range(8):
-    div = 2**div_range
-    Fvco = div * LO2_target_freq_MHz
-    if Fvco >= 3000:          # vco fundamental freq = 3000 MHz (numba requires a constant?)
+  Fvco = target_freq_MHz
+  while Fvco < 3000:
+    Fvco *= 2
+    if Fvco >= 3000:
       break
   Fpfd = ref_clock / R
   N = int(Fvco / Fpfd)

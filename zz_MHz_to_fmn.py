@@ -86,6 +86,7 @@ def report_cuda_memory(device='cuda:0'):
     print(f"Total GPU Memory: {total_memory}")
     print(f"Allocated Memory: {allocated_memory}")
     print(f"Cached Memory: {cached_memory}")
+"""
 #    total_memory = torch.cuda.get_device_properties(device).total_memory / (1024**2)  # Convert bytes to MB
 #    allocated_memory = torch.cuda.memory_allocated(device) / (1024**2)  # Convert bytes to MB
 #    cached_memory = torch.cuda.memory_cached(device) / (1024**2)  # Convert bytes to MB
@@ -93,7 +94,7 @@ def report_cuda_memory(device='cuda:0'):
 #    print(f"Total GPU Memory: {total_memory:.2f} MB")
 #    print(f"Allocated Memory: {allocated_memory:.2f} MB")
 #    print(f"Cached Memory: {cached_memory:.2f} MB")
-
+"""
 
 if __name__ == '__main__':
   print()
@@ -105,10 +106,10 @@ if __name__ == '__main__':
   device = torch.device('cpu')
 #  print(line(), f'{device = }\n')
 
-  start = 77.4
-  end = 93.995
-#  num_steps = 1
-  num_steps = round((end-start) / 0.001)
+  start = 3352.015
+  end = 3355.015
+  num_steps = 3
+#  num_steps = round((end-start) / 0.001)
   print(line(), f'start = {start}, end = {end}, steps = {num_steps}')
 #  start = 4082.0
 #  end = 4148.0
@@ -132,6 +133,7 @@ if __name__ == '__main__':
   start_a = perf_counter()
   for freq in sweep_freqs:
     fmn, norm_fvco = MHz_to_fmn(freq, 33.0)
+    print(line(), f'fmn = {hex(fmn)} : norm_fvco = {round(norm_fvco, 3)}')
     norm_freqs.append(freq)
     norm_fmn.append(fmn)
     norm_fvcos.append(norm_fvco)

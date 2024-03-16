@@ -17,6 +17,10 @@ def fmn_to_MHz(fmn_word, Fpfd, show_fmn: bool=False):
   freq_MHz = Fpfd * (N_ + F_/M_)
   return freq_MHz
 
+
+"""
+
+"""
 R = 2
 ref_clock = 66.666
 Fpfd = ref_clock / R
@@ -29,8 +33,10 @@ def np_MHz_to_fmn(target_freqs: np.ndarray, M: np.ndarray, Fpfd: float =33.0):
   div_mask = Fvco >= 3000                         # table of True/False: Which of the 8 are >3000?
   indices = np.argmax(div_mask, axis=1)[:, None]  # Using indices for Fvco masking
   Fvco = np.take_along_axis(Fvco, indices, axis=1)# Done with indicies, now it can be used elsewhere
-  N = (Fvco/Fpfd).astype(np.int16)                # Integer portion of the step size for register N
-  step_fract = Fvco/Fpfd - N                      # Decimal portion of the step size
+  step_fract, N = np.modf(Fvco/Fpfd)
+  N = N.astype(np.int16)
+#  N = (Fvco/Fpfd).astype(np.int16)                # Integer portion of the step size for register N
+#  step_fract = Fvco/Fpfd - N                      # Fractional portion of the step size
   F = (M * step_fract).astype(np.int64)           # Convert decimal part for register F
   Fvco_diffs = np.abs(Fvco - (Fpfd * (N + F/M)))
   indices = np.argmin(Fvco_diffs, axis=1)[:, None] # Get the index of the minimum error ....
@@ -87,13 +93,13 @@ def report_cuda_memory(device='cuda:0'):
     print(f"Allocated Memory: {allocated_memory}")
     print(f"Cached Memory: {cached_memory}")
 """
-#    total_memory = torch.cuda.get_device_properties(device).total_memory / (1024**2)  # Convert bytes to MB
-#    allocated_memory = torch.cuda.memory_allocated(device) / (1024**2)  # Convert bytes to MB
-#    cached_memory = torch.cuda.memory_cached(device) / (1024**2)  # Convert bytes to MB
-#
-#    print(f"Total GPU Memory: {total_memory:.2f} MB")
-#    print(f"Allocated Memory: {allocated_memory:.2f} MB")
-#    print(f"Cached Memory: {cached_memory:.2f} MB")
+    total_memory = torch.cuda.get_device_properties(device).total_memory / (1024**2)  # Convert bytes to MB
+    allocated_memory = torch.cuda.memory_allocated(device) / (1024**2)  # Convert bytes to MB
+    cached_memory = torch.cuda.memory_cached(device) / (1024**2)  # Convert bytes to MB
+
+    print(f"Total GPU Memory: {total_memory:.2f} MB")
+    print(f"Allocated Memory: {allocated_memory:.2f} MB")
+    print(f"Cached Memory: {cached_memory:.2f} MB")
 """
 
 if __name__ == '__main__':
@@ -140,70 +146,19 @@ if __name__ == '__main__':
 #  n = 13
 #  print(line(), f'norm fmn[{n}] = {norm_fmn[n]}')
 
-  """ Run the Pytorch version of MHz_to_fmn() """  
-  M = (torch.arange(2, 4096)).to(torch.int32)
-  M = M.to(device)
-  start_b = perf_counter()
-  num_batches = 0
-  for batch in dataloader:
-    num_batches += 1
-    batch = np.round(batch, decimals=3)
-    torch_fmn = pt_MHz_to_fmn(batch, M, device=device).cpu().numpy()
-  if num_batches == 1:
-    pt_str = f'{num_batches} batch'
-  else:
-    pt_str = f'{num_batches} batches'
-
-#  print(line(), f'"PyTorch" ran {pt_str} and took {round((perf_counter()-start_b), 4)} sec on the "{str(device)}"')
-#  print(line(), report_cuda_memory())
-  diffs = []
-  for i, fmn in enumerate(torch_fmn):
-    Tfmn = fmn_to_MHz(fmn[0],Fpfd)
-    Nfmn = fmn_to_MHz(norm_fmn[i], Fpfd)
-    NFvco = norm_fvcos[i]
-    NFreq = norm_freqs[i]
-    delta = round(Nfmn-Tfmn, 3)
-    if abs(delta) > 0.0:
-      diffs.append([NFreq, round(Nfmn,3), round(Tfmn,3), delta])
-#  print(line(), f'norm Fvco = {[round(f,3) for f in norm_fvcos[235:244]]}')
-  print(line(), f'{len(norm_fvcos)}')
-  print(line(), f'{len(diffs) = }')
-  print(line())
-  print(diffs)
-#  dees = []
-#  for d in diffs:
-#    if d[3] >.008:
-#      dees.append(d[0])
-#  print(dees)
-
-
-
-
-
-
-  """
-  np_M = np.arange(2, 4096)
-  np_all_fmn = []
-  np_num_batches = 0
-  start_a = perf_counter()
-  if 1:
-    for batch in dataloader:
-      # Convert PyTorch tensor to numpy array
-      np_num_batches += 1
-      target_freqs = batch.numpy()
-      print(line(), f'Batch from {np.round(target_freqs[0], decimals=3)} to {round(target_freqs[-1], 3)} MHz')
-      fmn_batch = np_MHz_to_fmn(target_freqs, np_M)
-      np_all_fmn.append(fmn_batch)
-    if np_num_batches == 1:
-      np_str = f'{np_num_batches} batch'
-    else:
-      np_str = f'{np_num_batches} batches'
-
-  print(line(), f'"Numpy"   ran {np_str} and took {round(perf_counter()-start_a, 6)} sec on the "cpu"')
-  print(line(), f'Size of FMNs = {len(np_all_fmn)}')
-  """
-
-
+#  """ Run the Pytorch version of MHz_to_fmn() """  
+#  M = (torch.arange(2, 4096)).to(torch.int32)
+#  M = M.to(device)
+#  start_b = perf_counter()
+#  num_batches = 0
+#  for batch in dataloader:
+#    num_batches += 1
+#    batch = np.round(batch, decimals=3)
+#    torch_fmn = pt_MHz_to_fmn(batch, M, device=device).cpu().numpy()
+#  if num_batches == 1:
+#    pt_str = f'{num_batches} batch'
+#  else:
+#    pt_str = f'{num_batches} batches'
 
 
 

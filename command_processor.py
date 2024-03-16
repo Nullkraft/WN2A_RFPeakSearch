@@ -19,34 +19,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""Assign hex values to constants used for controlling the IC's on the spectrum analyzer hardware.
-
-Classes:
-  none
-Functions:
-  set_attenuator(decibels: float=31.75)
-  set_max2871_freq(fmn: int)
-  disable_LO2_RFout()
-  disable_LO3_RFout()
-  set_LO1(LO1_command, int_N: int=54)
-  sel_LO2()
-  set_LO2(LO2_command)
-  set_LO3(LO3_command)
-  LO_device_register(device_command: int)
-  LED_on()
-  LED_off()
-  get_version_message()
-  disable_all_ref_clocks()
-  enable_ref_clock(ref_clock_command)
-  sweep_end()
-  _send_command(command)
-Misc variables:
-  __version__
-  format_version
-  compatible_formats
-
-"""
-
 # Use these functions in all your print statements to display the filename 
 # and the line number of the source file. Requires: import sys
 name = lambda: f"File \'{__name__}.py\',"
@@ -57,9 +29,9 @@ import serial_port as sp
 import sys
 import time
 import logging
-from abc import ABC, abstractmethod
 
-class CmdProcInterface(ABC):
+
+class CmdProcInterface():
   def __init__(self):
     # Arduino and Device Commands
     self.attenuator_sel    = 0x00FF   # Attenuates the RFinput from 0 to 31.75dB
@@ -109,70 +81,6 @@ class CmdProcInterface(ABC):
     self.sweep_end         = 0x27FF   # Tell the Arduino that all data has been sent
     self.reset_and_report  = 0x2FFF   # Reset the Spectrum Analyzer to default settings
 
-  @abstractmethod
-  def set_attenuator(self, decibels: float):
-    pass
-
-  @abstractmethod
-  def set_max2871_freq(self, fmn: int):
-    pass
-
-  @abstractmethod
-  def disable_LO2_RFout(self):
-    pass
-
-  @abstractmethod
-  def disable_LO3_RFout(self):
-    pass
-
-  @abstractmethod
-  def set_LO1(self, LO1_command: int, int_N: int):
-    pass
-
-  @abstractmethod
-  def sel_LO2(self):
-    pass
-
-  @abstractmethod
-  def set_LO2(self, LO2_command: int):
-    pass
-
-  @abstractmethod
-  def sel_LO3(self):
-    pass
-
-  @abstractmethod
-  def set_LO3(self, LO3_command):
-    pass
-
-  @abstractmethod
-  def LO_device_register(self, device_command: int):
-    pass
-
-  @abstractmethod
-  def LED_on(self):
-    pass
-
-  @abstractmethod
-  def LED_off(self):
-    pass
-
-  @abstractmethod
-  def get_version_message(self) -> str:
-    pass
-
-  @abstractmethod
-  def disable_all_ref_clocks(self):
-    pass
-
-  @abstractmethod
-  def enable_ref_clock(self, ref_clock_command):
-    pass
-
-  @abstractmethod
-  def end_sweep(self):
-    pass
-
 
 class CommandProcessor(CmdProcInterface):
 
@@ -215,6 +123,11 @@ class CommandProcessor(CmdProcInterface):
   def disable_LO3_RFout(self) -> None:
     """LO3 Command & Control."""
     self._send_command(self.LO3_RF_off)
+
+  
+  def sel_LO1(self) -> None:
+    """Send command to select the LO1 chip for programming."""
+    self._send_command(self.LO1_device_sel)
 
 
   def set_LO1(self, LO1_command: int, int_N: int = 54) -> None:
@@ -271,26 +184,43 @@ class CommandProcessor(CmdProcInterface):
   def LED_on(self) -> None:
     """Command for testing communication with the controller board."""
     self._send_command(self.Arduino_LED_on)
+    self.show_message()
 
 
   def LED_off(self) -> None:
     """Command for testing communication with the controller board."""
     self._send_command(self.Arduino_LED_off)
+    self.show_message()
 
 
-  def get_version_message(self) -> str:
-    """
-    Get the firmaware version string from the controller.
-
-    @return str
-
-    """
-    sp.ser.read(sp.ser.in_waiting)  # Clear out the serial buffer.
-    self._send_command(self.version_message)  # Request software report from controller
+  def show_message(self) -> str:
+    """ Get the last message string that was sent from the controller. """
+    sp.ser.read(sp.ser.in_waiting)  # Clear serial buffer of any junk
     time.sleep(0.01)
-    return sp.ser.read(64)      # Collect the report(s)
+    msg = sp.ser.read(64)           # Collect the report(s)
+    if msg:
+      print(name(), line(), f'Arduino message = {msg}')
 
 
+  def get_version_message(self):
+    """ Get the firmaware version string from the controller. """
+    self._send_command(self.version_message)  # Request software report from controller
+    self.show_message()
+
+
+#  def get_version_message(self) -> str:
+#    """
+#    Get the firmaware version string from the controller.
+#
+#    @return str
+#
+#    """
+#    sp.ser.read(sp.ser.in_waiting)  # Clear out the serial buffer.
+#    self._send_command(self.version_message)  # Request software report from controller
+#    time.sleep(0.01)
+#    return sp.ser.read(64)      # Collect the report(s)
+#
+#
   def disable_all_ref_clocks(self) -> None:
     """Disable both reference clocks for testing."""
     self._send_command(self.all_ref_disable)

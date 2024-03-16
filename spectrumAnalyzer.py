@@ -130,11 +130,12 @@ class SA_Control:
     @return The new_code in N so it can be saved to an external last_code
     """
     if control_code != last_control_code:
-      control_code = int(control_code)
+      if self.selected_device is not SPI_Device.LO1:
+#        self.cmd_proc.sel_LO1()
+        self.selected_device = SPI_Device.LO1
       self.cmd_proc.set_LO1(self.cmd_proc.LO1_neg4dBm, control_code) # Set to -4 dBm & freq=control_code
       time.sleep(0.002)                       # Wait 1 ms for LO1 to lock
       self.last_LO1_code = control_code
-      self.selected_device = SPI_Device.LO1   # Update currently selected device to LO1
 
   def set_LO2(self, control_code: int, last_control_code: int=0):
     """
@@ -146,13 +147,14 @@ class SA_Control:
     @type int (optional)
     """
     if control_code != last_control_code:
+      control_code = int(control_code)
       if self.selected_device is not SPI_Device.LO2:
         self.cmd_proc.sel_LO2()
         self.selected_device = SPI_Device.LO2   # Update currently selected device to LO2
       self.cmd_proc.set_LO2(control_code)      # Set to freq=control_code
+      self.last_LO2_code = control_code
 
-
-  def set_LO3(self, control_code: int):
+  def set_LO3(self, control_code: int, last_control_code: int=0):
     """
     Public set_LO3 sends the hardware control_code to set LO3's frequency
 
@@ -161,11 +163,13 @@ class SA_Control:
     @param last_control_code prevents sending FMN if it's the same as last time (defaults to 0)
     @type int (optional)
     """
-    if self.selected_device is not SPI_Device.LO3:
-      self.cmd_proc.sel_LO3()
-      self.selected_device = SPI_Device.LO3   # Update currently selected device to LO3
-    self.cmd_proc.set_LO3(control_code)      # Set to freq=control_code
-
+    if control_code != last_control_code:
+      control_code = int(control_code)
+      if self.selected_device is not SPI_Device.LO3:
+        self.cmd_proc.sel_LO3()
+        self.selected_device = SPI_Device.LO3   # Update currently selected device to LO3
+      self.cmd_proc.set_LO3(control_code)      # Set to freq=control_code
+#      self.last_LO3_code = control_code
 
   def create_LO3_sweep_list(self, x_min, x_max, x_range) -> list:
     LO3_fmn_codes = []
@@ -253,6 +257,7 @@ class SA_Control:
           time.sleep(1e-6)
           delay_count = 0
       sp.SimpleSerial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
+      print(name(), line(), bytes_rxd.hex())
       bytes_rxd.clear()
 #            if freq % 5 == 0:
 #                print(f'Progress {freq = }')
@@ -288,7 +293,7 @@ class SA_Control:
       self.cmd_proc.LED_off()
 
   def get_version_message(self):
-    print(name(), line(), f'Packets rcvd = {self.cmd_proc.get_version_message()}')
+    self.cmd_proc.get_version_message()
 
 
 def set_plot_window_xrange(x_min: float, x_max: float):

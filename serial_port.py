@@ -116,14 +116,16 @@ class SimpleSerial(QObject):
       except OSError as e:
         if e.errno == error.EBUSY:
           print(name(), line(), f': {self.port} has already been opened by another program. Arduino?')
+          ser_port = None
       except TypeError:
         print(name(), line(), f': {self.config_fname} is corrupt. New default file created.')
         self._write_config(self.default_serial_speed, self.default_serial_port)   # Corrupted file contents so recreate a default.
       else:
         print(name(), line(), f'INFO::{ser_port.port} opened at {ser_port.baudrate} baud.')
       finally:
-        ser = ser_port
-        self._write_config(current_speed=self.baud, current_port=self.port)
+        if ser_port is not None:
+          ser = ser_port
+          self._write_config(current_speed=self.baud, current_port=self.port)
     else:
       print(name(), line(), 'No serial ports found')
 

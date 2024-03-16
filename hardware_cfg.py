@@ -26,9 +26,9 @@ line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
 
 import sys
 from dataclasses import dataclass
-from numba import njit
 from enum import Enum, auto
 from functools import wraps
+from numba import njit
 
 class SPI_Device(Enum):
   """ Tracks which of the SPI capable chips is selected """
@@ -70,7 +70,7 @@ def memoize(func):
 
 
 #@memoize
-#@njit(nogil=True)
+@njit(nogil=True)
 def MHz_to_fmn(target_freq_MHz: float, ref_clock: float):
   """ Form a 32 bit word containing F, M and N for the MAX2871.
       Frac F is the fractional division value (0 to MOD-1)
@@ -84,9 +84,10 @@ def MHz_to_fmn(target_freq_MHz: float, ref_clock: float):
     Fvco *= 2
     if Fvco >= 3000:
       break
-  Fpfd = ref_clock / R
-  N = int(Fvco / Fpfd)
-  Fract = round(Fvco / Fpfd - N, 9)
+  Fpfd = ref_clock/R
+  NF = Fvco/Fpfd
+  N = int(NF)     # Get the integer portion for N
+  Fract = NF % 1  # Get the fraction portion for F
   for M in list(range(4095,1,-1)):
     F = round(Fract * M)
     Err1 = abs(Fvco - (Fpfd * (N + F/M)))

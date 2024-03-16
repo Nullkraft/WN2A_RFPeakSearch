@@ -114,17 +114,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     self.graphWidget.addItem(ver_line)
 
   @pyqtSlot()
-  def on_btnSweep_clicked(self):
-    self.label_sweep_status.setText("Sweep in progress...")
-    QtGui.QGuiApplication.processEvents()
-    sweep_complete = api.sweep(self.sa_ctl)
-    status_txt = f'Sweep complete, fwidth = {self.sa_ctl.lowpass_filter_width}'
-    self.label_sweep_status.setText(status_txt)
-    if self.chk_plot_enable.isChecked() and sweep_complete:
-      self.plot_ampl_data(sp.SimpleSerial.data_buffer_in)
-    QtGui.QGuiApplication.processEvents()
-
-  @pyqtSlot()
   def on_btnCalibrate_clicked(self):
     cal_start = 0
     cal_stop = 3000
@@ -252,6 +241,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
   def clear_last_N(self):
     self.last_n = -1
+
+  @pyqtSlot()
+  def on_btnSweep_clicked(self):
+    self.label_sweep_status.setText("Sweep in progress...")
+    QtGui.QGuiApplication.processEvents()
+    # # # # # # DO NOT REMOVE - FOR FUTURE USE # # # # # #
+#    sp.ser.read(sp.ser.in_waiting)                                      # Clear out the serial buffer.
+#    self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
+#    sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size, sa.ref_clock)
+##    assert len(sa.swept_frequencies_list) != 0, "sa.swept_frequencies_list was empty"
+##    self.graphWidget.setXRange(sa.swept_frequencies_list[0], sa.swept_frequencies_list[-1])   # Limit plot to user selected frequency range
+    sweep_complete = api.sweep(self.sa_ctl)
+    status_txt = f'Sweep complete, fwidth = {self.sa_ctl.lowpass_filter_width}'
+    self.label_sweep_status.setText(status_txt)
+    if self.chk_plot_enable.isChecked() and sweep_complete:
+      self.plot_ampl_data(sp.SimpleSerial.data_buffer_in)
+    QtGui.QGuiApplication.processEvents()
+
+
 
   def serial_read_thread(self):
     ''' Read back data points in a separate thread so we don't block the gui. '''

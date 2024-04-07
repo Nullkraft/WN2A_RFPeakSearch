@@ -257,7 +257,7 @@ class SA_Control:
           time.sleep(1e-6)
           delay_count = 0
       sp.SimpleSerial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
-      print(name(), line(), bytes_rxd.hex())
+#      print(name(), line(), bytes_rxd.hex())
       bytes_rxd.clear()
 #            if freq % 5 == 0:
 #                print(f'Progress {freq = }')

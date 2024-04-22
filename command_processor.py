@@ -249,6 +249,14 @@ class CommandProcessor(CmdProcInterface):
     except:
       print(name(), line(), f': Open the serial port before sending a command <{command.__name__}>.')
 
+#    # This can be used to echo a copy of the message from the Arduino controller
+#    # To simplify the result go into the Arduino and uncomment '#define MESSAGE_TESTING'
+#    msg = bytes(4)
+#    while(sp.ser.in_waiting):
+#      msg += sp.ser.read(sp.ser.in_waiting)  # Clear serial buffer of any junk
+#      time.sleep(0.01)
+#    print(name(), line(), f"msg = {msg}")
+
 
 
 

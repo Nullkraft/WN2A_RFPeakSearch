@@ -35,6 +35,7 @@ def main():
   start = perf_counter()
   window = MainWindow()
   print(name(), line(), f'INFO::Startup took {round(perf_counter()-start, 6)} seconds')
+  print(name(), line(), '\n\n RF Peak Search starting ...................\n')
   window.show()
   sys.exit(app.exec())  # Using sys.exit() takes the return code from app.exec() and sends
               # it to the command line while app.exec() starts the event loop.

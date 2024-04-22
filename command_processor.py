@@ -228,7 +228,11 @@ class CommandProcessor(CmdProcInterface):
 
   def enable_ref_clock(self, ref_clock_command) -> None:
     """Turn on the selected reference clock. The controller automatically turns off the other."""
-    self._send_command(ref_clock_command)
+    if ref_clock_command == 1:
+      self._send_command(self.ref_clock1_enable)
+    else:
+      self._send_command(self.ref_clock2_enable)
+    self.show_message()
 
 
   def end_sweep(self) -> None:

@@ -73,8 +73,8 @@ def _amplitude_bytes_to_volts(sa_ctl, amplBytes) -> list:
   hi_byte_list = amplBytes[::2]
   lo_byte_list = amplBytes[1::2]
   for idx, (hi_byte, lo_byte) in enumerate(zip(hi_byte_list, lo_byte_list)):
-    ret_msg = (hi_byte & 0xF0)
-    print(name(), line(), f'{ret_msg = } at {sa_ctl.swept_freq_list[idx]} Mhz')
+#    ret_msg = (hi_byte & 0xF0)
+#    print(name(), line(), f'{ret_msg = } at {sa_ctl.swept_freq_list[idx]} Mhz')
     hi_byte = (hi_byte & 15)
     if hi_byte > 3:
 #      hi_byte = (hi_byte & 15)    # Store the amplitude value despite it not locking

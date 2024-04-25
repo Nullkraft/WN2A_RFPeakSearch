@@ -189,7 +189,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     step_size = self.intStepKHz.value()
     start, stop, step, num_steps_actual = api.freq_steps(self.sa_ctl, start_freq, stop_freq, step_size, num_steps)
     self.numFrequencySteps.setValue(num_steps_actual)    # Update 'Data Points' for user
-    self.intStepKHz.setValue(step)
+#    self.intStepKHz.setValue(step)
     if not self.PROGSTART:
       self.sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
 
@@ -257,7 +257,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     self.label_sweep_status.setText(status_txt)
     if self.chk_plot_enable.isChecked() and sweep_complete:
       self.plot_ampl_data(sp.SimpleSerial.data_buffer_in)
-    QtGui.QGuiApplication.processEvents()
+#    QtGui.QGuiApplication.processEvents()
 
 
 
@@ -466,7 +466,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     num_steps = int(band_width / step_size)
 
     self.numFrequencySteps.setValue(num_steps)    # Update 'Data Points' for user
-    self.set_steps(num_steps)
     self.PROGSTART = False
 
   @pyqtSlot()
@@ -497,9 +496,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     self.floatStopMHz.setValue(x_max)
     self.set_steps()  # Default arg num_steps=401
 
-  @pyqtSlot(int)
-  def on_numFrequencySteps_valueChanged(self, p0):
-    print(name(), line(), f'Data points changed to {p0}')
+#  @pyqtSlot(int)
+#  def on_numFrequencySteps_valueChanged(self, p0):
+#    print(name(), line(), f'Data points changed to {p0}')
 
 
 if __name__ == '__main__':

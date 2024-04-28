@@ -44,7 +44,7 @@ def freq_steps(sa_ctl, startMHz, stopMHz, step_size, num_steps):
   # Get the start and stop indexes for the sweep frequencies list
   start: int = sa_ctl.window_x_min
   stop: int = sa_ctl.window_x_max
-  # Fill the list with new sweep frequecies
+  # Prepare the list for new swept frequecies
   sa_ctl.swept_freq_list.clear()
   return start, stop, step_size_khz, num_steps_actual   # Return to display the num_steps to the user
 

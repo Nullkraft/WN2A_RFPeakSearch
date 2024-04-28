@@ -188,8 +188,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     stop_freq = round(self.floatStopMHz.value(), 3)
     step_size = self.intStepKHz.value()
     start, stop, step, num_steps_actual = api.freq_steps(self.sa_ctl, start_freq, stop_freq, step_size, num_steps)
-    self.numFrequencySteps.setValue(num_steps_actual)    # Update 'Data Points' for user
-#    self.intStepKHz.setValue(step)
     if not self.PROGSTART:
       self.sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
 
@@ -255,9 +253,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     sweep_complete = api.sweep(self.sa_ctl)
     status_txt = f'Sweep complete, fwidth = {self.sa_ctl.lowpass_filter_width}'
     self.label_sweep_status.setText(status_txt)
+    QtGui.QGuiApplication.processEvents()
     if self.chk_plot_enable.isChecked() and sweep_complete:
       self.plot_ampl_data(sp.SimpleSerial.data_buffer_in)
-#    QtGui.QGuiApplication.processEvents()
 
 
 
@@ -448,12 +446,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
   @pyqtSlot()
   def on_floatStartMHz_editingFinished(self):
-    self.set_steps()
     self.PROGSTART = False
 
   @pyqtSlot()
   def on_floatStopMHz_editingFinished(self):
-    self.set_steps()
     self.PROGSTART = False
 
   @pyqtSlot()
@@ -462,10 +458,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     stop_freq = self.floatStopMHz.value()
     step_size = self.intStepKHz.value()
     band_width = (stop_freq - start_freq) * 1000
-    print(name(), line(), f"{band_width = }")
     num_steps = int(band_width / step_size)
 
     self.numFrequencySteps.setValue(num_steps)    # Update 'Data Points' for user
+    self.set_steps()
     self.PROGSTART = False
 
   @pyqtSlot()
@@ -494,7 +490,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     x_max = round(p1[0][1], 3)
     self.floatStartMHz.setValue(x_min)
     self.floatStopMHz.setValue(x_max)
-    self.set_steps()  # Default arg num_steps=401
+    self.set_steps()  # Uses default num_steps=401
 
 #  @pyqtSlot(int)
 #  def on_numFrequencySteps_valueChanged(self, p0):

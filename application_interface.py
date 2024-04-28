@@ -215,11 +215,11 @@ def load_controls(sa_ctl, control_fname: str=None):
     print(name(), line(), f'Missing control file "{control_file}"')
 
 def sweep(sa_ctl):
-  start = perf_counter()
-  sp.SimpleSerial.data_buffer_in.clear()   # Clear the serial data buffer before sweeping
+  timer_start = perf_counter()
+  sp.SimpleSerial.data_buffer_in.clear()   # Prepare serial data buffer for a new sweep
   window_x_min, window_x_max, _ = sa_ctl.get_x_range()
   sweep_complete = sa_ctl.sweep(window_x_min, window_x_max)
-  print(name(), line(), f'Sweep completed in {round(perf_counter()-start, 6)} seconds')
+  print(name(), line(), f'Sweep completed in {round(perf_counter()-timer_start, 6)} seconds')
   if not sweep_complete:
     print(name(), line(), 'Sweep stopped by user')
   return sweep_complete

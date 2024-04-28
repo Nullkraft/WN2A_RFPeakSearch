@@ -445,14 +445,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     sleep(2)
 
   @pyqtSlot()
-  def on_floatStartMHz_editingFinished(self):
-    self.PROGSTART = False
-
-  @pyqtSlot()
-  def on_floatStopMHz_editingFinished(self):
-    self.PROGSTART = False
-
-  @pyqtSlot()
   def on_intStepKHz_editingFinished(self):
     start_freq = self.floatStartMHz.value()
     stop_freq = self.floatStopMHz.value()

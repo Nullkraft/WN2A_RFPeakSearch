@@ -254,7 +254,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     status_txt = f'Sweep complete, fwidth = {self.sa_ctl.lowpass_filter_width}'
     self.label_sweep_status.setText(status_txt)
     QtGui.QGuiApplication.processEvents()
-    if self.chk_plot_enable.isChecked() and sweep_complete:
+    if self.chk_plot_enabled.isChecked() and sweep_complete:
       self.plot_ampl_data(sp.SimpleSerial.data_buffer_in)
 
 
@@ -445,6 +445,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     sleep(2)
 
   @pyqtSlot()
+  def on_floatStartMHz_editingFinished(self):
+    plot_x_start = self.floatStartMHz.value()
+    plot_x_stop = self.floatStopMHz.value()
+    print(name(), line(), f'{plot_x_start = } : {plot_x_stop = }')
+    # Prevent graph, or plot, from trying to update this StopMHz control
+    self.graphWidget.sigXRangeChanged.disconnect(self.update_start_stop)
+    self.graphWidget.setXRange(plot_x_start, plot_x_stop)
+    self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
+    self.PROGSTART = False
+
+  @pyqtSlot()
+  def on_floatStopMHz_editingFinished(self):
+    plot_x_start = self.floatStartMHz.value()
+    plot_x_stop = self.floatStopMHz.value()
+    print(name(), line(), f'{plot_x_start = } : {plot_x_stop = }')
+    # Prevent graph, or plot, from trying to update this StopMHz control
+    self.graphWidget.sigXRangeChanged.disconnect(self.update_start_stop)
+    self.graphWidget.setXRange(plot_x_start, plot_x_stop)
+    self.graphWidget.sigXRangeChanged.connect(self.update_start_stop)
+    self.PROGSTART = False
+
+  @pyqtSlot()
   def on_intStepKHz_editingFinished(self):
     start_freq = self.floatStartMHz.value()
     stop_freq = self.floatStopMHz.value()
@@ -453,7 +475,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     num_steps = int(band_width / step_size)
 
     self.numFrequencySteps.setValue(num_steps)    # Update 'Data Points' for user
-    self.set_steps()
+    self.set_steps(num_steps)
     self.PROGSTART = False
 
   @pyqtSlot()

@@ -36,8 +36,10 @@ class DataGenerator():
   control dictionaries needed by the calibration scripts.
   """
   def __init__(self):
-    self.ref1 = cmd.ref_clock1_enable
-    self.ref2 = cmd.ref_clock2_enable
+    self.ref1_control_code = cmd.CmdProcInterface().ref_clock1_enable
+    self.ref2_control_code = cmd.CmdProcInterface().ref_clock2_enable
+#    self.ref1_control_code = cmd.ref_clock1_enable
+#    self.ref2 = cmd.ref_clock2_enable
     ''' RFin_list contains every frequency from 0 to 3000.0 MHz in 1 kHz steps '''
     self.RFin_list = list()
     with open('RFin_steps.csv', 'r') as f:
@@ -142,8 +144,10 @@ class DataGenerator():
     print()
     
   def dump_LO2_ref1_HI_freq(self):
-    with open('freq_LO2_ref1_HI.csv', 'w') as f:
-      for LO2_freq in self.LO2_ref1_hi_freq_list:
+    with open('LO2_ref1_hi_fmn_list.csv', 'w') as f:
+      for LO2_freq in self.LO2_ref1_hi_fmn_list:
+#    with open('freq_LO2_ref1_HI.csv', 'w') as f:
+#      for LO2_freq in self.LO2_ref1_hi_freq_list:
         f.write(f'{LO2_freq}' + '\n')
     breakpoint
 
@@ -169,7 +173,7 @@ class DataGenerator():
   def save_ref1_hi_control_file(self) -> None:
     LO1_n = self.LO1_ref1_N_list
     LO2_fmn = self.LO2_ref1_hi_fmn_list
-    full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
+    full_sweep_step_dict = {freq: (self.ref1_control_code, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
     with open('control_ref1_HI.pickle', 'wb') as f:
       pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -177,7 +181,7 @@ class DataGenerator():
   def save_ref2_hi_control_file(self):
     LO1_n = self.LO1_ref2_N_list
     LO2_fmn = self.LO2_ref2_hi_fmn_list
-    full_sweep_step_dict = {freq: (self.ref2, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
+    full_sweep_step_dict = {freq: (self.ref2_control_code, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
     with open('control_ref2_HI.pickle', 'wb') as f:
       pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -185,7 +189,7 @@ class DataGenerator():
   def save_ref1_lo_control_file(self) -> None:
     LO1_n = self.LO1_ref1_N_list
     LO2_fmn = self.LO2_ref1_lo_fmn_list
-    full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
+    full_sweep_step_dict = {freq: (self.ref1_control_code, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
     with open('control_ref1_LO.pickle', 'wb') as f:
       pickle.dump(full_sweep_step_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -202,7 +206,7 @@ class DataGenerator():
   def dump_csv_control_files(self):
     LO1_n = self.LO1_ref1_N_list
     LO2_fmn = self.LO2_ref1_hi_fmn_list
-    full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
+    full_sweep_step_dict = {freq: (self.ref1_control_code, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
     with open('control_ref1_HI.csv', 'w') as f:
       for all_items in full_sweep_step_dict.items():
         f.write(f'{all_items}' + '\n')
@@ -216,7 +220,7 @@ class DataGenerator():
 
     LO1_n = self.LO1_ref1_N_list
     LO2_fmn = self.LO2_ref1_lo_fmn_list
-    full_sweep_step_dict = {freq: (self.ref1, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
+    full_sweep_step_dict = {freq: (self.ref1_control_code, LO1, LO2) for freq, LO1, LO2 in zip(self.RFin_list, LO1_n, LO2_fmn)}
     with open('control_ref1_LO.csv', 'w') as f:
       for all_items in full_sweep_step_dict.items():
         f.write(f'{all_items}' + '\n')

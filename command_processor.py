@@ -30,55 +30,6 @@ import sys
 import time
 import logging
 
-command_codes = {
-    'attenuator_sel'   : 0x00FF,   # Attenuates the RFinput from 0 to 31.75dB
-
-    'LO1_device_sel'   : 0x01FF,   # Select device before sending a General Command
-    'LO1_RF_off'       : 0x09FF,   # Specific commands
-    'LO1_neg4dBm'      : 0x11FF,   # Change power and num freq steps
-    'LO1_neg1dBm'      : 0x19FF,   #     .
-    'LO1_pos2dBm'      : 0x21FF,   #     .
-    'LO1_pos5dBm'      : 0x29FF,   #     .
-    'LO1_no_change'    : 0x31FF,   # Select LO1 without changing the RF output power level
-    'LO1_mux_tristate' : 0x39FF,   # Disable or rather set tristate on the mux pin
-    'LO1_mux_dig_lock' : 0x41FF,   # Enable digital lock detect on the mux pin
-
-    'LO2_device_sel'   : 0x02FF,   # Select device before sending a General Command
-    'LO2_RF_off'       : 0x0AFF,   # Specific commands
-    'LO2_neg4dBm'      : 0x12FF,   # Change power and num freq steps
-    'LO2_neg1dBm'      : 0x1AFF,   #     .
-    'LO2_pos2dBm'      : 0x22FF,   #     .
-    'LO2_pos5dBm'      : 0x2AFF,   #     .
-    'LO2_num_steps'    : 0x32FF,   # Change num freq steps only
-    'LO2_mux_tristate' : 0x3AFF,   # Set tristate on the mux pin
-    'LO2_mux_dig_lock' : 0x42FF,   # Enable digital lock detect on the mux pin
-    'LO2_divider_mode' : 0x4AFF,   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 16, 32, 64, or 128
-
-    'LO3_device_sel'   : 0x03FF,   # Select device before sending a General Command
-    'LO3_RF_off'       : 0x0BFF,   # Specific commands
-    'LO3_neg4dBm'      : 0x13FF,   # Change power and num freq steps
-    'LO3_neg1dBm'      : 0x1BFF,   #     .
-    'LO3_pos2dBm'      : 0x23FF,   #     .
-    'LO3_pos5dBm'      : 0x2BFF,   #     .
-    'LO3_num_steps'    : 0x33FF,   # Change num freq steps only
-    'LO3_mux_tristate' : 0x3BFF,   # Set tristate on the mux pin
-    'LO3_mux_dig_lock' : 0x43FF,   # Enable digital lock detect on the mux pin
-    'LO3_divider_mode' : 0x4BFF,   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 16, 32, 64, or 128
-
-    # Reference clock Device Commands
-    'all_ref_disable'  : 0x04FF,
-    'ref_clock1_enable': 0x0CFF,   # Enables 66.000 MHz reference and disables 66.666 MHz reference
-    'ref_clock2_enable': 0x14FF,   # Enables 66.666 MHz reference and disables 66.000 MHz reference
-
-    # Arduino status
-    'Arduino_LED_off'  : 0x07FF,
-    'Arduino_LED_on'   : 0x0FFF,   # LED blink test - The 'Hello World' of embedded dev
-    'version_message'  : 0x17FF,   # Query Arduino type and Software version
-    'sweep_start'      : 0x1FFF,   # Serial communication flow control
-    'sweep_end'        : 0x27FF,   # Tell the Arduino that all data has been sent
-    'reset_and_report' : 0x2FFF,   # Reset the Spectrum Analyzer to default settings
-}
-
 class CmdProcInterface():
   def __init__(self):
     # Arduino and Device Commands

@@ -30,59 +30,68 @@ import sys
 import time
 import logging
 
+
+''' Arduino and programmable Device commands '''
 class CmdProcInterface():
+  _instance = None
+  
+  def __new__(cls):
+    if cls._instance is None:
+      cls._instance = super(CmdProcInterface, cls).__new__(cls)
+      # Arduino and Device Commands
+      cls._instance.attenuator_sel    = 0x00FF   # Attenuates the RFinput from 0 to 31.75dB
+
+      cls._instance.LO1_device_sel    = 0x01FF   # Select device before sending a General Command
+      cls._instance.LO1_RF_off        = 0x09FF   # Specific commands
+      cls._instance.LO1_neg4dBm       = 0x11FF   # Change LO1 RF output power
+      cls._instance.LO1_neg1dBm       = 0x19FF   #     .
+      cls._instance.LO1_pos2dBm       = 0x21FF   #     .
+      cls._instance.LO1_pos5dBm       = 0x29FF   #     .
+      cls._instance.LO1_no_change     = 0x31FF   # Select LO1 without changing the RF output power
+      cls._instance.LO1_mux_tristate  = 0x39FF   # Disable or rather set tristate on the mux pin
+      cls._instance.LO1_mux_dig_lock  = 0x41FF   # Enable digital lock detect on the mux pin
+
+      cls._instance.LO2_device_sel    = 0x02FF   # Select device before sending a General Command
+      cls._instance.LO2_RF_off        = 0x0AFF   # Specific commands
+      cls._instance.LO2_neg4dBm       = 0x12FF   # Change power and num freq steps
+      cls._instance.LO2_neg1dBm       = 0x1AFF   #     .
+      cls._instance.LO2_pos2dBm       = 0x22FF   #     .
+      cls._instance.LO2_pos5dBm       = 0x2AFF   #     .
+      cls._instance.LO2_num_steps     = 0x32FF   # Change num freq steps only
+      cls._instance.LO2_mux_tristate  = 0x3AFF   # Set tristate on the mux pin
+      cls._instance.LO2_mux_dig_lock  = 0x42FF   # Enable digital lock detect on the mux pin
+      cls._instance.LO2_divider_mode  = 0x4AFF   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 16, 32, 64, or 128
+
+      cls._instance.LO3_device_sel    = 0x03FF   # Select device before sending a General Command
+      cls._instance.LO3_RF_off        = 0x0BFF   # Specific commands
+      cls._instance.LO3_neg4dBm       = 0x13FF   # Change power and num freq steps
+      cls._instance.LO3_neg1dBm       = 0x1BFF   #     .
+      cls._instance.LO3_pos2dBm       = 0x23FF   #     .
+      cls._instance.LO3_pos5dBm       = 0x2BFF   #     .
+      cls._instance.LO3_num_steps     = 0x33FF   # Change num freq steps only
+      cls._instance.LO3_mux_tristate  = 0x3BFF   # Set tristate on the mux pin
+      cls._instance.LO3_mux_dig_lock  = 0x43FF   # Enable digital lock detect on the mux pin
+      cls._instance.LO3_divider_mode  = 0x4BFF   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 16, 32, 64, or 128
+
+      # Reference clock Device Commands
+      cls._instance.all_ref_disable   = 0x04FF
+      cls._instance.ref_clock1_enable = 0x0CFF   # Enables 66.000 MHz reference and disables 66.666 MHz reference
+      cls._instance.ref_clock2_enable = 0x14FF   # Enables 66.666 MHz reference and disables 66.000 MHz reference
+
+      # Arduino status
+      cls._instance.Arduino_LED_off   = 0x07FF
+      cls._instance.Arduino_LED_on    = 0x0FFF   # LED blink test - The 'Hello World' of embedded dev
+      cls._instance.version_message   = 0x17FF   # Query Arduino type and Software version
+      cls._instance.sweep_start       = 0x1FFF   # Serial communication flow control
+      cls._instance.sweep_end         = 0x27FF   # Tell the Arduino that all data has been sent
+      cls._instance.reset_and_report  = 0x2FFF   # Reset the Spectrum Analyzer to default settings
+    return cls._instance
+    
   def __init__(self):
-    # Arduino and Device Commands
-    self.attenuator_sel    = 0x00FF   # Attenuates the RFinput from 0 to 31.75dB
-
-    self.LO1_device_sel    = 0x01FF   # Select device before sending a General Command
-    self.LO1_RF_off        = 0x09FF   # Specific commands
-    self.LO1_neg4dBm       = 0x11FF   # Change power and num freq steps
-    self.LO1_neg1dBm       = 0x19FF   #     .
-    self.LO1_pos2dBm       = 0x21FF   #     .
-    self.LO1_pos5dBm       = 0x29FF   #     .
-    self.LO1_no_change     = 0x31FF   # Select LO1 without changing the RF output power level
-    self.LO1_mux_tristate  = 0x39FF   # Disable or rather set tristate on the mux pin
-    self.LO1_mux_dig_lock  = 0x41FF   # Enable digital lock detect on the mux pin
-
-    self.LO2_device_sel    = 0x02FF   # Select device before sending a General Command
-    self.LO2_RF_off        = 0x0AFF   # Specific commands
-    self.LO2_neg4dBm       = 0x12FF   # Change power and num freq steps
-    self.LO2_neg1dBm       = 0x1AFF   #     .
-    self.LO2_pos2dBm       = 0x22FF   #     .
-    self.LO2_pos5dBm       = 0x2AFF   #     .
-    self.LO2_num_steps     = 0x32FF   # Change num freq steps only
-    self.LO2_mux_tristate  = 0x3AFF   # Set tristate on the mux pin
-    self.LO2_mux_dig_lock  = 0x42FF   # Enable digital lock detect on the mux pin
-    self.LO2_divider_mode  = 0x4AFF   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 16, 32, 64, or 128
-
-    self.LO3_device_sel    = 0x03FF   # Select device before sending a General Command
-    self.LO3_RF_off        = 0x0BFF   # Specific commands
-    self.LO3_neg4dBm       = 0x13FF   # Change power and num freq steps
-    self.LO3_neg1dBm       = 0x1BFF   #     .
-    self.LO3_pos2dBm       = 0x23FF   #     .
-    self.LO3_pos5dBm       = 0x2BFF   #     .
-    self.LO3_num_steps     = 0x33FF   # Change num freq steps only
-    self.LO3_mux_tristate  = 0x3BFF   # Set tristate on the mux pin
-    self.LO3_mux_dig_lock  = 0x43FF   # Enable digital lock detect on the mux pin
-    self.LO3_divider_mode  = 0x4BFF   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 16, 32, 64, or 128
-
-    # Reference clock Device Commands
-    self.all_ref_disable   = 0x04FF
-    self.ref_clock1_enable = 0x0CFF   # Enables 66.000 MHz reference and disables 66.666 MHz reference
-    self.ref_clock2_enable = 0x14FF   # Enables 66.666 MHz reference and disables 66.000 MHz reference
-
-    # Arduino status
-    self.Arduino_LED_off   = 0x07FF
-    self.Arduino_LED_on    = 0x0FFF   # LED blink test - The 'Hello World' of embedded dev
-    self.version_message   = 0x17FF   # Query Arduino type and Software version
-    self.sweep_start       = 0x1FFF   # Serial communication flow control
-    self.sweep_end         = 0x27FF   # Tell the Arduino that all data has been sent
-    self.reset_and_report  = 0x2FFF   # Reset the Spectrum Analyzer to default settings
+    pass # Initialization is handled in __new__
 
 
 class CommandProcessor(CmdProcInterface):
-
   # Attenuator Command & Control
   def set_attenuator(self, decibels: float = 31.75) -> None:
     """

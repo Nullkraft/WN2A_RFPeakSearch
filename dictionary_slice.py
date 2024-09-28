@@ -76,7 +76,7 @@ class DictionarySlice:
 if __name__ == "__main__":
   import pickle
   from time import perf_counter
-  print("Executing z_scratch.py ...")
+  print("Executing dictionary_slice.py ...")
   ctrl_dict = {}
   with open("control.pickle", "rb") as f:
     ctrl_dict = pickle.load(f)

@@ -44,6 +44,17 @@ from PyQt6.QtCore import QObject, pyqtSignal
 """
 ser = serial.Serial()
 
+class BaseCommunication():
+    
+    def __init__(self, port_addr, baud_rate):
+      self.port_addr = port_addr
+      self.baud_rate = baud_rate
+    
+    def open_port(self):
+      ser_port = serial.Serial(self.port, self.baud, timeout=100/int(self.baud))
+      return ser_port
+
+
 class SimpleSerial(QObject):
   finished = pyqtSignal(bytearray)
   progress = pyqtSignal(int)

@@ -36,3 +36,5 @@ my_main.py
 training.py
 *prof
 delMe.py
+share/
+snake_venv/

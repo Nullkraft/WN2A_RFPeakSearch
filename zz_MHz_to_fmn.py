@@ -78,23 +78,12 @@ def collect_M_ties(
     batch_size=16_384,
     max_examples=None,
     ties_only=True,
-    rtol=1e-5,
-    atol=1e-8,
 ):
     """
     For each frequency in the sweep, find all M values (2..4095) whose error
-    matches the minimum error for that frequency.
+    matches the minimum error for that frequency, after rounding error to kHz.
 
-    Returns:
-        freq_M_targets: dict
-            freq_MHz (float) -> {
-                "error_kHz": float,
-                "best_M":    int,
-                "M_list":    [int, ...],  # all M that tie with best_M
-            }
-
-    NOTE: Over a full multi-million-point sweep this dict can get huge.
-          Use max_examples to cap how many frequencies you record.
+    Frequencies are stored and keyed as MHz rounded to 3 decimals.
     """
     import numpy as np
     import torch
@@ -104,17 +93,12 @@ def collect_M_ties(
     else:
         device = torch.device(device)
 
-    # Reuse your existing sweep builder
     sweep_freqs, step_size = build_sweep(frange)
 
-    # Frequencies on device
     target_freqs = torch.from_numpy(sweep_freqs.astype(np.float32)).to(device)
 
-    # M and Fpfd on device (M is already what you use elsewhere)
     M = torch.arange(2, 4096, dtype=torch.int32, device=device)      # [nM]
     Fpfd_t = torch.tensor(Fpfd, dtype=torch.float32, device=device)  # scalar
-
-    # Precompute the div ladder once
     div = 2 ** torch.arange(8, device=device)                        # [8]
 
     freq_M_targets = {}
@@ -122,13 +106,10 @@ def collect_M_ties(
 
     start_t = perf_counter()
 
-    # Process in batches to avoid huge intermediates
     for batch_freqs in target_freqs.split(batch_size):
-        # batch_freqs: [B]
-
         B = batch_freqs.shape[0]
 
-        # 1) VCO ladder and pick first multiplier s.t. Fvco >= 3000
+        # 1) VCO ladder and first multiplier with Fvco >= 3000
         Fvco_ladder = batch_freqs.view(-1, 1) * div.view(1, -1)      # [B, 8]
         div_mask = (Fvco_ladder >= 3000.0).to(torch.int)
         idx = torch.argmax(div_mask, dim=1)                          # [B]
@@ -140,26 +121,67 @@ def collect_M_ties(
         step_fract = step_total - N                                  # [B]
 
         # 3) All F candidates for all M
-        #    step_fract[:,None] * M[None,:] -> [B, nM]
         F = (step_fract.view(-1, 1) * M.view(1, -1)).to(torch.int64) # [B, nM]
 
-        # 4) Error surface for all (F,M) in MHz
-        F_over_M = F.to(torch.float32) / M.view(1, -1)                 # [B, nM]
-        synth = Fpfd_t * (N.view(-1, 1).to(torch.float32) + F_over_M)  # [B, nM]
-        diffs = torch.abs(Fvco.view(-1, 1) - synth)                    # [B, nM], MHz
+        # 4) Error surface in MHz
+        F_over_M = F.to(torch.float32) / M.view(1, -1)               # [B, nM]
+        synth = Fpfd_t * (N.view(-1, 1).to(torch.float32) + F_over_M)
+        diffs = torch.abs(Fvco.view(-1, 1) - synth)                  # [B, nM]
 
-        # --- NEW: quantize to 3 decimal places (kHz) and use exact equality ---
-        # Convert to kHz and round to nearest integer kHz
-        diffs_kHz = torch.round(diffs * 1000.0)                        # [B, nM], integer kHz
+        # Quantize error to integer kHz and use strict equality
+        diffs_kHz = torch.round(diffs * 1000.0)                      # [B, nM]
+        row_min_kHz, _ = diffs_kHz.min(dim=1)                        # [B]
+        tie_mask = diffs_kHz == row_min_kHz.view(-1, 1)              # [B, nM]
 
-        # 5) Minimum error per row in kHz
-        row_min_kHz, _ = diffs_kHz.min(dim=1)                          # [B]
-        # Tie mask: exactly equal after rounding to 1 kHz resolution
-        tie_mask = diffs_kHz == row_min_kHz.view(-1, 1)                # [B, nM]
+        # Canonical best_M from quantized error
+        idx_min = torch.argmin(diffs_kHz, dim=1)                     # [B]
+        best_M = M[idx_min]                                          # [B]
 
-        # 6) Canonical best_M = first argmin of the quantized error
-        idx_min = torch.argmin(diffs_kHz, dim=1)                       # [B]
-        best_M = M[idx_min]                                            # [B]
+        # Move small things to CPU for dict population
+        freqs_cpu        = batch_freqs.cpu().numpy()
+        row_min_kHz_cpu  = row_min_kHz.cpu().numpy()
+        best_M_cpu       = best_M.cpu().numpy()
+        tie_mask_cpu     = tie_mask.cpu().numpy()
+        M_cpu            = M.cpu().numpy()
+
+        for i in range(B):
+            Ms_tied = M_cpu[tie_mask_cpu[i]].astype(int).tolist()
+
+            if ties_only and len(Ms_tied) <= 1:
+                continue
+
+            # Raw float from GPU
+            freq_MHz = float(freqs_cpu[i])
+            # Round to 3 decimals (1 kHz resolution)
+            freq_MHz_rounded = round(freq_MHz, 3)
+
+            best_err_kHz = float(row_min_kHz_cpu[i])
+            best_M_val   = int(best_M_cpu[i])
+
+            freq_M_targets[freq_MHz_rounded] = {
+                "freq_MHz":  freq_MHz_rounded,
+                "error_kHz": best_err_kHz,
+                "best_M":    best_M_val,
+                "M_list":    Ms_tied,
+            }
+
+            saved += 1
+            if max_examples is not None and saved >= max_examples:
+                break
+
+        if max_examples is not None and saved >= max_examples:
+            break
+
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+    elapsed = perf_counter() - start_t
+
+    print(
+        line(),
+        f"collect_M_ties() captured {saved} frequencies "
+        f"in {elapsed:.3f} s on {device}",
+    )
+    return freq_M_targets
 
         """
         # 4) Error surface for all (F,M)
@@ -270,8 +292,8 @@ def summarize_M_ties(freq_M_targets):
             max_count = count
             max_freq = freq
 
-    print(line(), f"fewest M's: freq = {min_freq:.6f} MHz, count = {min_count}")
-    print(line(), f"most   M's: freq = {max_freq:.6f} MHz, count = {max_count}")
+    print(line(), f"fewest M's: freq = {min_freq:.3f} MHz, count = {min_count}")
+    print(line(), f"most   M's: freq = {max_freq:.3f} MHz, count = {max_count}")
 
     return (min_freq, min_count), (max_freq, max_count)
 

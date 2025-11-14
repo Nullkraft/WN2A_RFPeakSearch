@@ -143,6 +143,25 @@ def collect_M_ties(
         #    step_fract[:,None] * M[None,:] -> [B, nM]
         F = (step_fract.view(-1, 1) * M.view(1, -1)).to(torch.int64) # [B, nM]
 
+        # 4) Error surface for all (F,M) in MHz
+        F_over_M = F.to(torch.float32) / M.view(1, -1)                 # [B, nM]
+        synth = Fpfd_t * (N.view(-1, 1).to(torch.float32) + F_over_M)  # [B, nM]
+        diffs = torch.abs(Fvco.view(-1, 1) - synth)                    # [B, nM], MHz
+
+        # --- NEW: quantize to 3 decimal places (kHz) and use exact equality ---
+        # Convert to kHz and round to nearest integer kHz
+        diffs_kHz = torch.round(diffs * 1000.0)                        # [B, nM], integer kHz
+
+        # 5) Minimum error per row in kHz
+        row_min_kHz, _ = diffs_kHz.min(dim=1)                          # [B]
+        # Tie mask: exactly equal after rounding to 1 kHz resolution
+        tie_mask = diffs_kHz == row_min_kHz.view(-1, 1)                # [B, nM]
+
+        # 6) Canonical best_M = first argmin of the quantized error
+        idx_min = torch.argmin(diffs_kHz, dim=1)                       # [B]
+        best_M = M[idx_min]                                            # [B]
+
+        """
         # 4) Error surface for all (F,M)
         F_over_M = F.to(torch.float32) / M.view(1, -1)               # [B, nM]
         synth = Fpfd_t * (N.view(-1, 1).to(torch.float32) + F_over_M)  # [B, nM]
@@ -160,15 +179,36 @@ def collect_M_ties(
         # 6) Canonical best_M = first argmin (keeps current behaviour)
         idx_min = torch.argmin(diffs, dim=1)                         # [B]
         best_M = M[idx_min]                                          # [B]
+        """
 
         # Move small things to CPU for dict construction
+        freqs_cpu    = batch_freqs.cpu().numpy()
+        row_min_kHz_cpu = row_min_kHz.cpu().numpy()
+        best_M_cpu   = best_M.cpu().numpy()
+        tie_mask_cpu = tie_mask.cpu().numpy()
+        M_cpu        = M.cpu().numpy()
+        """
         freqs_cpu     = batch_freqs.cpu().numpy()
         row_min_cpu   = row_min.cpu().numpy()
         best_M_cpu    = best_M.cpu().numpy()
         tie_mask_cpu  = tie_mask.cpu().numpy()
         M_cpu         = M.cpu().numpy()
+        """
 
         for i in range(B):
+            freq_MHz = float(freqs_cpu[i])
+
+            # Already in kHz, rounded to integer
+            best_err_kHz = float(row_min_kHz_cpu[i])
+
+            Ms_tied = M_cpu[tie_mask_cpu[i]].astype(int).tolist()
+
+            freq_M_targets[freq_MHz] = {
+                "error_kHz": best_err_kHz,
+                "best_M":    int(best_M_cpu[i]),
+                "M_list":    Ms_tied,
+            }
+            """
             # Which M values tie for the minimum?
             Ms_tied = M_cpu[tie_mask_cpu[i]].astype(int).tolist()
 
@@ -184,6 +224,7 @@ def collect_M_ties(
                 "best_M":    best_M_val,
                 "M_list":    Ms_tied,
             }
+            """
 
             saved += 1
             if max_examples is not None and saved >= max_examples:

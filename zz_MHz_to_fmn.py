@@ -72,6 +72,138 @@ def pt_MHz_to_fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float
   return best_F<<20 | best_M<<8 | N
 
 
+def collect_M_ties(
+    frange,
+    device=None,
+    batch_size=16_384,
+    max_examples=None,
+    ties_only=True,
+    rtol=1e-5,
+    atol=1e-8,
+):
+    """
+    For each frequency in the sweep, find all M values (2..4095) whose error
+    matches the minimum error for that frequency.
+
+    Returns:
+        freq_M_targets: dict
+            freq_MHz (float) -> {
+                "error_kHz": float,
+                "best_M":    int,
+                "M_list":    [int, ...],  # all M that tie with best_M
+            }
+
+    NOTE: Over a full multi-million-point sweep this dict can get huge.
+          Use max_examples to cap how many frequencies you record.
+    """
+    import numpy as np
+    import torch
+
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    else:
+        device = torch.device(device)
+
+    # Reuse your existing sweep builder
+    sweep_freqs, step_size = build_sweep(frange)
+
+    # Frequencies on device
+    target_freqs = torch.from_numpy(sweep_freqs.astype(np.float32)).to(device)
+
+    # M and Fpfd on device (M is already what you use elsewhere)
+    M = torch.arange(2, 4096, dtype=torch.int32, device=device)      # [nM]
+    Fpfd_t = torch.tensor(Fpfd, dtype=torch.float32, device=device)  # scalar
+
+    # Precompute the div ladder once
+    div = 2 ** torch.arange(8, device=device)                        # [8]
+
+    freq_M_targets = {}
+    saved = 0
+
+    start_t = perf_counter()
+
+    # Process in batches to avoid huge intermediates
+    for batch_freqs in target_freqs.split(batch_size):
+        # batch_freqs: [B]
+
+        B = batch_freqs.shape[0]
+
+        # 1) VCO ladder and pick first multiplier s.t. Fvco >= 3000
+        Fvco_ladder = batch_freqs.view(-1, 1) * div.view(1, -1)      # [B, 8]
+        div_mask = (Fvco_ladder >= 3000.0).to(torch.int)
+        idx = torch.argmax(div_mask, dim=1)                          # [B]
+        Fvco = Fvco_ladder[torch.arange(B, device=device), idx]      # [B]
+
+        # 2) N and fractional part
+        step_total = Fvco / Fpfd_t                                   # [B]
+        N = step_total.to(torch.int16)                               # [B]
+        step_fract = step_total - N                                  # [B]
+
+        # 3) All F candidates for all M
+        #    step_fract[:,None] * M[None,:] -> [B, nM]
+        F = (step_fract.view(-1, 1) * M.view(1, -1)).to(torch.int64) # [B, nM]
+
+        # 4) Error surface for all (F,M)
+        F_over_M = F.to(torch.float32) / M.view(1, -1)               # [B, nM]
+        synth = Fpfd_t * (N.view(-1, 1).to(torch.float32) + F_over_M)  # [B, nM]
+        diffs = torch.abs(Fvco.view(-1, 1) - synth)                  # [B, nM]
+
+        # 5) Minimum error per row, and tie mask
+        row_min, _ = diffs.min(dim=1)                                # [B]
+        tie_mask = torch.isclose(
+            diffs,
+            row_min.view(-1, 1),
+            rtol=rtol,
+            atol=atol,
+        )                                                            # [B, nM]
+
+        # 6) Canonical best_M = first argmin (keeps current behaviour)
+        idx_min = torch.argmin(diffs, dim=1)                         # [B]
+        best_M = M[idx_min]                                          # [B]
+
+        # Move small things to CPU for dict construction
+        freqs_cpu     = batch_freqs.cpu().numpy()
+        row_min_cpu   = row_min.cpu().numpy()
+        best_M_cpu    = best_M.cpu().numpy()
+        tie_mask_cpu  = tie_mask.cpu().numpy()
+        M_cpu         = M.cpu().numpy()
+
+        for i in range(B):
+            # Which M values tie for the minimum?
+            Ms_tied = M_cpu[tie_mask_cpu[i]].astype(int).tolist()
+
+            if ties_only and len(Ms_tied) <= 1:
+                continue  # skip single-M minima if you only care about ties
+
+            freq_MHz = float(freqs_cpu[i])
+            best_err_kHz = float(row_min_cpu[i]) * 1000.0
+            best_M_val = int(best_M_cpu[i])
+
+            freq_M_targets[freq_MHz] = {
+                "error_kHz": best_err_kHz,
+                "best_M":    best_M_val,
+                "M_list":    Ms_tied,
+            }
+
+            saved += 1
+            if max_examples is not None and saved >= max_examples:
+                break
+
+        if max_examples is not None and saved >= max_examples:
+            break
+
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+    elapsed = perf_counter() - start_t
+
+    print(
+        line(),
+        f"collect_M_ties() captured {saved} frequencies "
+        f"in {elapsed:.3f} s on {device}",
+    )
+    return freq_M_targets
+
+
 def report_cuda_memory(device='cuda:0'):
     total_memory = torch.cuda.get_device_properties(device).total_memory
     allocated_memory = torch.cuda.memory_allocated(device)
@@ -204,11 +336,25 @@ def py_torch(frange):
 
 def main():
   print()
-  frange = (23.5, 6000.0, 5_976_000)
+frange = (23.5, 6000.0, 5_976_000)
+
+freq_M_targets = collect_M_ties(
+  frange,
+  device="cuda",
+  batch_size=16_384,
+  max_examples=1000,   # or None if you really want all of them
+  ties_only=True,      # only keep frequencies with >1 M in M_list
+)
+
+for f, info in list(freq_M_targets.items())[:5]:
+  print(
+    f"{f:.3f} MHz -> err={info['error_kHz']:.6f} kHz, "
+    f"best_M={info['best_M']}, M_list={info['M_list']}"
+  )
 
   # num_py(frange)
   # print()
-  py_torch(frange)
+  # py_torch(frange)
   print()
 
 if __name__ == '__main__':

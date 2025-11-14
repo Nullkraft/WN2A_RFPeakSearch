@@ -3,8 +3,15 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import sys
 from hardware_cfg import MHz_to_fmn
+from time import perf_counter
+from os import cpu_count
 
-line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
+line = lambda: f"line {str(sys._getframe(1).f_lineno)},"    # Report which line in the file
+
+R = 2
+ref_clock = 66.000
+Fpfd = ref_clock / R
+
 
 def fmn_to_MHz(fmn_word, Fpfd, show_fmn: bool=False):
   F_ = fmn_word >> 20
@@ -21,10 +28,7 @@ def fmn_to_MHz(fmn_word, Fpfd, show_fmn: bool=False):
 """
 
 """
-R = 2
-ref_clock = 66.666
-Fpfd = ref_clock / R
-def np_MHz_to_fmn(target_freqs: np.ndarray, M: np.ndarray, Fpfd: float =33.0):
+def np_MHz_to_fmn(target_freqs: np.ndarray, M: np.ndarray, Fpfd: float=66.0):
   global F_list
   global diffs
   """ Form a 32 bit word consisting of 12 bits of F, 12 bits of M and 8 bits of N for the MAX2871. """
@@ -35,9 +39,9 @@ def np_MHz_to_fmn(target_freqs: np.ndarray, M: np.ndarray, Fpfd: float =33.0):
   Fvco = np.take_along_axis(Fvco, indices, axis=1)# Done with indicies, now it can be used elsewhere
   step_fract, N = np.modf(Fvco/Fpfd)
   N = N.astype(np.int16)
-#  N = (Fvco/Fpfd).astype(np.int16)                # Integer portion of the step size for register N
-#  step_fract = Fvco/Fpfd - N                      # Fractional portion of the step size
-  F = (M * step_fract).astype(np.int64)           # Convert decimal part for register F
+#  N = (Fvco/Fpfd).astype(np.int16)                 # Integer portion of the step size for register N
+#  step_fract = Fvco/Fpfd - N                       # Fractional portion of the step size
+  F = (M * step_fract).astype(np.int64)            # Convert decimal part for register F
   Fvco_diffs = np.abs(Fvco - (Fpfd * (N + F/M)))
   indices = np.argmin(Fvco_diffs, axis=1)[:, None] # Get the index of the minimum error ....
   best_M = M[indices]                              # .... and get best_M at same 'index' and ....
@@ -102,64 +106,92 @@ def report_cuda_memory(device='cuda:0'):
     print(f"Cached Memory: {cached_memory:.2f} MB")
 """
 
-if __name__ == '__main__':
-  print()
-  from time import perf_counter
-  from os import cpu_count
-#  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-#  dev_capability = torch.cuda.get_device_capability()
-#  print(line(), f'GPU Capability : {dev_capability}')
-  device = torch.device('cpu')
-#  print(line(), f'{device = }\n')
+def num_py(frange):
+    start, end, num_steps = frange
+    print(line(), f'start = {start}, end = {end}, steps = {num_steps}')
+    step_size = (end - start)/num_steps
 
+    norm_fmn = []
+    norm_fvcos = []
+    norm_freqs = []
+    torch_fmn = []
+    sweep_freqs = np.round(FreqDataset(start, end, step_size), 3)
+
+    start_a = perf_counter()
+    for freq in sweep_freqs:
+      fmn, norm_fvco = MHz_to_fmn(freq, ref_clock)
+      print(line(), f'fmn = {hex(fmn)} : norm_fvco = {round(norm_fvco, 3)}')
+      norm_freqs.append(freq)
+      norm_fmn.append(fmn)
+      norm_fvcos.append(norm_fvco)
+
+def py_torch(frange):
+  #  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+  #  dev_capability = torch.cuda.get_device_capability()
+  #  print(line(), f'GPU Capability : {dev_capability}')
+    device = torch.device('cpu')
+  #  print(line(), f'{device = }\n')
+
+    start, end, num_steps = frange
+  #  num_steps = round((end-start) / 0.001)
+    print(line(), f'start = {start}, end = {end}, steps = {num_steps}')
+  #  start = 4082.0
+  #  end = 4148.0
+    step_size = (end - start)/num_steps
+  #  end = end + step_size/10      # Add a small fraction of a step to include the 'end' value
+  #  steps = np.arange(start, end, step_size)
+  #  print(line(), f'steps =\n{steps}')
+
+    norm_fmn = []
+    norm_fvcos = []
+    norm_freqs = []
+    torch_fmn = []
+  #  batch_size = 65_000
+    batch_size = 16350    # This batch size causes 1.0 GB of video ram to be consumed
+    sweep_freqs = np.round(FreqDataset(start, end, step_size), 3)
+
+    dataloader = DataLoader(sweep_freqs, batch_size=batch_size, shuffle=False, num_workers=cpus)
+    print(line(), f'{len(sweep_freqs) = }, {dataloader.dataset}')
+    start_a = perf_counter()
+    for freq in sweep_freqs:
+      fmn, norm_fvco = MHz_to_fmn(freq, ref_clock)
+      print(line(), f'fmn = {hex(fmn)} : norm_fvco = {round(norm_fvco, 3)}')
+      norm_freqs.append(freq)
+      norm_fmn.append(fmn)
+      norm_fvcos.append(norm_fvco)
+  #  n = 13
+  #  print(line(), f'norm fmn[{n}] = {norm_fmn[n]}')
+
+  #  """ Run the Pytorch version of MHz_to_fmn() """
+  #  M = (torch.arange(2, 4096)).to(torch.int32)
+  #  M = M.to(device)
+  #  start_b = perf_counter()
+  #  num_batches = 0
+  #  for batch in dataloader:
+  #    num_batches += 1
+  #    batch = np.round(batch, decimals=3)
+  #    torch_fmn = pt_MHz_to_fmn(batch, M, device=device).cpu().numpy()
+  #  if num_batches == 1:
+  #    pt_str = f'{num_batches} batch'
+  #  else:
+  #    pt_str = f'{num_batches} batches'
+
+
+def main():
   start = 3352.015
   end = 3355.015
-  num_steps = 3
-#  num_steps = round((end-start) / 0.001)
-  print(line(), f'start = {start}, end = {end}, steps = {num_steps}')
-#  start = 4082.0
-#  end = 4148.0
-  step_size = (end - start)/num_steps
-  end = end + step_size/10      # Add a small fraction of a step to include the 'end' value
-  steps = np.arange(start, end, step_size)
-#  print(line(), f'steps =\n{steps}')
+  num_steps = 9
+  frange = (start, end, num_steps)
 
-  norm_fmn = []
-  norm_fvcos = []
-  norm_freqs = []
-  torch_fmn = []
-#  batch_size = 65_000
-  batch_size = 16350    # This batch size causes 1.0 GB of video ram to be consumed
-  sweep_freqs = np.round(FreqDataset(start, end, step_size), 3)
-  
+  num_py(frange)
+
+if __name__ == '__main__':
+  print()
+
   cpus = int(cpu_count() / 2)
   print(line(), f'number of CPUs = {cpus}')
-  dataloader = DataLoader(sweep_freqs, batch_size=batch_size, shuffle=False, num_workers=cpus)
-  print(line(), f'{len(sweep_freqs) = }, {dataloader.dataset}')
-  start_a = perf_counter()
-  for freq in sweep_freqs:
-    fmn, norm_fvco = MHz_to_fmn(freq, 33.0)
-    print(line(), f'fmn = {hex(fmn)} : norm_fvco = {round(norm_fvco, 3)}')
-    norm_freqs.append(freq)
-    norm_fmn.append(fmn)
-    norm_fvcos.append(norm_fvco)
-#  n = 13
-#  print(line(), f'norm fmn[{n}] = {norm_fmn[n]}')
 
-#  """ Run the Pytorch version of MHz_to_fmn() """  
-#  M = (torch.arange(2, 4096)).to(torch.int32)
-#  M = M.to(device)
-#  start_b = perf_counter()
-#  num_batches = 0
-#  for batch in dataloader:
-#    num_batches += 1
-#    batch = np.round(batch, decimals=3)
-#    torch_fmn = pt_MHz_to_fmn(batch, M, device=device).cpu().numpy()
-#  if num_batches == 1:
-#    pt_str = f'{num_batches} batch'
-#  else:
-#    pt_str = f'{num_batches} batches'
-
+  main()
 
 
 

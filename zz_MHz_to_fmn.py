@@ -6,10 +6,11 @@ from hardware_cfg import MHz_to_fmn
 from time import perf_counter
 from os import cpu_count
 from typing import Optional
+from collections import Counter
 
 line = lambda: f"line {str(sys._getframe(1).f_lineno)},"    # Report which line in the file
 
-R = 2
+R = 1
 ref_clock = 66.000
 Fpfd = ref_clock / R
 
@@ -78,7 +79,7 @@ def collect_M_ties(
     batch_size=16_384,
     max_examples=None,
     ties_only=True,
-):
+    ):
     """
     For each frequency in the sweep, find all M values (2..4095) whose error
     matches the minimum error for that frequency, after rounding error to kHz.
@@ -183,89 +184,6 @@ def collect_M_ties(
     )
     return freq_M_targets
 
-        """
-        # 4) Error surface for all (F,M)
-        F_over_M = F.to(torch.float32) / M.view(1, -1)               # [B, nM]
-        synth = Fpfd_t * (N.view(-1, 1).to(torch.float32) + F_over_M)  # [B, nM]
-        diffs = torch.abs(Fvco.view(-1, 1) - synth)                  # [B, nM]
-
-        # 5) Minimum error per row, and tie mask
-        row_min, _ = diffs.min(dim=1)                                # [B]
-        tie_mask = torch.isclose(
-            diffs,
-            row_min.view(-1, 1),
-            rtol=rtol,
-            atol=atol,
-        )                                                            # [B, nM]
-
-        # 6) Canonical best_M = first argmin (keeps current behaviour)
-        idx_min = torch.argmin(diffs, dim=1)                         # [B]
-        best_M = M[idx_min]                                          # [B]
-        """
-
-        # Move small things to CPU for dict construction
-        freqs_cpu    = batch_freqs.cpu().numpy()
-        row_min_kHz_cpu = row_min_kHz.cpu().numpy()
-        best_M_cpu   = best_M.cpu().numpy()
-        tie_mask_cpu = tie_mask.cpu().numpy()
-        M_cpu        = M.cpu().numpy()
-        """
-        freqs_cpu     = batch_freqs.cpu().numpy()
-        row_min_cpu   = row_min.cpu().numpy()
-        best_M_cpu    = best_M.cpu().numpy()
-        tie_mask_cpu  = tie_mask.cpu().numpy()
-        M_cpu         = M.cpu().numpy()
-        """
-
-        for i in range(B):
-            freq_MHz = float(freqs_cpu[i])
-
-            # Already in kHz, rounded to integer
-            best_err_kHz = float(row_min_kHz_cpu[i])
-
-            Ms_tied = M_cpu[tie_mask_cpu[i]].astype(int).tolist()
-
-            freq_M_targets[freq_MHz] = {
-                "error_kHz": best_err_kHz,
-                "best_M":    int(best_M_cpu[i]),
-                "M_list":    Ms_tied,
-            }
-            """
-            # Which M values tie for the minimum?
-            Ms_tied = M_cpu[tie_mask_cpu[i]].astype(int).tolist()
-
-            if ties_only and len(Ms_tied) <= 1:
-                continue  # skip single-M minima if you only care about ties
-
-            freq_MHz = float(freqs_cpu[i])
-            best_err_kHz = float(row_min_cpu[i]) * 1000.0
-            best_M_val = int(best_M_cpu[i])
-
-            freq_M_targets[freq_MHz] = {
-                "error_kHz": best_err_kHz,
-                "best_M":    best_M_val,
-                "M_list":    Ms_tied,
-            }
-            """
-
-            saved += 1
-            if max_examples is not None and saved >= max_examples:
-                break
-
-        if max_examples is not None and saved >= max_examples:
-            break
-
-    if device.type == "cuda":
-        torch.cuda.synchronize(device)
-    elapsed = perf_counter() - start_t
-
-    print(
-        line(),
-        f"collect_M_ties() captured {saved} frequencies "
-        f"in {elapsed:.3f} s on {device}",
-    )
-    return freq_M_targets
-
 
 def summarize_M_ties(freq_M_targets):
     """
@@ -296,6 +214,75 @@ def summarize_M_ties(freq_M_targets):
     print(line(), f"most   M's: freq = {max_freq:.3f} MHz, count = {max_count}")
 
     return (min_freq, min_count), (max_freq, max_count)
+
+
+def build_M_usage(freq_M_targets):
+    """
+    Count how many frequencies each M appears in.
+    Returns: Counter mapping M -> count_of_frequencies_using_M
+    """
+    usage = Counter()
+    for info in freq_M_targets.values():
+        # Use set(...) so multiple occurrences in the same M_list don't overcount
+        usage.update(set(info["M_list"]))
+    return usage
+
+
+def reduce_unique_Ms(freq_M_targets):
+    """
+    Remove M values that appear in only one frequency's M_list, starting from
+    frequencies with the largest M_list. Ensures each frequency keeps at least
+    one M.
+
+    Mutates freq_M_targets in-place.
+    Returns:
+        removed_Ms   : set of M values that were removed everywhere
+        final_M_set  : set of all M values still used after reduction
+    """
+    # 1) Initial usage counts
+    usage = build_M_usage(freq_M_targets)
+
+    # 2) Frequencies sorted by descending M_list size
+    freqs_sorted = sorted(
+        freq_M_targets.keys(),
+        key=lambda f: len(freq_M_targets[f]["M_list"]),
+        reverse=True,
+    )
+
+    removed_Ms = set()
+
+    # 3) Greedy pass
+    for freq in freqs_sorted:
+        info = freq_M_targets[freq]
+        Ms = info["M_list"]
+
+        # If this frequency has only 1 M, nothing can be removed
+        if len(Ms) <= 1:
+            continue
+
+        # We'll build a new list of M's to keep
+        new_M_list = []
+        remaining = len(Ms)
+
+        for m in Ms:
+            # If this M is used only here and we still have >1 left, drop it
+            if usage[m] == 1 and remaining > 1:
+                removed_Ms.add(m)
+                usage[m] = 0
+                remaining -= 1
+                # do not add to new_M_list
+            else:
+                new_M_list.append(m)
+
+        # Update this frequency's M_list with pruned list
+        info["M_list"] = new_M_list
+
+    # 4) Recompute the global set of Ms still used
+    final_M_set = set()
+    for info in freq_M_targets.values():
+        final_M_set.update(info["M_list"])
+
+    return removed_Ms, final_M_set
 
 
 def report_cuda_memory(device='cuda:0'):
@@ -436,18 +423,40 @@ def main():
     frange,
     device="cuda",
     batch_size=16_384,
-    max_examples=1000,   # or None if you really want all of them
+    max_examples=None,   # or None if you really want all of them
     ties_only=True,      # only keep frequencies with >1 M in M_list
   )
 
-  for f, info in list(freq_M_targets.items())[:5]:
-    print(
+  # Sanity: how many M's before reduction?
+  original_Ms = set()
+  for info in freq_M_targets.values():
+      original_Ms.update(info["M_list"])
+  print(line(), f"original unique M count: {len(original_Ms)}")
+
+  removed_Ms, final_M_set = reduce_unique_Ms(freq_M_targets)
+
+  print(line(), f"removed M count: {len(removed_Ms)}")
+  print(line(), f"final unique M count: {len(final_M_set)}")
+
+  # Inspect what happened at 24.750 MHz specifically:
+  f = 24.750
+  entry = freq_M_targets[f]
+  print(
+      line(),
+      f"freq = {f:.3f} MHz -> M_list length after reduction = {len(entry['M_list'])}"
+  )
+  print(line(), f"first 10 M's: {sorted(entry['M_list'])[:10]}")
+  print(line(), f"last 10 M's:  {sorted(entry['M_list'])[-10:]}")
+
+
+  """ for f, info in list(freq_M_targets.items())[:5]:
+    print(line(),
       f"{f:.3f} MHz -> err={info['error_kHz']:.6f} kHz, "
       f"best_M={info['best_M']}, M_list={info['M_list']}"
     )
 
   (min_freq, min_count), (max_freq, max_count) = summarize_M_ties(freq_M_targets)
-
+  """
   # num_py(frange)
   # print()
   # py_torch(frange)

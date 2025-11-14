@@ -245,6 +245,37 @@ def collect_M_ties(
     return freq_M_targets
 
 
+def summarize_M_ties(freq_M_targets):
+    """
+    Given freq_M_targets from collect_M_ties(), find:
+      - the frequency with the fewest tied M values
+      - the frequency with the most tied M values
+
+    Returns:
+        (min_freq, min_count), (max_freq, max_count)
+    """
+    min_freq = None
+    min_count = None
+    max_freq = None
+    max_count = None
+
+    for freq, info in freq_M_targets.items():
+        count = len(info["M_list"])
+
+        if min_count is None or count < min_count:
+            min_count = count
+            min_freq = freq
+
+        if max_count is None or count > max_count:
+            max_count = count
+            max_freq = freq
+
+    print(line(), f"fewest M's: freq = {min_freq:.6f} MHz, count = {min_count}")
+    print(line(), f"most   M's: freq = {max_freq:.6f} MHz, count = {max_count}")
+
+    return (min_freq, min_count), (max_freq, max_count)
+
+
 def report_cuda_memory(device='cuda:0'):
     total_memory = torch.cuda.get_device_properties(device).total_memory
     allocated_memory = torch.cuda.memory_allocated(device)
@@ -377,21 +408,23 @@ def py_torch(frange):
 
 def main():
   print()
-frange = (23.5, 6000.0, 5_976_000)
+  frange = (23.5, 6000.0, 5_976_000)
 
-freq_M_targets = collect_M_ties(
-  frange,
-  device="cuda",
-  batch_size=16_384,
-  max_examples=1000,   # or None if you really want all of them
-  ties_only=True,      # only keep frequencies with >1 M in M_list
-)
-
-for f, info in list(freq_M_targets.items())[:5]:
-  print(
-    f"{f:.3f} MHz -> err={info['error_kHz']:.6f} kHz, "
-    f"best_M={info['best_M']}, M_list={info['M_list']}"
+  freq_M_targets = collect_M_ties(
+    frange,
+    device="cuda",
+    batch_size=16_384,
+    max_examples=1000,   # or None if you really want all of them
+    ties_only=True,      # only keep frequencies with >1 M in M_list
   )
+
+  for f, info in list(freq_M_targets.items())[:5]:
+    print(
+      f"{f:.3f} MHz -> err={info['error_kHz']:.6f} kHz, "
+      f"best_M={info['best_M']}, M_list={info['M_list']}"
+    )
+
+  (min_freq, min_count), (max_freq, max_count) = summarize_M_ties(freq_M_targets)
 
   # num_py(frange)
   # print()

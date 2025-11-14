@@ -48,6 +48,7 @@ def np_MHz_to_fmn(target_freqs: np.ndarray, M: np.ndarray, Fpfd: float=66.0):
   best_F = np.take_along_axis(F, indices, axis=1)  # .... get best_F at same 'index'
   return best_F<<20 | best_M<<8 | N
 
+
 pr = True
 def pt_MHz_to_fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float16=33.0, device='cpu'):
   global pr
@@ -77,15 +78,6 @@ def pt_MHz_to_fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float
   best_F = F.gather(1, indices)         # indices is the index that results in best_F
   return best_F<<20 | best_M<<8 | N
 
-class FreqDataset(Dataset):
-    def __init__(self, start, end, step_size):
-        self.freqs = torch.arange(start, end, step_size)
-
-    def __len__(self):
-        return len(self.freqs)
-
-    def __getitem__(self, idx):
-        return self.freqs[idx]
 
 def report_cuda_memory(device='cuda:0'):
     total_memory = torch.cuda.get_device_properties(device).total_memory
@@ -106,24 +98,67 @@ def report_cuda_memory(device='cuda:0'):
     print(f"Cached Memory: {cached_memory:.2f} MB")
 """
 
+
+def build_sweep(frange):
+    """Return (sweep_freqs, step_size) for a given (start, end, num_steps)."""
+    start, end, num_steps = frange
+    print(line(), f'start = {start}, end = {end}, steps = {num_steps}')
+    step_size = (end - start) / num_steps
+
+    # If you want to mimic your old “end + step/10” trick, do it here:
+    end_adjusted = end + step_size / 10.0
+    sweep_freqs = np.arange(start, end_adjusted, step_size)
+    sweep_freqs = np.round(sweep_freqs, 3)
+
+    return sweep_freqs, step_size
+
+
+def num_py(frange):
+    sweep_freqs, step_size = build_sweep(frange)
+
+    scalar_freqs = []
+    scalar_fmn   = []
+    scalar_fvco  = []
+
+    start_a = perf_counter()
+    for freq in sweep_freqs:
+        fmn, fvco = MHz_to_fmn(float(freq), ref_clock)
+        print(line(), f'fmn = {hex(fmn)} : fvco = {round(fvco, 3)}')
+        scalar_freqs.append(freq)
+        scalar_fmn.append(fmn)
+        scalar_fvco.append(fvco)
+
+    elapsed = perf_counter() - start_a
+    print(line(), f'num_py() processed {len(scalar_freqs)} points in {elapsed:.3f} s')
+
+    return (
+        np.array(scalar_freqs),
+        np.array(scalar_fmn, dtype=np.uint32),
+        np.array(scalar_fvco, dtype=np.float64),
+    )
+
+
+""" # Old num_py():  has sweep_freqs = np.round(FreqDataset(start, end, step_size), 3)
 def num_py(frange):
     start, end, num_steps = frange
     print(line(), f'start = {start}, end = {end}, steps = {num_steps}')
     step_size = (end - start)/num_steps
 
-    norm_fmn = []
-    norm_fvcos = []
-    norm_freqs = []
+    scalar_fmn = []
+    scalar_fvcos = []
+    scalar_freqs = []
     torch_fmn = []
     sweep_freqs = np.round(FreqDataset(start, end, step_size), 3)
 
     start_a = perf_counter()
     for freq in sweep_freqs:
-      fmn, norm_fvco = MHz_to_fmn(freq, ref_clock)
-      print(line(), f'fmn = {hex(fmn)} : norm_fvco = {round(norm_fvco, 3)}')
-      norm_freqs.append(freq)
-      norm_fmn.append(fmn)
-      norm_fvcos.append(norm_fvco)
+      fmn, scalar_fvco = MHz_to_fmn(freq, ref_clock)
+      print(line(), f'fmn = {hex(fmn)} : scalar_fvco = {round(scalar_fvco, 3)}')
+      scalar_freqs.append(freq)
+      scalar_fmn.append(fmn)
+      scalar_fvcos.append(scalar_fvco)
+"""
+
 
 def py_torch(frange):
   #  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -142,9 +177,9 @@ def py_torch(frange):
   #  steps = np.arange(start, end, step_size)
   #  print(line(), f'steps =\n{steps}')
 
-    norm_fmn = []
-    norm_fvcos = []
-    norm_freqs = []
+    scalar_fmn = []
+    scalar_fvcos = []
+    scalar_freqs = []
     torch_fmn = []
   #  batch_size = 65_000
     batch_size = 16350    # This batch size causes 1.0 GB of video ram to be consumed
@@ -154,13 +189,13 @@ def py_torch(frange):
     print(line(), f'{len(sweep_freqs) = }, {dataloader.dataset}')
     start_a = perf_counter()
     for freq in sweep_freqs:
-      fmn, norm_fvco = MHz_to_fmn(freq, ref_clock)
-      print(line(), f'fmn = {hex(fmn)} : norm_fvco = {round(norm_fvco, 3)}')
-      norm_freqs.append(freq)
-      norm_fmn.append(fmn)
-      norm_fvcos.append(norm_fvco)
+      fmn, scalar_fvco = MHz_to_fmn(freq, ref_clock)
+      print(line(), f'fmn = {hex(fmn)} : scalar_fvco = {round(scalar_fvco, 3)}')
+      scalar_freqs.append(freq)
+      scalar_fmn.append(fmn)
+      scalar_fvcos.append(scalar_fvco)
   #  n = 13
-  #  print(line(), f'norm fmn[{n}] = {norm_fmn[n]}')
+  #  print(line(), f'scalar fmn[{n}] = {scalar_fmn[n]}')
 
   #  """ Run the Pytorch version of MHz_to_fmn() """
   #  M = (torch.arange(2, 4096)).to(torch.int32)
@@ -184,6 +219,7 @@ def main():
   frange = (start, end, num_steps)
 
   num_py(frange)
+  # py_torch(frange)
 
 if __name__ == '__main__':
   print()

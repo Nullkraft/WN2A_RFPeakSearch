@@ -35,7 +35,7 @@ from PyQt6.QtWidgets import QMainWindow
 import pyqtgraph as pg
 from pathlib import Path
 
-from .Ui_mainWindow import Ui_MainWindow
+from ui.Ui_mainWindow import Ui_MainWindow
 import spectrumAnalyzer as sa
 from command_processor import CommandProcessor
 from spectrumAnalyzer import SA_Control
@@ -217,7 +217,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
       freq = self.RFin_list[idx]            # freq is the key for accessing the all_frequencies_dict
       ref_code, _, _ = self.sa_ctl.all_frequencies_dict[freq]  # We need the ref_code from all_frequencies_dict
       ''' Selecting by ref_clock because all_frequencies_dict was already
-          calibrated. If you are running a calibration then the sorting 
+          calibrated. If you are running a calibration then the sorting
           has no effect. All the control codes will either be for ref1 or
           ref2 depending on which one you are calibrating.
       '''

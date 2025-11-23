@@ -48,7 +48,7 @@ def freq2fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float16=66
   indices = torch.argmin(Fvco_diffs, dim=1).view(-1, 1)   # Reuse indices for Min-Error
   best_M = M[indices]
   best_F = F.gather(1, indices)         # indices is the index that results in best_F
-  return best_F<<20 | best_M<<8 | N
+  return best_F<<20 | best_M<<8 | N     # Assemble best_F, best_M, and N into a 32bit FMN return value
 
 
 

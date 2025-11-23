@@ -61,7 +61,7 @@ def calculate_gpu_batch_size(device):
     return max(1024, batch_size)  # Return larger of two so never smaller than 1024
 
 
-def build_sweep(frange):
+def build_sweep(frange, device='cpu'):
     """Return (sweep_freqs, step_size) for a given (start, end, num_steps).
 
         Where sweep_freqs is an array of frequencies to be operated on
@@ -77,7 +77,7 @@ def build_sweep(frange):
 
 
 def py_torch(frange, device=None, batch_size=131_072):
-    sweep_freqs = build_sweep(frange)
+    sweep_freqs = build_sweep(frange, device=device)
     # Build an array of 4094 values of M and an Fpfd tensor on device
     M = torch.arange(2, 4096, dtype=torch.int32, device=device)
     Fpfd_t = torch.tensor(Fpfd, dtype=torch.float32, device=device)

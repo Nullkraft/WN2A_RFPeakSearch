@@ -89,7 +89,8 @@ def py_torch(frange, device=None, batch_size=131_072):
     start_b = perf_counter()
     for batch in target_freqs.split(batch_size):
         batch_fmn = freq2fmn(batch, M, Fpfd=Fpfd_t, device=device)
-        fmns_torch.append(batch_fmn)
+        fmns_torch.append(batch_fmn)        # Creating a list of tensors
+    fmns_torch = torch.cat(fmns_torch)      # Join the list of tensors into one
 
     if device == 'cuda':
         peak_mem = round(torch.cuda.max_memory_allocated(device) / (1024**3), 6)
@@ -97,7 +98,7 @@ def py_torch(frange, device=None, batch_size=131_072):
     fmns_torch = torch.cat(fmns_torch)
     elapsed = perf_counter() - start_b
     num_freq_steps = round(len(target_freqs) / 1_000_000, 2)
-    print(line(), f'Converted {num_freq_steps} million frequencies to FMN in {elapsed:.3f} s on {device}')
+    print(line(), f'Converted {num_freq_steps} million frequencies to FMN in {elapsed:.3f} sec on {hw_device}')
 
     return sweep_freqs, fmns_torch.cpu().numpy()
 

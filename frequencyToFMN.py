@@ -63,17 +63,17 @@ def calculate_gpu_batch_size(device):
 
 
 def build_sweep(frange):
-    """Return (sweep_freqs, step_size) for a given (start, end, num_steps)."""
+    """Return (sweep_freqs, step_size) for a given (start, end, num_steps).
+
+        Where sweep_freqs is an array of frequencies to be operated on
+    """
     start, end, num_steps = frange
-#    print(line(), f'start = {start}, end = {end}, steps = {num_steps}')
     step_size = round((end - start) / num_steps, 3)
-
-    # Adjust “end + step/10” to include last step in range, ie. a closed interval
+    # Adjust the sweep range to include the last frequency
     end_adjusted = end + step_size / 10.0
-    sweep_freqs = np.arange(start, end_adjusted, step_size)
-    sweep_freqs = np.round(sweep_freqs, 3)
+    sweep_freqs = torch.arange(start, end_adjusted, step_size).to(device)
 
-    return sweep_freqs, step_size
+    return sweep_freqs
 
 
 def py_torch(frange, device=None, batch_size=131_072):

@@ -77,12 +77,10 @@ def build_sweep(frange):
 
 
 def py_torch(frange, device=None, batch_size=131_072):
-    sweep_freqs, step_size = build_sweep(frange)
-
-    # Convert sweep to Torch on the selected device
-    target_freqs = torch.from_numpy(sweep_freqs.astype(np.float32)).to(device)
-
-    # Precompute M and Fpfd on device
+    sweep_freqs = build_sweep(frange)
+    # Convert sweep frequencies to a tensor on the selected device
+    target_freqs = sweep_freqs.cuda().to(device)
+    # Build an array of 4094 values of M and an Fpfd tensor on device
     M = torch.arange(2, 4096, dtype=torch.int32, device=device)
     Fpfd_t = torch.tensor(Fpfd, dtype=torch.float32, device=device)
 

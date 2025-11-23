@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 import sys
 from math import log
 from time import perf_counter
@@ -71,6 +70,7 @@ def build_sweep(frange):
     step_size = round((end - start) / num_steps, 3)
     # Adjust the sweep range to include the last frequency
     end_adjusted = end + step_size / 10.0
+    # Create sweep frequencies as a tensor on the selected device
     sweep_freqs = torch.arange(start, end_adjusted, step_size).to(device)
 
     return sweep_freqs
@@ -78,8 +78,6 @@ def build_sweep(frange):
 
 def py_torch(frange, device=None, batch_size=131_072):
     sweep_freqs = build_sweep(frange)
-    # Convert sweep frequencies to a tensor on the selected device
-    target_freqs = sweep_freqs.cuda().to(device)
     # Build an array of 4094 values of M and an Fpfd tensor on device
     M = torch.arange(2, 4096, dtype=torch.int32, device=device)
     Fpfd_t = torch.tensor(Fpfd, dtype=torch.float32, device=device)
@@ -87,7 +85,7 @@ def py_torch(frange, device=None, batch_size=131_072):
     # Run in batches to control memory use
     fmns_torch = []
     start_b = perf_counter()
-    for batch in target_freqs.split(batch_size):
+    for batch in sweep_freqs.split(batch_size):
         batch_fmn = freq2fmn(batch, M, Fpfd=Fpfd_t, device=device)
         fmns_torch.append(batch_fmn)        # Creating a list of tensors
     fmns_torch = torch.cat(fmns_torch)      # Join the list of tensors into one
@@ -100,7 +98,7 @@ def py_torch(frange, device=None, batch_size=131_072):
     else:
         hw_device = 'cpu'
 
-    num_freq_steps = round(len(target_freqs) / 1_000_000, 2)
+    num_freq_steps = round(len(sweep_freqs) / 1_000_000, 2)
     print(line(), f'Converted {num_freq_steps} million frequencies to FMN in {elapsed:.3f} sec on {hw_device}')
 
     return fmns_torch.cpu().numpy()

@@ -108,12 +108,12 @@ if __name__ == '__main__':
     cpus = int(cpu_count() / 2)
     print(line(), f'number of CPUs = {cpus}')
 
-    cpu = 0     # For manually testing on cpu vs gpu
+    cpu = 0     # Manually force testing on cpu vs gpu
     if cpu:
         device = 'cpu'
     else:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     frange = (23.5, 6000.0, 5_976_000)
     sz_batch = calculate_gpu_batch_size(device)
-    py_torch(frange, device, sz_batch)    # Approx 2 sec on gpu and 108 sec on cpu
+    fmns = py_torch(frange, device, sz_batch)    # Approx 2 sec on gpu and 108 sec on cpu
 

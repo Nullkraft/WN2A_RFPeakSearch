@@ -35,7 +35,7 @@ def freq2fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float32=66
   indices = torch.argmin(Fvco_diffs, dim=1).view(-1, 1)   # Reuse indices for Min-Error
   best_M = M[indices]
   best_F = F.gather(1, indices)         # indices is the index that results in best_F
-  return best_F<<20 | best_M<<8 | N     # Assemble best_F, best_M, and N into a 32bit FMN return value
+  return (best_F<<20 | best_M<<8 | N).squeeze()     # Assemble best_F, best_M, and N into a 32bit FMN return value
 
 
 
@@ -116,4 +116,4 @@ if __name__ == '__main__':
     frange = (23.5, 6000.0, 5_976_000)
     sz_batch = calculate_gpu_batch_size(device)
     fmns = py_torch(frange, device, sz_batch)    # Approx 2 sec on gpu and 108 sec on cpu
-
+    print(line(), f'{type(fmns)} : {len(fmns)=} : {fmns=}')

@@ -12,18 +12,6 @@ ref_clock = 66.000
 Fpfd = ref_clock / R
 
 
-def fmn_to_MHz(fmn_word, Fpfd, show_fmn: bool=False):
-  F_ = fmn_word >> 20
-  M_= (fmn_word & 0xFFFFF) >> 8
-  if M_ == 0:
-      M_ = 2
-  N_ = fmn_word & 0xFF
-  if show_fmn:
-      print('\t', f'M:F:N = {M_.item(),F_.item(),N_.item()}')
-  freq_MHz = Fpfd * (N_ + F_/M_)
-  return freq_MHz
-
-
 def freq2fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float16=66.0, device='cpu'):
   """ Form a 32 bit word consisting of 12 bits of F, 12 bits of M and 8 bits of N for the MAX2871. """
   div = 2**torch.arange(8).to(device)

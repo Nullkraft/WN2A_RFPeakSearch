@@ -20,7 +20,7 @@ def freq2fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float32=66
   Fvco = (div * target_freqs.view(-1, 1))
   target_freqs = target_freqs.to(device)
   div_mask = (Fvco >= 3000).to(dtype=torch.int)
-  indices = torch.argmax(div_mask, dim=1).view(-1, 1)   # Using indices for Fvco masking
+  indices = torch.argmax(div_mask, dim=1).view(-1, 1)   # finds first divider that keeps Fvco in the VCO range
   Fvco = Fvco.gather(1, indices)
   """ Fpfd is the step bandwidth. Dividing Fvco by Fpfd gives the total number
       of steps with a small fraction. The result is split into an integer, N,

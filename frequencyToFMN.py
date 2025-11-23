@@ -14,9 +14,6 @@ Fpfd = ref_clock / R
 def freq2fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float32=66.0, device='cpu'):
   """ Form a 32 bit word consisting of 12 bits of F, 12 bits of M and 8 bits of N for the MAX2871. """
   div = 2**torch.arange(8).to(device)
-  target_freqs = target_freqs.cuda().to(device)
-#  print(line(), f'target_freqs = {target_freqs[0]} to {target_freqs[-1]}')
-
   Fvco = (div * target_freqs.view(-1, 1))
   target_freqs = target_freqs.to(device)
   div_mask = (Fvco >= 3000).to(dtype=torch.int)

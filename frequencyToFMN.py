@@ -26,16 +26,12 @@ def freq2fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float32=66
   N = (Fvco/Fpfd).to(torch.int16)  # Integer portion of the step size for register N
   step_fract = (Fvco/Fpfd - N)    # Decimal portion of the step size
   """ F must be 64 bit to prevent overflow when left-shifting 20 bits at *return* """
-#  F = (M * step_fract).to(torch.int64)  # Convert decimal part for register F
   F = torch.round(M * step_fract).to(torch.int64)
-#  indices = torch.argmin((torch.abs(Fvco - (Fpfd * (N + F/M)))), dim=1).view(-1, 1)   # Reuse indices for Min-Error
   Fvco_diffs = torch.abs(Fvco - (Fpfd * (N + F/M)))
   indices = torch.argmin(Fvco_diffs, dim=1).view(-1, 1)   # Reuse indices for Min-Error
   best_M = M[indices]
   best_F = F.gather(1, indices)         # indices is the index that results in best_F
   return (best_F<<20 | best_M<<8 | N).squeeze()     # Assemble best_F, best_M, and N into a 32bit FMN return value
-
-
 
 
 def calculate_gpu_batch_size(device):
@@ -44,13 +40,12 @@ def calculate_gpu_batch_size(device):
     Results based on empirical measurement: ~62 KB per batch item
 
     Rounding to powers of 2 serves two purposes:
-        Prevents memory overflow: batch sizes are internally allocated in powers of 2,
+        Prevents memory overflow and batch sizes are internally allocated in powers of 2,
     """
     if device == 'cpu' or device == None:
         return 16_384  # fallback for CPU
 
     free_memory_bytes, _ = torch.cuda.mem_get_info(device)
-
     bytes_per_item = 62 * 1024  # 62 KB because ~62 KB per item was empirically measured
     batch_size = int(free_memory_bytes / bytes_per_item)
     exp = int(log(batch_size) / log(2))
@@ -114,4 +109,3 @@ if __name__ == '__main__':
     frange = (23.5, 6000.0, 5_976_000)
     sz_batch = calculate_gpu_batch_size(device)
     fmns = py_torch(frange, device, sz_batch)    # Approx 2 sec on gpu and 108 sec on cpu
-    print(line(), f'{type(fmns)} : {len(fmns)=} : {fmns=}')

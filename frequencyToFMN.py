@@ -26,7 +26,8 @@ def freq2fmn(target_freqs: torch.Tensor, M: torch.Tensor, Fpfd: torch.float32=66
   N = (Fvco/Fpfd).to(torch.int16)  # Integer portion of the step size for register N
   step_fract = (Fvco/Fpfd - N)    # Decimal portion of the step size
   """ F must be 64 bit to prevent overflow when left-shifting 20 bits at *return* """
-  F = (M * step_fract).to(torch.int64)  # Convert decimal part for register F
+#  F = (M * step_fract).to(torch.int64)  # Convert decimal part for register F
+  F = torch.round(M * step_fract).to(torch.int64)
 #  indices = torch.argmin((torch.abs(Fvco - (Fpfd * (N + F/M)))), dim=1).view(-1, 1)   # Reuse indices for Min-Error
   Fvco_diffs = torch.abs(Fvco - (Fpfd * (N + F/M)))
   indices = torch.argmin(Fvco_diffs, dim=1).view(-1, 1)   # Reuse indices for Min-Error

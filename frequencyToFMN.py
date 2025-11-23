@@ -91,12 +91,14 @@ def py_torch(frange, device=None, batch_size=131_072):
         batch_fmn = freq2fmn(batch, M, Fpfd=Fpfd_t, device=device)
         fmns_torch.append(batch_fmn)        # Creating a list of tensors
     fmns_torch = torch.cat(fmns_torch)      # Join the list of tensors into one
+    elapsed = perf_counter() - start_b
 
-    if device == 'cuda':
+    if Fpfd_t.is_cuda: # using torch.tensor side effect to find device. True=='cuda'
         peak_mem = round(torch.cuda.max_memory_allocated(device) / (1024**3), 6)
         print(line(), f'{peak_mem=} GB')
-    fmns_torch = torch.cat(fmns_torch)
-    elapsed = perf_counter() - start_b
+        hw_device = 'gpu'
+    else:
+        hw_device = 'cpu'
     num_freq_steps = round(len(target_freqs) / 1_000_000, 2)
     print(line(), f'Converted {num_freq_steps} million frequencies to FMN in {elapsed:.3f} sec on {hw_device}')
 

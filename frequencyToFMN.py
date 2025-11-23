@@ -99,10 +99,11 @@ def py_torch(frange, device=None, batch_size=131_072):
         hw_device = 'gpu'
     else:
         hw_device = 'cpu'
+
     num_freq_steps = round(len(target_freqs) / 1_000_000, 2)
     print(line(), f'Converted {num_freq_steps} million frequencies to FMN in {elapsed:.3f} sec on {hw_device}')
 
-    return sweep_freqs, fmns_torch.cpu().numpy()
+    return fmns_torch.cpu().numpy()
 
 
 if __name__ == '__main__':

@@ -40,5 +40,5 @@ training.py
 delMe.py
 share/
 snake_venv/
-convert_pickle_to_numpy.py
-
+convert_amplitude_files.py
+convert_control_ref_files.py

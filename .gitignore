@@ -3,6 +3,7 @@
 __pycache__/
 .venv/
 docs/
+*npy
 *~
 *pdf
 *jpg
@@ -39,3 +40,5 @@ training.py
 delMe.py
 share/
 snake_venv/
+convert_pickle_to_numpy.py
+

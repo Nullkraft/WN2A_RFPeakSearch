@@ -32,7 +32,6 @@ from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread, QCoreApplication
 from PyQt6.QtWidgets import QMainWindow
 import pyqtgraph as pg
-from pathlib import Path
 
 from ui.Ui_mainWindow import Ui_MainWindow
 import spectrumAnalyzer as sa
@@ -40,6 +39,7 @@ from command_processor import CommandProcessor
 from spectrumAnalyzer import SA_Control
 import serial_port as sp
 import application_interface as api
+import numpy as np
 
 class MainWindow(QMainWindow, Ui_MainWindow):
   last_N = -1   # for monitoring the amount of data from serial_read()
@@ -86,12 +86,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     if (speed_index >= 0):
       self.cbxSerialSpeedSelection.setCurrentIndex(speed_index)
     ''' ~~~~~~ End serial port ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
-    # RFin_steps.pickle is used when creating the list of frequencies to sweep
-    RFin_file = Path('RFin_steps.pickle')
-    if not RFin_file.exists():
-      print(name(), line(), f'Missing RFin file "{RFin_file}"')
-    with open('RFin_steps.pickle', 'rb') as f:
-      self.RFin_list = pickle.load(f)
+    # List of all frequencies from 0 to 3000 MHz in 1 kHz steps
+    self.RFin_list = np.arange(0, 3_000_001) / 1000.0
     # Loading the initial control file in a background thread
     api.load_controls(self.sa_ctl, 'control.npy')
 

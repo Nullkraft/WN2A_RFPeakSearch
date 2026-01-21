@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Use these functions in all your print statements to display the filename 
+# Use these functions in all your print statements to display the filename
 # and the line number of the source file. Requires: import sys
 name = lambda: f'File "{__name__}.py",'
 line = lambda: f"line {str(sys._getframe(1).f_lineno)},"

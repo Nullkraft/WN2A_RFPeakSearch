@@ -19,7 +19,7 @@
 #
 
 
-# Use these functions in all your print statements to display the filename 
+# Use these functions in all your print statements to display the filename
 # and the line number of the source file. Requires: import sys
 name = lambda: f'File "{__name__}.py",'
 line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
@@ -66,6 +66,7 @@ class SA_Control:
   lowpass_filter_width = 20       # Sets the +/- amplitude calibration smoothing half_window
   swept_freq_list = list()        # The list of frequencies that the user requested to be swept
   all_frequencies_dict = dict()   # ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
+  all_frequencies = None          # NumPy array for runtime lookups
   window_x_min = 0.0
   window_x_max = 3000.0
   window_x_range = 3000
@@ -78,7 +79,11 @@ class SA_Control:
     self.last_LO2_code = 0      # Decide if a new LO2_code is to be sent
     self.cmd_proc = cmd_proc
 
-  
+  def get_control_codes(self, freq_mhz):
+    """Lookup control codes for a frequency from the numpy array."""
+    idx = int(round(freq_mhz * 1000))
+    return tuple(self.all_frequencies[idx])
+
   def adc_Vref(self):
     return Cfg.Vref
 
@@ -101,7 +106,7 @@ class SA_Control:
   def set_reference_clock(self, ref_code: int, last_ref_code: int=0):
     """
     Public set_reference send the hardware ref_code to select a reference oscillator
-    
+
     @param ref_code The Command Code found in the Instruction List document
     @type int
     @param last_ref_code prevents sending ref_code if it's the same as last time (defaults to 0)
@@ -183,14 +188,14 @@ class SA_Control:
     freq_steps = [round(freq,3) for freq in np.arange(x_min, x_max, step_size)]
     ''' Now find a resonable LO2 freq near the middle of the LO3 sweep '''
     mid_freq = freq_steps[len(freq_steps)//2]
-    ref_code, _, _ = self.all_frequencies_dict[mid_freq]    # Which reference clock is active
+    ref_code, _, _ = self.get_control_codes(mid_freq)    # Which reference clock is active
     if ref_code == 3327:
       ref_clock = Cfg.ref_clock_1
     else:
       ref_clock = Cfg.ref_clock_2
     ''' Convert freq steps in x into LO3 control codes '''
     for RFin in freq_steps:
-      ref_code, LO1_N_code, LO2_fmn_code = self.all_frequencies_dict[RFin]    # Get hardware control codes
+      ref_code, LO1_N_code, LO2_fmn_code = self.get_control_codes(RFin)    # Get hardware control codes
       if ref_code == 3327:
           ref_clock = Cfg.ref_clock_1
       else:
@@ -211,7 +216,7 @@ class SA_Control:
     self.set_LO2(self.cmd_proc.LO2_mux_tristate)
     """ Set hardware to next frequency """
     RFin_center_freq = round((x_min + x_max) / 2)
-    ref_code, LO1_N_code, LO2_fmn_code = self.all_frequencies_dict[RFin_center_freq]    # Get hardware control codes
+    ref_code, LO1_N_code, LO2_fmn_code = self.get_control_codes(RFin_center_freq)    # Get hardware control codes
     self.set_reference_clock(ref_code, self.last_ref_code);
     self.set_LO1(LO1_N_code, self.last_LO1_code)
     self.set_LO2(LO2_fmn_code, self.last_LO2_code)
@@ -242,7 +247,7 @@ class SA_Control:
       if not SWEEP:                       # The user pressed the ESC key so time to bail out
         break
       """ Set hardware to next frequency """
-      ref_code, LO1_N_code, LO2_fmn_code = self.all_frequencies_dict[freq]    # Get hardware control codes
+      ref_code, LO1_N_code, LO2_fmn_code = self.get_control_codes(freq)    # Get hardware control codes
       self.set_reference_clock(ref_code, self.last_ref_code);
       self.set_LO1(LO1_N_code, self.last_LO1_code)
       self.set_LO2(LO2_fmn_code, self.last_LO2_code)
@@ -285,7 +290,7 @@ class SA_Control:
     Function
     """
     pass
-    
+
   def toggle_arduino_led(self, on_off):
     if on_off == True:
       self.cmd_proc.LED_on()

@@ -189,6 +189,12 @@ def make_control_dictionary(sa_ctl, RFin_list):
 
   with open('control.pickle', 'wb') as f:
     pickle.dump(sa_ctl.all_frequencies_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+    # Also save as numpy array for fast runtime loading
+    n = 3_000_001
+    data = np.zeros((n, 3), dtype=np.uint32)
+    for freq, (ref_clock, lo1_n, lo2_fmn) in sa_ctl.all_frequencies_dict.items():
+      data[int(round(freq * 1000))] = (ref_clock, lo1_n, lo2_fmn)
+    np.save('control.npy', data)
 
   with open('control.csv', 'w') as fcsv:
     for f in sa_ctl.all_frequencies_dict:
@@ -202,15 +208,13 @@ def make_control_dictionary(sa_ctl, RFin_list):
 def load_controls(sa_ctl, control_fname: str=None):
   if control_fname is None:
     print(name(), line(), 'You must enter a control file name')
-  else:
-    sa_ctl.all_frequencies_dict.clear()   # get ready for a new set of control codes
-    control_file = Path(control_fname)    # Filename containting new control codes
+    return
+  control_file = Path(control_fname)
   if control_file.exists():
     ctrl_start = perf_counter()
-    with open(control_file, 'rb', buffering=65536) as f:
-      sa_ctl.all_frequencies_dict = pickle.load(f)
-      delta = round(perf_counter()-ctrl_start, 2)
-      print(name(), line(), f'Control file "{control_file}" loaded in {delta} seconds')
+    sa_ctl.all_frequencies = np.load(control_file)
+    delta = round(perf_counter()-ctrl_start, 3)
+    print(name(), line(), f'Control file "{control_file}" loaded in {delta} seconds')
   else:
     print(name(), line(), f'Missing control file "{control_file}"')
 

@@ -94,7 +94,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     with open('RFin_steps.pickle', 'rb') as f:
       self.RFin_list = pickle.load(f)
     # Loading the initial control file in a background thread
-    control_thread = threading.Thread(target=api.load_controls, args=(self.sa_ctl, 'control.pickle',))
+    control_thread = threading.Thread(target=api.load_controls, args=(self.sa_ctl, 'control.npy',))
     control_thread.start()
 
   def setup_plot(self):
@@ -215,7 +215,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     freq_steps.append(stop)               # Include the stop value
     for idx in freq_steps:
       freq = self.RFin_list[idx]            # freq is the key for accessing the all_frequencies_dict
-      ref_code, _, _ = self.sa_ctl.all_frequencies_dict[freq]  # We need the ref_code from all_frequencies_dict
+      ref_code, _, _ = self.sa_ctl.get_control_codes(freq)  # We need the ref_code for this frequency
       ''' Selecting by ref_clock because all_frequencies_dict was already
           calibrated. If you are running a calibration then the sorting
           has no effect. All the control codes will either be for ref1 or

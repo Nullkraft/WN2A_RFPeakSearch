@@ -18,88 +18,115 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
+"""
+Spectrum Analyzer Calibration Module
 
-
-"""Combine two sets of sweep readings into a single calbrated chip control file.
-
-Classes:
-  calibrate
-Functions:
-  dump(object, file)
-  dumps(object) -> string
-  load(file) -> object
-  loads(bytes) -> object
-Misc variables:
-  __version__
-  format_version
-  compatible_formats
-
+Runs calibration sweeps for all reference clock / injection mode combinations
+and saves amplitude data for later processing by make_control_dictionary().
 """
 
-# Use these functions in all your print statements to display the filename 
-# and the line number of the source file. Requires: import sys
-name = lambda: f"File \'{__name__}.py\',"
+import sys
+import pickle
+import numpy as np
+from pathlib import Path
+from time import perf_counter
+
+name = lambda: f"File '{__name__}.py',"
 line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
 
+import application_interface as api
+import serial_port as sp
 
-import sys
+
+# Calibration configurations: (control_file, amplitude_output)
+CALIBRATION_RUNS = [
+    ('control_ref1_HI.pickle', 'amplitude_ref1_HI.npy'),
+    ('control_ref2_HI.pickle', 'amplitude_ref2_HI.npy'),
+    ('control_ref1_LO.pickle', 'amplitude_ref1_LO.npy'),
+    ('control_ref2_LO.pickle', 'amplitude_ref2_LO.npy'),
+]
+
+CAL_START = 0
+CAL_STOP = 3000
+CAL_NUM_POINTS = 3_000_001
 
 
-class Calibrate():
+def load_control_pickle(sa_ctl, control_fname: str) -> bool:
+    """Load a calibration control pickle file into sa_ctl.all_frequencies_dict."""
+    control_file = Path(control_fname)
+    if not control_file.exists():
+        print(name(), line(), f'Missing control file "{control_file}"')
+        return False
+    with open(control_file, 'rb') as f:
+        sa_ctl.all_frequencies_dict = pickle.load(f)
+    return True
 
-  """
-  Best spurs calibration class combines the best control codes from references 1 and 2.
 
-  ...
+def setup_calibration_sweep(sa_ctl):
+    """Configure sa_ctl for a full calibration sweep (0-3000 MHz, 1 kHz steps)."""
+    sa_ctl.window_x_min = CAL_START
+    sa_ctl.window_x_max = CAL_STOP
+    sa_ctl.window_x_range = CAL_STOP - CAL_START
+    # Build the full frequency list: 0.000, 0.001, 0.002, ... 3000.000
+    sa_ctl.swept_freq_list = (np.arange(CAL_NUM_POINTS) / 1000.0).tolist()
 
-  Attributes
-  ----------
-  name : dict
-    calibrated_dict
-  file_1 : str
-    Filename of the ref1 hardware control file.
-  file_2 : str
-    Filename of the ref2 hardware control file.
-  age : int
-    age of the person
 
-  Methods
-  -------
-  info(additional=""):
-    Prints the person's name and age.
-
-  """
-
-  def __init__(self, fname: str) -> None:
+def run_single_calibration(sa_ctl, control_file: str, amplitude_file: str) -> bool:
     """
-    Constructor.
+    Run a single calibration sweep and save amplitude data.
 
-    @param fname The file to save the calibrated dictionary to.
-    @type str
-    @return DESCRIPTION
-    @rtype None
-
+    Returns True if completed, False if cancelled by user.
     """
-    self.calibrated_dict = {}
-    pass
+    serial_buf = sp.SimpleSerial.data_buffer_in
 
-  def combine(self, file_1: str, file_2: str) -> dict:
+    if not load_control_pickle(sa_ctl, control_file):
+        return False
+
+    setup_calibration_sweep(sa_ctl)
+    serial_buf.clear()
+    calibration_complete = sa_ctl.sweep(CAL_START, CAL_STOP)
+
+    if not calibration_complete:
+        print(name(), line(), 'Calibration cancelled by user')
+        return False
+
+    # Convert to volts and save as numpy array
+    volts = np.array([round(v, 3) for v in api._amplitude_bytes_to_volts(sa_ctl, serial_buf)],
+                     dtype=np.float32)
+    np.save(amplitude_file, volts)
+    print(name(), line(), f'Saved {amplitude_file} ({len(volts):,} points)')
+
+    return True
+
+
+def run_full_calibration(sa_ctl, status_callback=None) -> bool:
     """
-    Public method Combine file_1 and file_2 to create the calibrated hardware control dict.
+    Run all four calibration sweeps.
 
-    @param file_1 Uncalibrated hardware control dict for ref_clock_1.
-    @type str
-    @param file_2 Uncalibrated hardware control dict for ref_clock_2.
-    @type str
-    @return Calibrated hardware control dictionary.
-    @rtype dict
+    Args:
+        sa_ctl: Spectrum analyzer control object
+        status_callback: Optional function(str) called with status updates
 
+    Returns:
+        True if all calibrations completed, False if cancelled
     """
-    return self.calibrated_dict
+    start = perf_counter()
+
+    for control_file, amplitude_file in CALIBRATION_RUNS:
+        if status_callback:
+            status_callback(f"Calibrating with {control_file}...")
+
+        if not run_single_calibration(sa_ctl, control_file, amplitude_file):
+            return False
+
+    elapsed = round(perf_counter() - start, 2)
+    print(name(), line(), f'Full calibration completed in {elapsed} seconds')
+
+    if status_callback:
+        status_callback('Calibration complete')
+
+    return True
 
 
 if __name__ == '__main__':
-  print()
-
-
-  print('Calibraion complete')
+    print('This module should be imported, not run directly.')

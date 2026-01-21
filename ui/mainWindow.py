@@ -25,8 +25,6 @@ name = lambda: f'File "{__name__}.py",'
 line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
 
 import sys
-from time import sleep, perf_counter
-import pickle
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread, QCoreApplication
@@ -109,71 +107,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
   @pyqtSlot()
   def on_btnCalibrate_clicked(self):
-    cal_start = 0
-    cal_stop = 3000
-    start = perf_counter()
-    self.label_sweep_status.setText("Amplitude cal in progress...")
-    QtGui.QGuiApplication.processEvents()
-    serial_buf = sp.SimpleSerial.data_buffer_in
-    ''' Run ref1 HI calibrations '''
-    self.load_controls('control_ref1_HI.pickle')
-    self.set_steps(num_steps=3_000_001)
-    serial_buf.clear()   # Clear the serial data buffer before sweeping
-    calibration_complete = self.sa_ctl.sweep(cal_start, cal_stop)
-    volts_list = [round(v, 3) for v in api._amplitude_bytes_to_volts(serial_buf)]
-    if calibration_complete == False:
-      print(name(), line(), 'Calibration cancelled by user')
-    with open('amplitude_ref1_HI.pickle', 'wb') as f:
-      pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
-      print(name(), line(), f'Saved {f}')
-#    with open('amplitude_ref1_HI.csv', 'w') as f:
-#      for amplitude in volts_list:
-#        f.write(f'{amplitude}' + '\n')
-    ''' Run ref2 HI calibrations '''
-    self.load_controls('control_ref2_HI.pickle')
-    self.set_steps(num_steps=3_000_001)
-    serial_buf.clear()   # Clear the serial data buffer before sweeping
-    calibration_complete = self.sa_ctl.sweep(cal_start, cal_stop)
-    volts_list = [round(v, 3) for v in api._amplitude_bytes_to_volts(serial_buf)]
-    if calibration_complete == False:
-      print(name(), line(), 'Calibration cancelled by user')
-    with open('amplitude_ref2_HI.pickle', 'wb') as f:
-      pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
-      print(name(), line(), f'Saved {f}')
-#    with open('amplitude_ref2_HI.csv', 'w') as f:
-#      for amplitude in volts_list:
-#        f.write(f'{amplitude}' + '\n')
-    ''' Run ref1 LO calibrations '''
-    self.load_controls('control_ref1_LO.pickle')
-    self.set_steps(num_steps=3_000_001)
-    serial_buf.clear()   # Clear the serial data buffer before sweeping
-    calibration_complete = self.sa_ctl.sweep(cal_start, cal_stop)
-    volts_list = [round(v, 3) for v in api._amplitude_bytes_to_volts(serial_buf)]
-    if calibration_complete == False:
-      print(name(), line(), 'Calibration cancelled by user')
-    with open('amplitude_ref1_LO.pickle', 'wb') as f:
-      pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
-      print(name(), line(), f'Saved {f}')
-#    with open('amplitude_ref1_LO.csv', 'w') as f:
-#      for amplitude in volts_list:
-#        f.write(f'{amplitude}' + '\n')
-    ''' Run ref2 LO calibrations '''
-    self.load_controls('control_ref2_LO.pickle')
-    self.set_steps(num_steps=3_000_001)
-    serial_buf.clear()   # Clear the serial data buffer before sweeping
-    calibration_complete = self.sa_ctl.sweep(cal_start, cal_stop)
-    volts_list = [round(v, 3) for v in api._amplitude_bytes_to_volts(serial_buf)]
-    if calibration_complete == False:
-      print(name(), line(), 'Calibration cancelled by user')
-    with open('amplitude_ref2_LO.pickle', 'wb') as f:
-      pickle.dump(volts_list, f, protocol=pickle.HIGHEST_PROTOCOL)
-      print(name(), line(), f'Saved {f}')
-#    with open('amplitude_ref2_LO.csv', 'w') as f:
-#      for amplitude in volts_list:
-#        f.write(f'{amplitude}' + '\n')
-    self.label_sweep_status.setText('Calibration complete')
-    QtGui.QGuiApplication.processEvents()
-    print(name(), line(), f'Calibration of {len(volts_list)} data points took {round(perf_counter()-start, 6)} seconds')
+    import calibrate_sa
+
+    def update_status(msg):
+      self.label_sweep_status.setText(msg)
+      QtGui.QGuiApplication.processEvents()
+
+    calibrate_sa.run_full_calibration(self.sa_ctl, status_callback=update_status)
 
   def set_steps(self, num_steps: int = 401):
     if self.PROGSTART:

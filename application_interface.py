@@ -6,7 +6,6 @@ name = lambda: f'File "{__name__}.py",'
 line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
 
 import sys
-import pickle
 import numpy as np
 from pathlib import Path
 import serial_port as sp
@@ -105,105 +104,76 @@ def make_control_dictionary(sa_ctl, RFin_list):
   with ref1 selected and then ref2. Whichever amplitude is lower then the
   control codes for that frequency are copied to the control_dict.
   '''
-  r1_hi_amplitudes = []
-  r1_lo_amplitudes = []
-  r2_hi_amplitudes = []
-  r2_lo_amplitudes = []
   sa_ctl.all_frequencies_dict.clear()
-  ''' If one of these files is missing there is no need to check the others '''
-  ampl_file_1 = Path('amplitude_ref1_HI.pickle')
-  ampl_file_2 = Path('amplitude_ref2_HI.pickle')
-  if ampl_file_1.exists() and ampl_file_2.exists():
-    if r1_hi_amplitudes == []:  # If this list is empty then fill all 4 of the following lists
-      ''' The contents of the amplitude files need to be compared to see which one
-      has the lowest level of noise. Each entry depends on its position in the file,
-      e.g. Line 132427 in the file came from the frequency 132.427 MHz RFin '''
-      with open('amplitude_ref1_HI.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
-        r1_hi_amplitudes = pickle.load(f)
-      with open('amplitude_ref1_LO.pickle', 'rb') as f:   # 3 million amplitudes collected with ref1
-        r1_lo_amplitudes = pickle.load(f)
-      with open('amplitude_ref2_HI.pickle', 'rb') as f:   # 3 million amplitudes collected with ref2
-        r2_hi_amplitudes = pickle.load(f)
-      with open('amplitude_ref2_LO.pickle', 'rb') as f:   # 3 million amplitudes collected with ref2
-        r2_lo_amplitudes = pickle.load(f)
-      ''' These are the controls associated with the amplitude files. When the lowest
-      noise level has been found then the control associated with that amplitude file
-      is assigned to a single full_control dictionary, e.g. We found Line 132427 was
-      lowest in amplitude_ref1_LO so the control from control_ref1_LO is copied into
-      the full_control dictionary. '''
-      with open('control_ref1_HI.pickle', 'rb') as f:
-        control_ref1_hi_dict = pickle.load(f)
-      with open('control_ref1_LO.pickle', 'rb') as f:
-        control_ref1_lo_dict = pickle.load(f)
-      with open('control_ref2_HI.pickle', 'rb') as f:
-        control_ref2_hi_dict = pickle.load(f)
-      with open('control_ref2_LO.pickle', 'rb') as f:
-        control_ref2_lo_dict = pickle.load(f)
 
-    def lp_filt(active_list, half_window: int, index: int = 0) -> float:
-      ''' A Centered Moving Average is is used to smooth out the amplitude data.
-      Otherwise random noise levels cause random control selection. This shows
-      up as a comb effect when performing actual sweeps.
-      '''
-      start = index - half_window
-      stop = index + half_window
-      if start < 0:           # too close to the start of the list
-        start = 0
-      if stop > len(active_list):     # too close to the end of the list
-        stop = len(active_list)
-      avg_value = round(np.average(active_list[start:stop]),3)
-      return avg_value
+  # Check if amplitude files exist
+  ampl_file_1 = Path('amplitude_ref1_HI.npy')
+  ampl_file_2 = Path('amplitude_ref2_HI.npy')
+  if not (ampl_file_1.exists() and ampl_file_2.exists()):
+    print(name(), line(), 'Missing amplitude calibration files')
+    return
 
-    ''' We need smoothed amplitude data for performing the amplitude comparison step
-      The lp_filt() def uses self.r1_lo_amplitudes, etc., directly. It's faster
-      than passing the entire list.
-    '''
-    window = sa_ctl.lowpass_filter_width
-    a1_filtered = [lp_filt(r1_hi_amplitudes, window, idx) for idx, _ in enumerate(r1_hi_amplitudes)]
-    a2_filtered = [lp_filt(r1_lo_amplitudes, window, idx) for idx, _ in enumerate(r1_lo_amplitudes)]
-    a3_filtered = [lp_filt(r2_hi_amplitudes, window, idx) for idx, _ in enumerate(r2_hi_amplitudes)]
-    a4_filtered = [lp_filt(r2_lo_amplitudes, window, idx) for idx, _ in enumerate(r2_lo_amplitudes)]
+  # Load amplitude data (numpy arrays)
+  r1_hi_amplitudes = np.load('amplitude_ref1_HI.npy')
+  r1_lo_amplitudes = np.load('amplitude_ref1_LO.npy')
+  r2_hi_amplitudes = np.load('amplitude_ref2_HI.npy')
+  r2_lo_amplitudes = np.load('amplitude_ref2_LO.npy')
 
-    for idx, freq in enumerate(RFin_list):
-      ''' For each RFin select the control code that generated the best (lowest) amplitude. '''
-      a1 = a1_filtered[idx]
-      a2 = a2_filtered[idx]
-      a3 = a3_filtered[idx]
-      a4 = a4_filtered[idx]
-      if a1 <= a2 and a1 <= a3 and a1 <= a4:
-        sa_ctl.all_frequencies_dict[freq] = control_ref1_hi_dict[freq]
-      elif a2 < a1 and a2 <= a3 and a2 <= a4:
-        sa_ctl.all_frequencies_dict[freq] = control_ref1_lo_dict[freq]
-      elif a3 < a1 and a3 < a2 and a3 <= a4:
-        sa_ctl.all_frequencies_dict[freq] = control_ref2_hi_dict[freq]
-      elif a4 < a1 and a4 < a2 and a4 < a3:
-        sa_ctl.all_frequencies_dict[freq] = control_ref2_lo_dict[freq]
-      ''' Special cases requiring manual input '''
-      if 208 < freq < 210.35:
-        sa_ctl.all_frequencies_dict[freq] = control_ref2_lo_dict[freq]
-      if 359.9 < freq < 360.1:
-#          sa_ctl.all_frequencies_dict[freq] = control_ref2_lo_dict[freq]
-        sa_ctl.all_frequencies_dict[freq] = control_ref1_hi_dict[freq]
-      if 2482 < freq < 2484:
-        sa_ctl.all_frequencies_dict[freq] = control_ref1_hi_dict[freq]
+  # Load control data (numpy arrays)
+  control_ref1_hi = np.load('control_ref1_HI.npy')
+  control_ref1_lo = np.load('control_ref1_LO.npy')
+  control_ref2_hi = np.load('control_ref2_HI.npy')
+  control_ref2_lo = np.load('control_ref2_LO.npy')
 
-#  with open('control.pickle', 'wb') as f:
-#    pickle.dump(sa_ctl.all_frequencies_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
-    # Also save as numpy array for fast runtime loading
-    n = 3_000_001
-    data = np.zeros((n, 3), dtype=np.uint32)
-    for freq, (ref_clock, lo1_n, lo2_fmn) in sa_ctl.all_frequencies_dict.items():
-      data[int(round(freq * 1000))] = (ref_clock, lo1_n, lo2_fmn)
-    np.save('control.npy', data)
+  def lp_filt(active_list, half_window: int, index: int = 0) -> float:
+    ''' A Centered Moving Average is used to smooth out the amplitude data. '''
+    start = max(0, index - half_window)
+    stop = min(len(active_list), index + half_window)
+    return round(np.average(active_list[start:stop]), 3)
 
+  # Smooth amplitude data for comparison
+  window = sa_ctl.lowpass_filter_width
+  a1_filtered = [lp_filt(r1_hi_amplitudes, window, idx) for idx in range(len(r1_hi_amplitudes))]
+  a2_filtered = [lp_filt(r1_lo_amplitudes, window, idx) for idx in range(len(r1_lo_amplitudes))]
+  a3_filtered = [lp_filt(r2_hi_amplitudes, window, idx) for idx in range(len(r2_hi_amplitudes))]
+  a4_filtered = [lp_filt(r2_lo_amplitudes, window, idx) for idx in range(len(r2_lo_amplitudes))]
+
+  for idx, freq in enumerate(RFin_list):
+    ''' For each RFin select the control code that generated the best (lowest) amplitude. '''
+    a1 = a1_filtered[idx]
+    a2 = a2_filtered[idx]
+    a3 = a3_filtered[idx]
+    a4 = a4_filtered[idx]
+    if a1 <= a2 and a1 <= a3 and a1 <= a4:
+      sa_ctl.all_frequencies_dict[freq] = tuple(control_ref1_hi[idx])
+    elif a2 < a1 and a2 <= a3 and a2 <= a4:
+      sa_ctl.all_frequencies_dict[freq] = tuple(control_ref1_lo[idx])
+    elif a3 < a1 and a3 < a2 and a3 <= a4:
+      sa_ctl.all_frequencies_dict[freq] = tuple(control_ref2_hi[idx])
+    elif a4 < a1 and a4 < a2 and a4 < a3:
+      sa_ctl.all_frequencies_dict[freq] = tuple(control_ref2_lo[idx])
+    ''' Special cases requiring manual input '''
+    if 208 < freq < 210.35:
+      sa_ctl.all_frequencies_dict[freq] = tuple(control_ref2_lo[idx])
+    if 359.9 < freq < 360.1:
+      sa_ctl.all_frequencies_dict[freq] = tuple(control_ref1_hi[idx])
+    if 2482 < freq < 2484:
+      sa_ctl.all_frequencies_dict[freq] = tuple(control_ref1_hi[idx])
+
+  # Save as numpy array for fast runtime loading
+  n = 3_000_001
+  data = np.zeros((n, 3), dtype=np.uint32)
+  for freq, (ref_clock, lo1_n, lo2_fmn) in sa_ctl.all_frequencies_dict.items():
+    data[int(round(freq * 1000))] = (ref_clock, lo1_n, lo2_fmn)
+  np.save('control.npy', data)
+
+  # Save CSV for human readability
   with open('control.csv', 'w') as fcsv:
     for f in sa_ctl.all_frequencies_dict:
       r, LO1_N, LO2_FMN = sa_ctl.all_frequencies_dict[f]
-      freq = str(f)
-      ref_clock = str(r)
-      LO1 = str(LO1_N)
-      LO2 = str(LO2_FMN)
-      fcsv.write(f'{freq}:({ref_clock},{LO1},{LO2})\n')
+      fcsv.write(f'{f}:({r},{LO1_N},{LO2_FMN})\n')
+
+  print(name(), line(), f'Saved control.npy and control.csv ({len(sa_ctl.all_frequencies_dict):,} entries)')
 
 def load_controls(sa_ctl, control_fname: str=None):
   if control_fname is None:

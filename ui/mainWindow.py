@@ -27,7 +27,6 @@ line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
 import sys
 from time import sleep, perf_counter
 import pickle
-import threading
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread, QCoreApplication
@@ -94,8 +93,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     with open('RFin_steps.pickle', 'rb') as f:
       self.RFin_list = pickle.load(f)
     # Loading the initial control file in a background thread
-    control_thread = threading.Thread(target=api.load_controls, args=(self.sa_ctl, 'control.npy',))
-    control_thread.start()
+    api.load_controls(self.sa_ctl, 'control.npy')
 
   def setup_plot(self):
     ''' Setting up the plot window '''

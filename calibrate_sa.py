@@ -26,7 +26,6 @@ and saves amplitude data for later processing by make_control_dictionary().
 """
 
 import sys
-import pickle
 import numpy as np
 from pathlib import Path
 from time import perf_counter
@@ -40,10 +39,10 @@ import serial_port as sp
 
 # Calibration configurations: (control_file, amplitude_output)
 CALIBRATION_RUNS = [
-    ('control_ref1_HI.pickle', 'amplitude_ref1_HI.npy'),
-    ('control_ref2_HI.pickle', 'amplitude_ref2_HI.npy'),
-    ('control_ref1_LO.pickle', 'amplitude_ref1_LO.npy'),
-    ('control_ref2_LO.pickle', 'amplitude_ref2_LO.npy'),
+    ('control_ref1_HI.npy', 'amplitude_ref1_HI.npy'),
+    ('control_ref2_HI.npy', 'amplitude_ref2_HI.npy'),
+    ('control_ref1_LO.npy', 'amplitude_ref1_LO.npy'),
+    ('control_ref2_LO.npy', 'amplitude_ref2_LO.npy'),
 ]
 
 CAL_START = 0
@@ -51,14 +50,13 @@ CAL_STOP = 3000
 CAL_NUM_POINTS = 3_000_001
 
 
-def load_control_pickle(sa_ctl, control_fname: str) -> bool:
-    """Load a calibration control pickle file into sa_ctl.all_frequencies_dict."""
+def load_control_npy(sa_ctl, control_fname: str) -> bool:
+    """Load a calibration control numpy file into sa_ctl.all_frequencies."""
     control_file = Path(control_fname)
     if not control_file.exists():
         print(name(), line(), f'Missing control file "{control_file}"')
         return False
-    with open(control_file, 'rb') as f:
-        sa_ctl.all_frequencies_dict = pickle.load(f)
+    sa_ctl.all_frequencies = np.load(control_file)
     return True
 
 
@@ -79,7 +77,7 @@ def run_single_calibration(sa_ctl, control_file: str, amplitude_file: str) -> bo
     """
     serial_buf = sp.SimpleSerial.data_buffer_in
 
-    if not load_control_pickle(sa_ctl, control_file):
+    if not load_control_npy(sa_ctl, control_file):
         return False
 
     setup_calibration_sweep(sa_ctl)

@@ -187,8 +187,8 @@ def make_control_dictionary(sa_ctl, RFin_list):
       if 2482 < freq < 2484:
         sa_ctl.all_frequencies_dict[freq] = control_ref1_hi_dict[freq]
 
-  with open('control.pickle', 'wb') as f:
-    pickle.dump(sa_ctl.all_frequencies_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+#  with open('control.pickle', 'wb') as f:
+#    pickle.dump(sa_ctl.all_frequencies_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
     # Also save as numpy array for fast runtime loading
     n = 3_000_001
     data = np.zeros((n, 3), dtype=np.uint32)

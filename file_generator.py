@@ -78,26 +78,24 @@ class DataGenerator():
     return Fpfd * np.round((RFin + IF1) / Fpfd)
 
 
-  def _LO2_frequency(self, RFin: float, ref_clock: str, injection: str) -> float:
+  def _LO2_frequency_vectorized(self, RFin: np.ndarray, LO1_freq: np.ndarray, injection: str) -> np.ndarray:
     """
-    Protected method calculates the frequency for LO2 from LO1, RFin, and
-    the selected reference clock
+    Vectorized LO2 frequency calculation.
 
-    @param RFin is the Spectrum Anaylzer input frequency
-    @type float
-    @param ref_clock is the name of the reference clock 'ref1' or 'ref2'
+    @param RFin is the array of Spectrum Analyzer input frequencies
+    @type np.ndarray
+    @param LO1_freq is the array of LO1 frequencies (already computed)
+    @type np.ndarray
+    @param injection is 'HI' for high-side or 'LO' for low-side injection
     @type str
-    @return LO2 frequency
-    @rtype float
+    @return Array of LO2 frequencies
+    @rtype np.ndarray
     """
-    select_dict = {"ref1": self.LO1_ref1_freq_dict, "ref2": self.LO1_ref2_freq_dict}
-    LO1_freq = select_dict[ref_clock]
-    IF1_corrected = LO1_freq[RFin] - RFin     # Make correction to IF1
+    IF1_corrected = LO1_freq - RFin
     if injection == "HI":
-      LO2_freq = IF1_corrected + hw.Cfg.IF2   # High-side injection
-    elif injection == "LO":
-      LO2_freq = IF1_corrected - hw.Cfg.IF2   # Low-side injection
-    return LO2_freq
+        return IF1_corrected + hw.Cfg.IF2
+    else:  # "LO"
+        return IF1_corrected - hw.Cfg.IF2
 
 
   def _LO3_frequency(self, LO2_freq: float, ref_clock: str, injection: str) -> float:
@@ -161,13 +159,23 @@ class DataGenerator():
     self.LO1_ref2_N_list = np.divide(self.LO1_ref2_freq_list, hw.Cfg.Fpfd2)
     self.LO1_ref2_N_list = self.LO1_ref2_N_list.astype(int)
     # Create the frequency lookup tables for LO1
-    # Create the frequency lookup tables for LO2. (LO2_freq = LO1 - freq + hw.Cfg.IF2)
-    freq_func = lambda freq, ref, inj: self._LO2_frequency(freq, ref, inj)
-    vfunc = np.vectorize(freq_func)
-    self.LO2_ref1_hi_freq_list = np.round(vfunc(self.RFin_list, "ref1", "HI"), decimals=9)
-    self.LO2_ref1_lo_freq_list = np.round(vfunc(self.RFin_list, "ref1", "LO"), decimals=9)
-    self.LO2_ref2_hi_freq_list = np.round(vfunc(self.RFin_list, "ref2", "HI"), decimals=9)
-    self.LO2_ref2_lo_freq_list = np.round(vfunc(self.RFin_list, "ref2", "LO"), decimals=9)
+#    self.LO1_ref1_freq_dict = dict(zip(self.RFin_list, self.LO1_ref1_freq_list))
+#    self.LO1_ref2_freq_dict = dict(zip(self.RFin_list, self.LO1_ref2_freq_list))
+    # Create the frequency lists for LO2. (LO2_freq = LO1 - RFin ± IF2)
+    lo2_start = perf_counter()
+    self.LO2_ref1_hi_freq_list = np.round(
+        self._LO2_frequency_vectorized(self.RFin_list, self.LO1_ref1_freq_list, "HI"), decimals=9
+    )
+    self.LO2_ref1_lo_freq_list = np.round(
+        self._LO2_frequency_vectorized(self.RFin_list, self.LO1_ref1_freq_list, "LO"), decimals=9
+    )
+    self.LO2_ref2_hi_freq_list = np.round(
+        self._LO2_frequency_vectorized(self.RFin_list, self.LO1_ref2_freq_list, "HI"), decimals=9
+    )
+    self.LO2_ref2_lo_freq_list = np.round(
+        self._LO2_frequency_vectorized(self.RFin_list, self.LO1_ref2_freq_list, "LO"), decimals=9
+    )
+    print(name(), line(), f'LO2 elapsed time = {round(perf_counter()-lo2_start, 3)} seconds')
 
     # Create the LO2 control codes - this is the slow part
     print('Starting FMN calculation...')

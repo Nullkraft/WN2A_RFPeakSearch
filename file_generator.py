@@ -60,27 +60,22 @@ class DataGenerator():
     print(name(), line(), f'Detected {self.num_cpus} CPU(s)')
 
 
-  def _LO1_frequency(self, RFin: float, Fref: float, R: int=1) -> float:
+  def _LO1_frequency_vectorized(self, RFin: np.ndarray, Fref: float, R: int = 1) -> np.ndarray:
     """
-    Protected method calculates the frequency for LO1 from RFin, Fpfd, and R
-    where the Phase Frequency Detector frequency is Fpfd=Fref/R
+    Vectorized LO1 frequency calculation for entire RFin array.
 
-    @param RFin is the Spectrum Anaylzer input frequency
-    @type float
+    @param RFin is the array of Spectrum Analyzer input frequencies
+    @type np.ndarray
     @param Fref is the frequency of the selected reference clock
     @type float
     @param R is from the manufacturer's specsheet (defaults to 1)
     @type int (optional)
-    @return The LO1 frequency that steps by the Fpfd value
-    @rtype float
+    @return Array of LO1 frequencies that step by the Fpfd value
+    @rtype np.ndarray
     """
-    Fpfd = Fref/R     # Fpfd1 = reference clock_1 and Fpfd2 = reference clock_2
-    if RFin <= 2000:
-      IF1 = 3800
-    else:
-      IF1 = 3700
-    LO1_freq = Fpfd * round((RFin+IF1)/Fpfd, 0)
-    return LO1_freq
+    Fpfd = Fref / R
+    IF1 = np.where(RFin <= 2000, 3800, 3700)
+    return Fpfd * np.round((RFin + IF1) / Fpfd)
 
 
   def _LO2_frequency(self, RFin: float, ref_clock: str, injection: str) -> float:
@@ -149,12 +144,16 @@ class DataGenerator():
 
     @param use_parallel: True for parallel, False for serial, None for auto-detect
     """
+    lo1_start = perf_counter()
     # Create the list of LO1 frequencies when using reference clock 1.
-    self.LO1_ref1_freq_list = [self._LO1_frequency(RFin, hw.Cfg.Fpfd1) for RFin in self.RFin_list]
-    self.LO1_ref1_freq_list = np.round(self.LO1_ref1_freq_list, decimals=9)
+    self.LO1_ref1_freq_list = np.round(
+        self._LO1_frequency_vectorized(self.RFin_list, hw.Cfg.Fpfd1), decimals=9
+    )
     # Create the list of LO1 frequencies when using reference clock 2.
-    self.LO1_ref2_freq_list = [self._LO1_frequency(RFin, hw.Cfg.Fpfd2) for RFin in self.RFin_list]
-    self.LO1_ref2_freq_list = np.round(self.LO1_ref2_freq_list, decimals=9)
+    self.LO1_ref2_freq_list = np.round(
+        self._LO1_frequency_vectorized(self.RFin_list, hw.Cfg.Fpfd2), decimals=9
+    )
+    print(name(), line(), f'LO1 elapsed time = {round(perf_counter()-lo1_start, 3)} seconds')
     # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 1
     self.LO1_ref1_N_list = np.divide(self.LO1_ref1_freq_list, hw.Cfg.Fpfd1)
     self.LO1_ref1_N_list = self.LO1_ref1_N_list.astype(int)
@@ -162,8 +161,6 @@ class DataGenerator():
     self.LO1_ref2_N_list = np.divide(self.LO1_ref2_freq_list, hw.Cfg.Fpfd2)
     self.LO1_ref2_N_list = self.LO1_ref2_N_list.astype(int)
     # Create the frequency lookup tables for LO1
-    self.LO1_ref1_freq_dict = dict(zip(self.RFin_list, self.LO1_ref1_freq_list))
-    self.LO1_ref2_freq_dict = dict(zip(self.RFin_list, self.LO1_ref2_freq_list))
     # Create the frequency lookup tables for LO2. (LO2_freq = LO1 - freq + hw.Cfg.IF2)
     freq_func = lambda freq, ref, inj: self._LO2_frequency(freq, ref, inj)
     vfunc = np.vectorize(freq_func)

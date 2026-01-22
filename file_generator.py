@@ -106,6 +106,7 @@ class DataGenerator():
 
 
   def _LO3_frequency(self, LO2_freq: float, ref_clock: str, injection: str) -> float:
+    # TODO: Implement when hardware is available for testing
     IF1 = 3600
     LO3_freq = (LO2_freq - IF1) - 45.000
     return LO3_freq
@@ -189,8 +190,8 @@ class DataGenerator():
 
 
   def dump_LO2_ref1_HI_freq(self):
-    with open('LO2_ref1_hi_fmn_list.csv', 'w') as f:
-      for LO2_freq in self.LO2_ref1_hi_fmn_list:
+    with open('freq_LO2_ref1_HI.csv', 'w') as f:
+      for LO2_freq in self.LO2_ref1_hi_freq_list:
         f.write(f'{LO2_freq}\n')
 
   def dump_LO2_ref2_HI_freq(self):
@@ -217,7 +218,7 @@ class DataGenerator():
     np.save('control_ref1_HI.npy', data)
 
 
-  def save_ref2_hi_control_file(self):
+  def save_ref2_hi_control_file(self) -> None:
     data = np.zeros((NUM_FREQUENCIES, 3), dtype=np.uint32)
     data[:, 0] = self.ref2_control_code
     data[:, 1] = self.LO1_ref2_N_list
@@ -233,7 +234,7 @@ class DataGenerator():
     np.save('control_ref1_LO.npy', data)
 
 
-  def save_ref2_lo_control_file(self):
+  def save_ref2_lo_control_file(self) -> None:
     data = np.zeros((NUM_FREQUENCIES, 3), dtype=np.uint32)
     data[:, 0] = self.ref2_control_code
     data[:, 1] = self.LO1_ref2_N_list

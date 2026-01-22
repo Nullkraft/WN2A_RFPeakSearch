@@ -272,16 +272,16 @@ if __name__ == '__main__':
   start = perf_counter()
   dg.create_data()  # Auto-detects parallel vs serial
 
-  dg.dump_LO2_ref1_HI_freq()
-  dg.dump_LO2_ref2_HI_freq()
-  dg.dump_LO2_ref1_LO_freq()
-  dg.dump_LO2_ref2_LO_freq()
+#  dg.dump_LO2_ref1_HI_freq()
+#  dg.dump_LO2_ref2_HI_freq()
+#  dg.dump_LO2_ref1_LO_freq()
+#  dg.dump_LO2_ref2_LO_freq()
   dg.save_ref1_hi_control_file()
   dg.save_ref2_hi_control_file()
   dg.save_ref1_lo_control_file()
   dg.save_ref2_lo_control_file()
   print(f'Time to generate all the files = {round(perf_counter()-start, 6)} seconds')
 
-  dg.dump_csv_control_files()
+#  dg.dump_csv_control_files()
 
   print("Generator done")

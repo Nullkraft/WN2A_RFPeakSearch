@@ -24,12 +24,14 @@ name = lambda: f"File '{__name__}.py',"
 line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
 
 
-import hardware_cfg as hw
-import command_processor as cmd
 import sys
 import os
 import numpy as np
+from time import perf_counter
 from concurrent.futures import ProcessPoolExecutor
+
+import hardware_cfg as hw
+import command_processor as cmd
 
 
 NUM_FREQUENCIES = 3_000_001
@@ -264,8 +266,6 @@ class DataGenerator():
 
 if __name__ == '__main__':
   print()
-  from time import perf_counter
-
   print(f'Fpfd values are {hw.Cfg.Fpfd1} & {hw.Cfg.Fpfd2}')
   dg = DataGenerator()
 

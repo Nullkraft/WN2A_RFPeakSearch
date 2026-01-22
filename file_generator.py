@@ -158,9 +158,6 @@ class DataGenerator():
     # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 2
     self.LO1_ref2_N_list = np.divide(self.LO1_ref2_freq_list, hw.Cfg.Fpfd2)
     self.LO1_ref2_N_list = self.LO1_ref2_N_list.astype(int)
-    # Create the frequency lookup tables for LO1
-#    self.LO1_ref1_freq_dict = dict(zip(self.RFin_list, self.LO1_ref1_freq_list))
-#    self.LO1_ref2_freq_dict = dict(zip(self.RFin_list, self.LO1_ref2_freq_list))
     # Create the frequency lists for LO2. (LO2_freq = LO1 - RFin ± IF2)
     lo2_start = perf_counter()
     self.LO2_ref1_hi_freq_list = np.round(
@@ -192,27 +189,6 @@ class DataGenerator():
 
     print(name(), line(), f'FMN elapsed time = {round(perf_counter()-fmn_start, 3)} seconds')
     print()
-
-
-  def dump_LO2_ref1_HI_freq(self):
-    with open('freq_LO2_ref1_HI.csv', 'w') as f:
-      for LO2_freq in self.LO2_ref1_hi_freq_list:
-        f.write(f'{LO2_freq}\n')
-
-  def dump_LO2_ref2_HI_freq(self):
-    with open('freq_LO2_ref2_HI.csv', 'w') as f:
-      for LO2_freq in self.LO2_ref2_hi_freq_list:
-        f.write(f'{LO2_freq}\n')
-
-  def dump_LO2_ref1_LO_freq(self):
-    with open('freq_LO2_ref1_LO.csv', 'w') as f:
-      for LO2_freq in self.LO2_ref1_lo_freq_list:
-        f.write(f'{LO2_freq}\n')
-
-  def dump_LO2_ref2_LO_freq(self):
-    with open('freq_LO2_ref2_LO.csv', 'w') as f:
-      for LO2_freq in self.LO2_ref2_lo_freq_list:
-        f.write(f'{LO2_freq}\n')
 
 
   def save_ref1_hi_control_file(self) -> None:
@@ -247,28 +223,6 @@ class DataGenerator():
     np.save('control_ref2_LO.npy', data)
 
 
-  def dump_csv_control_files(self):
-    # ref1 HI
-    with open('control_ref1_HI.csv', 'w') as f:
-      for freq, lo1, lo2 in zip(self.RFin_list, self.LO1_ref1_N_list, self.LO2_ref1_hi_fmn_list):
-        f.write(f'{freq}:({self.ref1_control_code},{lo1},{lo2})\n')
-
-    # ref2 HI
-    with open('control_ref2_HI.csv', 'w') as f:
-      for freq, lo1, lo2 in zip(self.RFin_list, self.LO1_ref2_N_list, self.LO2_ref2_hi_fmn_list):
-        f.write(f'{freq}:({self.ref2_control_code},{lo1},{lo2})\n')
-
-    # ref1 LO
-    with open('control_ref1_LO.csv', 'w') as f:
-      for freq, lo1, lo2 in zip(self.RFin_list, self.LO1_ref1_N_list, self.LO2_ref1_lo_fmn_list):
-        f.write(f'{freq}:({self.ref1_control_code},{lo1},{lo2})\n')
-
-    # ref2 LO
-    with open('control_ref2_LO.csv', 'w') as f:
-      for freq, lo1, lo2 in zip(self.RFin_list, self.LO1_ref2_N_list, self.LO2_ref2_lo_fmn_list):
-        f.write(f'{freq}:({self.ref2_control_code},{lo1},{lo2})\n')
-
-
 
 if __name__ == '__main__':
   print()
@@ -278,16 +232,10 @@ if __name__ == '__main__':
   start = perf_counter()
   dg.create_data()  # Auto-detects parallel vs serial
 
-#  dg.dump_LO2_ref1_HI_freq()
-#  dg.dump_LO2_ref2_HI_freq()
-#  dg.dump_LO2_ref1_LO_freq()
-#  dg.dump_LO2_ref2_LO_freq()
   dg.save_ref1_hi_control_file()
   dg.save_ref2_hi_control_file()
   dg.save_ref1_lo_control_file()
   dg.save_ref2_lo_control_file()
   print(f'Time to generate all the files = {round(perf_counter()-start, 6)} seconds')
-
-#  dg.dump_csv_control_files()
 
   print("Generator done")

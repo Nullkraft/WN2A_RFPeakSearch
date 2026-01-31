@@ -26,9 +26,15 @@ line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
 
 import sys
 import os
+import platform
 import numpy as np
 from time import perf_counter
 from concurrent.futures import ProcessPoolExecutor
+
+try:
+  import torch
+except ImportError:
+  torch = None
 
 import hardware_cfg as hw
 import command_processor as cmd
@@ -57,7 +63,56 @@ class DataGenerator():
     self.RFin_list = np.arange(NUM_FREQUENCIES) / 1000.0
     # Detect available CPUs
     self.num_cpus = os.cpu_count() or 1
-    print(name(), line(), f'Detected {self.num_cpus} CPU(s)')
+    self.parallel_workers = None
+    self._report_environment()
+    self._report_array_storage()
+
+
+  def _report_environment(self) -> None:
+    python_version = platform.python_version()
+    print(name(), line(), f'Python version: {python_version} ({platform.python_implementation()})')
+    print(name(), line(), f'NumPy version: {np.__version__}')
+    if torch is None:
+      print(name(), line(), 'Torch version: not installed')
+      print(name(), line(), 'Torch device: unavailable')
+    else:
+      try:
+        torch_version = torch.__version__
+      except AttributeError:
+        torch_version = 'unknown'
+      print(name(), line(), f'Torch version: {torch_version}')
+      if torch.cuda.is_available():
+        try:
+          device_index = torch.cuda.current_device()
+          device_name = torch.cuda.get_device_name(device_index)
+          torch_device = f'cuda:{device_index} ({device_name})'
+        except Exception:
+          torch_device = 'cuda (device details unavailable)'
+      else:
+        torch_device = 'cpu'
+      print(name(), line(), f'Torch device: {torch_device}')
+    print(name(), line(), f'Available CPU processes: {self.num_cpus}')
+
+
+  def _report_array_storage(self, extra_arrays=None) -> None:
+    tracked_arrays = {
+      'RFin_list': self.RFin_list,
+    }
+    if extra_arrays:
+      tracked_arrays.update(extra_arrays)
+    memmap_arrays = [name for name, arr in tracked_arrays.items() if isinstance(arr, np.memmap)]
+    if memmap_arrays:
+      formatted = ', '.join(memmap_arrays)
+      print(name(), line(), f'Memory-mapped arrays: {formatted}')
+    else:
+      print(name(), line(), 'Tracked arrays currently reside in RAM (NumPy ndarray).')
+
+
+  def _log_num_workers(self, num_workers: int, parallel: bool) -> None:
+    if parallel:
+      print(name(), line(), f'Configured process pool workers: {num_workers}')
+    else:
+      print(name(), line(), f'Configured workers: {num_workers} (serial execution)')
 
 
   def _LO1_frequency_vectorized(self, RFin: np.ndarray, Fref: float, R: int = 1) -> np.ndarray:
@@ -114,10 +169,10 @@ class DataGenerator():
     self.LO2_ref2_lo_fmn_list = [hw.MHz_to_fmn(freq, hw.Cfg.ref_clock_2)[0] for freq in self.LO2_ref2_lo_freq_list]
 
 
-  def _compute_fmn_parallel(self):
+  def _compute_fmn_parallel(self, num_workers: int):
     """Compute FMN lists in parallel (multiple CPUs)."""
-    num_workers = min(4, self.num_cpus)  # Max 4 workers since we have 4 tasks
-    print(name(), line(), f'Computing FMN values (parallel, {num_workers} workers)...')
+    worker_label = 'worker' if num_workers == 1 else 'workers'
+    print(name(), line(), f'Computing FMN values (parallel, {num_workers} {worker_label})...')
 
     # Prepare arguments for each worker
     tasks = [
@@ -183,8 +238,13 @@ class DataGenerator():
         use_parallel = self.num_cpus > 1
 
     if use_parallel:
-        self._compute_fmn_parallel()
+        num_workers = min(4, self.num_cpus)  # Max 4 workers since we have 4 tasks
+        self.parallel_workers = num_workers
+        self._log_num_workers(num_workers, parallel=True)
+        self._compute_fmn_parallel(num_workers)
     else:
+        self.parallel_workers = 1
+        self._log_num_workers(1, parallel=False)
         self._compute_fmn_serial()
 
     print(name(), line(), f'FMN elapsed time = {round(perf_counter()-fmn_start, 3)} seconds')

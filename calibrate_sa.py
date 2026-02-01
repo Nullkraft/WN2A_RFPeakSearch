@@ -25,13 +25,15 @@ Runs calibration sweeps for all reference clock / injection mode combinations
 and saves amplitude data for later processing by make_control_dictionary().
 """
 
-import sys
+import logging
 import numpy as np
 from pathlib import Path
 from time import perf_counter
 
-name = lambda: f"File '{__name__}.py',"
-line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(filename)s:%(lineno)d %(message)s"
+)
 
 import application_interface as api
 import serial_port as sp
@@ -54,7 +56,7 @@ def load_control_npy(sa_ctl, control_fname: str) -> bool:
     """Load a calibration control numpy file into sa_ctl.all_frequencies."""
     control_file = Path(control_fname)
     if not control_file.exists():
-        print(name(), line(), f'Missing control file "{control_file}"')
+        logging.info(f'Missing control file "{control_file}"')
         return False
     sa_ctl.all_frequencies = np.load(control_file)
     return True
@@ -85,14 +87,14 @@ def run_single_calibration(sa_ctl, control_file: str, amplitude_file: str) -> bo
     calibration_complete = sa_ctl.sweep(CAL_START, CAL_STOP)
 
     if not calibration_complete:
-        print(name(), line(), 'Calibration cancelled by user')
+        logging.info('Calibration cancelled by user')
         return False
 
     # Convert to volts and save as numpy array
     volts = np.array([round(v, 3) for v in api._amplitude_bytes_to_volts(sa_ctl, serial_buf)],
                      dtype=np.float32)
     np.save(amplitude_file, volts)
-    print(name(), line(), f'Saved {amplitude_file} ({len(volts):,} points)')
+    logging.info(f'Saved {amplitude_file} ({len(volts):,} points)')
 
     return True
 
@@ -118,7 +120,7 @@ def run_full_calibration(sa_ctl, status_callback=None) -> bool:
             return False
 
     elapsed = round(perf_counter() - start, 2)
-    print(name(), line(), f'Full calibration completed in {elapsed} seconds')
+    logging.info(f'Full calibration completed in {elapsed} seconds')
 
     if status_callback:
         status_callback('Calibration complete')

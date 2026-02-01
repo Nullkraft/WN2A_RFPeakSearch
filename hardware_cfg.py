@@ -18,13 +18,13 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Use these functions in all your print statements to display the filename 
-# and the line number of the source file. Requires: import sys
-name = lambda: f"File \'{__name__}.py\',"
-line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
+# Set up logging to provide filename and line number context with each message.
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(filename)s:%(lineno)d %(message)s"
+)
 
-
-import sys
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import wraps

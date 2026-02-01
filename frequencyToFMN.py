@@ -1,10 +1,13 @@
+import logging
 import torch
-import sys
 from math import log
 from time import perf_counter
 from os import cpu_count
 
-line = lambda: f"line {str(sys._getframe(1).f_lineno)},"    # Report which line in the file
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(filename)s:%(lineno)d %(message)s"
+)
 
 R = 1
 ref_clock = 66.000
@@ -86,20 +89,20 @@ def py_torch(frange, device=None, batch_size=131_072):
 
     if Fpfd_t.is_cuda: # using torch.tensor side effect to find device. True=='cuda'
         peak_mem = round(torch.cuda.max_memory_allocated(device) / (1024**3), 6)
-        print(line(), f'{peak_mem=} GB')
+        logging.info(f'{peak_mem=} GB')
         hw_device = 'gpu'
     else:
         hw_device = 'cpu'
 
     num_freq_steps = round(len(sweep_freqs) / 1_000_000, 2)
-    print(line(), f'Converted {num_freq_steps} million frequencies to FMN in {elapsed:.3f} sec on {hw_device}')
+    logging.info(f'Converted {num_freq_steps} million frequencies to FMN in {elapsed:.3f} sec on {hw_device}')
 
     return fmns_torch.cpu().numpy()
 
 
 if __name__ == '__main__':
     cpus = int(cpu_count() / 2)
-    print(line(), f'number of CPUs = {cpus}')
+    logging.info(f'number of CPUs = {cpus}')
 
     cpu = 0     # Manually force testing on cpu vs gpu
     if cpu:

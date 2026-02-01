@@ -17,13 +17,17 @@
 # You should have received a copy of the GNU General Public License 
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
+# Configure logging to include filename and line number with each message.
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(filename)s:%(lineno)d %(message)s"
+)
 
 
 """
 Module implementing Dialog.
 """
-
-import sys
 
 from PyQt6.QtCore import pyqtSlot
 from PyQt6.QtWidgets import QDialog
@@ -31,20 +35,6 @@ from PyQt6.QtWidgets import QDialog
 from .Ui_direct_programming import Ui_Dialog
 from hardware_cfg import Cfg
 import command_processor as cp
-
-
-def line() -> str:
-    """
-    Function Utility to simplify print debugging.
-
-    @return The line number of the source code file.
-    @rtype str
-
-    """
-    return f'line {str(sys._getframe(1).f_lineno)},'
-
-
-name = f"File \'{__name__}.py\',"
 
 
 class Dialog(QDialog, Ui_Dialog):
@@ -74,8 +64,6 @@ class Dialog(QDialog, Ui_Dialog):
         cp.set_LO2(fmn)
 
 
-
-
         """ Get next frequency based on step size """
         step_size = round(self.direct_step_freq_mhz.value(), 3)
         next_freq = start_freq + step_size
@@ -84,10 +72,5 @@ class Dialog(QDialog, Ui_Dialog):
 
 
     
-
-
-
-
-
 
 

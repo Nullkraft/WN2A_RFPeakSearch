@@ -19,13 +19,13 @@
 #
 
 
-# Use these functions in all your print statements to display the filename
-# and the line number of the source file. Requires: import sys
-name = lambda: f'File "{__name__}.py",'
-line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
+# Configure logging to include filename and line number with each message.
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(filename)s:%(lineno)d %(message)s"
+)
 
-
-import sys
 import time
 
 import numpy as np
@@ -207,7 +207,7 @@ class SA_Control:
       LO3 = IF2 - Cfg.IF3
       fmn, _ = MHz_to_fmn(LO3, ref_clock)
       LO3_fmn_codes.append(fmn)
-    print(name(), line(), f'{len(LO3_fmn_codes) = }')
+    logging.info(f'{len(LO3_fmn_codes) = }')
     return LO2_fmn_code, LO3_fmn_codes
 
   def sweep_45(self, x_min, x_max, x_range):
@@ -223,7 +223,7 @@ class SA_Control:
     time.sleep(.001)
     sp.ser.read(sp.ser.in_waiting)  # Clear out the serial buffer.
     delay_count = 0     # Prevents 100% CPU when reading the serial input
-    print(name(), line(), f'{LO3_fmn_codes = }')
+    logging.info(f'{LO3_fmn_codes = }')
     for fmn in LO3_fmn_codes:
       self.set_LO3(fmn)
       """ Read the amplitude data from the serial input """
@@ -327,7 +327,7 @@ def peakSearch(amplitudeData, numPeaks):
   for i in idx:
     if is_peak(amp, i):
       peak_list.append(i)
-  print(name(), line(), f'{len(peak_list) = }')
+  logging.info(f'{len(peak_list) = }')
   return(peak_list)
 
 
@@ -358,7 +358,7 @@ def fmn_to_MHz(fmn_word, Fpfd=66.0, show_fmn: bool=False):
     M = 1
   N = fmn_word & 0xFF
   if show_fmn:
-    print(name(), line(), '\t', f'M:F:N = {M,F,N}')
+    logging.info(f'\t M:F:N = {(M, F, N)}')
   freq_MHz = Fpfd * (N + F/M)
   return freq_MHz
 
@@ -368,7 +368,7 @@ def MHz_to_N(RFout_MHz, ref_clock, R: int=1) -> int:
       the integer step register of the ADF4356 chip.
   """
   if ref_clock == None:
-    print(name(), line(), 'WARNING: ref_clock can not be None when calling MHz_to_N()')
+    logging.warning('ref_clock can not be None when calling MHz_to_N()')
   N = int(RFout_MHz * (2/ref_clock))
   return (N)
 
@@ -376,11 +376,6 @@ def MHz_to_N(RFout_MHz, ref_clock, R: int=1) -> int:
 
 if __name__ == '__main__':
   print()
-
-
-
-
-
 
 
 

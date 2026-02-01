@@ -19,16 +19,15 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Use these functions in all your print statements to display the filename 
-# and the line number of the source file. Requires: import sys
-name = lambda: f"File \'{__name__}.py\',"
-line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
-
+# Configure logging to include filename and line number with each message.
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(filename)s:%(lineno)d %(message)s"
+)
 
 import serial_port as sp
-import sys
 import time
-import logging
 
 
 ''' Arduino and programmable Device commands '''
@@ -152,7 +151,7 @@ class CommandProcessor(CmdProcInterface):
       if (53 <= int_N <= 102):
         N = int_N << 16
       else:
-        logging.error(f'{name}, {line()}, N ({int_N}) exceeds the limits of the ADF4356 (LO1)')
+        logging.error(f'N ({int_N}) exceeds the limits of the ADF4356 (LO1)')
     else:
       N = 0
     self._send_command(LO1_command | N)
@@ -207,7 +206,7 @@ class CommandProcessor(CmdProcInterface):
     time.sleep(0.01)
     msg = sp.ser.read(64)           # Collect the report(s)
     if msg:
-      print(name(), line(), f'Arduino message = {msg}')
+      logging.info(f'Arduino message = {msg}')
 
 
   def get_version_message(self):
@@ -255,7 +254,7 @@ class CommandProcessor(CmdProcInterface):
       if sp.ser.is_open:
         sp.SimpleSerial.write(object, command)
     except:
-      print(name(), line(), f': Open the serial port before sending a command <{command.__name__}>.')
+      logging.warning(f'Open the serial port before sending command {command}.')
 
 #    # This can be used to echo a copy of the message from the Arduino controller
 #    # To simplify the result go into the Arduino and uncomment '#define MESSAGE_TESTING'

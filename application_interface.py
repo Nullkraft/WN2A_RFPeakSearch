@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
-# Use these functions in all your print statements to display the filename
-# and the line number of the source file. Requires: import sys
-name = lambda: f'File "{__name__}.py",'
-line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
+# Configure logging to include filename and line number with each message.
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(filename)s:%(lineno)d %(message)s"
+)
 
-import sys
 import numpy as np
 from pathlib import Path
 import serial_port as sp
@@ -77,7 +78,7 @@ def _amplitude_bytes_to_volts(sa_ctl, amplBytes) -> list:
     hi_byte = (hi_byte & 15)
     if hi_byte > 3:
 #      hi_byte = (hi_byte & 15)    # Store the amplitude value despite it not locking
-      print(name(), line(), f'{len(amplBytes) = } WARNING:: PLL failed to lock at {sa_ctl.swept_freq_list[idx]} Mhz')
+      logging.warning(f'{len(amplBytes) = } WARNING:: PLL failed to lock at {sa_ctl.swept_freq_list[idx]} Mhz')
     ampl = (hi_byte << 8) | lo_byte   # Combine MSByte/LSByte into an amplitude word
     voltage = ampl * sa_ctl.adc_Vref()/(2**10-1)     # Convert 10 bit ADC counts to Voltage
     volts_list.append(voltage)
@@ -110,7 +111,7 @@ def make_control_dictionary(sa_ctl, RFin_list):
   ampl_file_1 = Path('amplitude_ref1_HI.npy')
   ampl_file_2 = Path('amplitude_ref2_HI.npy')
   if not (ampl_file_1.exists() and ampl_file_2.exists()):
-    print(name(), line(), 'Missing amplitude calibration files')
+    logging.warning('Missing amplitude calibration files')
     return
 
   # Load amplitude data (numpy arrays)
@@ -173,28 +174,28 @@ def make_control_dictionary(sa_ctl, RFin_list):
       r, LO1_N, LO2_FMN = sa_ctl.all_frequencies_dict[f]
       fcsv.write(f'{f}:({r},{LO1_N},{LO2_FMN})\n')
 
-  print(name(), line(), f'Saved control.npy and control.csv ({len(sa_ctl.all_frequencies_dict):,} entries)')
+  logging.info(f'Saved control.npy and control.csv ({len(sa_ctl.all_frequencies_dict):,} entries)')
 
 def load_controls(sa_ctl, control_fname: str=None):
   if control_fname is None:
-    print(name(), line(), 'You must enter a control file name')
+    logging.warning('You must enter a control file name')
     return
   control_file = Path(control_fname)
   if control_file.exists():
     ctrl_start = perf_counter()
     sa_ctl.all_frequencies = np.load(control_file)
     delta = round(perf_counter()-ctrl_start, 3)
-    print(name(), line(), f'Control file "{control_file}" loaded in {delta} seconds')
+    logging.info(f'Control file "{control_file}" loaded in {delta} seconds')
   else:
-    print(name(), line(), f'Missing control file "{control_file}"')
+    logging.warning(f'Missing control file "{control_file}"')
 
 def sweep(sa_ctl):
   timer_start = perf_counter()
   sp.SimpleSerial.data_buffer_in.clear()   # Prepare serial data buffer for a new sweep
   window_x_min, window_x_max, _ = sa_ctl.get_x_range()
   sweep_complete = sa_ctl.sweep(window_x_min, window_x_max)
-  print(name(), line(), f'Sweep completed in {round(perf_counter()-timer_start, 6)} seconds')
+  logging.info(f'Sweep completed in {round(perf_counter()-timer_start, 6)} seconds')
   if not sweep_complete:
-    print(name(), line(), 'Sweep stopped by user')
+    logging.info('Sweep stopped by user')
   return sweep_complete
 

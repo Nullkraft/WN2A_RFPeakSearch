@@ -19,12 +19,12 @@
 
 # -*- coding: utf-8 -*-
 
-# Utility functions used for displaying the name and the line number
-# of the source file. Requires: import sys
-name = lambda: f'File "{__name__}.py",'
-line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
-
-import sys
+# Configure logging to include filename and line number with each message.
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(filename)s:%(lineno)d %(message)s"
+)
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread, QCoreApplication
@@ -210,9 +210,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #      self.btnSweep.setEnabled(False)     # disable the sweep button until we're done
       self.thread.finished.connect(lambda: self.btnSweep.setEnabled(True))
     else:
-      print('')
-      print('   You have to open the serial port.')
-      print('   You must select both a Serial port AND speed.')
+      logging.info('')
+      logging.warning('   You have to open the serial port.')
+      logging.warning('   You must select both a Serial port AND speed.')
 
   @pyqtSlot()
   def update_start_stop(self):
@@ -245,7 +245,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
       color = {"purple": (75, 50, 255), "yellow": (150, 255, 150)}
       self.dataLine.setData(self.x_axis, self.y_axis, pen=color["yellow"])
     else:
-      print(name(), line(), 'Unable to plot. Missing amplitude data.')
+      logging.warning('Unable to plot. Missing amplitude data.')
 
 
   @pyqtSlot()
@@ -382,7 +382,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
   def on_floatStartMHz_editingFinished(self):
     plot_x_start = self.floatStartMHz.value()
     plot_x_stop = self.floatStopMHz.value()
-    print(name(), line(), f'{plot_x_start = } : {plot_x_stop = }')
+    logging.info(f'{plot_x_start = } : {plot_x_stop = }')
     # Prevent graph, or plot, from trying to update this StopMHz control
     self.graphWidget.sigXRangeChanged.disconnect(self.update_start_stop)
     self.graphWidget.setXRange(plot_x_start, plot_x_stop)
@@ -393,7 +393,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
   def on_floatStopMHz_editingFinished(self):
     plot_x_start = self.floatStartMHz.value()
     plot_x_stop = self.floatStopMHz.value()
-    print(name(), line(), f'{plot_x_start = } : {plot_x_stop = }')
+    logging.info(f'{plot_x_start = } : {plot_x_stop = }')
     # Prevent graph, or plot, from trying to update this StopMHz control
     self.graphWidget.sigXRangeChanged.disconnect(self.update_start_stop)
     self.graphWidget.setXRange(plot_x_start, plot_x_stop)
@@ -446,5 +446,5 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
 if __name__ == '__main__':
-  print()
+  logging.info('')
 #  freeze_support()

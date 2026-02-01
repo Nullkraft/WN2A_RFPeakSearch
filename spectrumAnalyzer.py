@@ -18,13 +18,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-
-# Configure logging to include filename and line number with each message.
+# Import logging_setup to configure logging once for the application.
 import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(filename)s:%(lineno)d %(message)s"
-)
+import logging_setup
 
 import time
 
@@ -376,7 +372,6 @@ def MHz_to_N(RFout_MHz, ref_clock, R: int=1) -> int:
 
 if __name__ == '__main__':
   print()
-
 
 
 

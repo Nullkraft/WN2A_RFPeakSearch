@@ -26,14 +26,10 @@ and saves amplitude data for later processing by make_control_dictionary().
 """
 
 import logging
+import logging_setup
 import numpy as np
 from pathlib import Path
 from time import perf_counter
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(filename)s:%(lineno)d %(message)s"
-)
 
 import application_interface as api
 import serial_port as sp

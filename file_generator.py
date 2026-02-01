@@ -21,6 +21,7 @@
 # Use these functions in all your print statements to display the filename
 # and the line number of the source file. Requires: import sys
 import logging
+import logging_setup
 import os
 import platform
 import numpy as np
@@ -35,11 +36,6 @@ except ImportError:
 import hardware_cfg as hw
 import command_processor as cmd
 
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(filename)s:%(lineno)d %(message)s"
-)
 
 NUM_FREQUENCIES = 3_000_001
 

@@ -17,12 +17,9 @@
 # You should have received a copy of the GNU General Public License 
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-# Configure logging to include filename and line number with each message.
+# Import logging_setup to configure logging once for the application.
 import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(filename)s:%(lineno)d %(message)s"
-)
+import logging_setup
 
 
 """
@@ -72,5 +69,4 @@ class Dialog(QDialog, Ui_Dialog):
 
 
     
-
 

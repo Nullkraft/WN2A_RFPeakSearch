@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Configure logging to include filename and line number with each message.
+# Import logging_setup to configure logging once for the application.
 import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(filename)s:%(lineno)d %(message)s"
-)
+import logging_setup
 
 import numpy as np
 from pathlib import Path
@@ -198,4 +195,3 @@ def sweep(sa_ctl):
   if not sweep_complete:
     logging.info('Sweep stopped by user')
   return sweep_complete
-

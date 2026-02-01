@@ -1,13 +1,9 @@
 import logging
+import logging_setup
 import torch
 from math import log
 from time import perf_counter
 from os import cpu_count
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(filename)s:%(lineno)d %(message)s"
-)
 
 R = 1
 ref_clock = 66.000

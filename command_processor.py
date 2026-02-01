@@ -19,12 +19,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Configure logging to include filename and line number with each message.
+# Import logging_setup to configure logging once for the application.
 import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(filename)s:%(lineno)d %(message)s"
-)
+import logging_setup
 
 import serial_port as sp
 import time
@@ -263,7 +260,6 @@ class CommandProcessor(CmdProcInterface):
 #      msg += sp.ser.read(sp.ser.in_waiting)  # Clear serial buffer of any junk
 #      time.sleep(0.01)
 #    print(name(), line(), f"msg = {msg}")
-
 
 
 

@@ -19,13 +19,10 @@
 
 # -*- coding: utf-8 -*-
 
-# Configure logging to include filename and line number with each message.
+# Import logging_setup to configure logging once for the application.
 import logging
+import logging_setup
 from time import sleep
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(filename)s:%(lineno)d %(message)s"
-)
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread, QCoreApplication

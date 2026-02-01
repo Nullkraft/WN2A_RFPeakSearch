@@ -18,12 +18,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Configure logging to report filename and line number with each message.
+# Import logging_setup to configure logging once for the application.
 import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(filename)s:%(lineno)d %(message)s"
-)
+import logging_setup
 
 import errno as error
 import sys
@@ -197,7 +194,6 @@ if __name__ == '__main__':
   logging.info("")
   logging.info(SimpleSerial().get_baud_rate_list())
   logging.info(SimpleSerial().get_serial_port_list())
-
 
 
 

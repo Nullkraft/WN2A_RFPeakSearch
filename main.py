@@ -18,12 +18,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Set up logging to provide filename and line number context with each message.
+# Import logging_setup to configure logging once for the application.
 import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(filename)s:%(lineno)d %(message)s"
-)
+import logging_setup
 
 
 from ui.mainWindow import MainWindow

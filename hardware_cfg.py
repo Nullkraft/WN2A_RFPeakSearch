@@ -18,12 +18,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Set up logging to provide filename and line number context with each message.
+# Import logging_setup to configure logging once for the application.
 import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(filename)s:%(lineno)d %(message)s"
-)
+import logging_setup
 
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -101,7 +98,6 @@ def MHz_to_fmn(target_freq_MHz: float, ref_clock: float):
       best_M = M
 #  print(name(), line(), f'F = {best_F} : M = {best_M} : N = {N}')
   return best_F<<20 | best_M<<8 | N, Fvco 
-
 
 
 

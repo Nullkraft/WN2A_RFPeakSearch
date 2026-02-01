@@ -21,6 +21,7 @@
 
 # Configure logging to include filename and line number with each message.
 import logging
+from time import sleep
 logging.basicConfig(
     level=logging.INFO,
     format="%(filename)s:%(lineno)d %(message)s"

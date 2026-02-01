@@ -20,7 +20,8 @@
 
 # Import logging_setup to configure logging once for the application.
 import logging
-import logging_setup
+import logging_setup    # Used for its side effects
+_ = logging_setup   # silence Warning: 'logging_setup' imported but unused
 
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -97,8 +98,5 @@ def MHz_to_fmn(target_freq_MHz: float, ref_clock: float):
       best_F = F
       best_M = M
 #  print(name(), line(), f'F = {best_F} : M = {best_M} : N = {N}')
-  return best_F<<20 | best_M<<8 | N, Fvco 
-
-
-
+  return best_F<<20 | best_M<<8 | N, Fvco
 

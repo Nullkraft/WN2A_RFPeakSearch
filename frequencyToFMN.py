@@ -1,5 +1,6 @@
 import logging
-import logging_setup
+import logging_setup    # Used for its side effects
+_ = logging_setup   # silence Warning: 'logging_setup' imported but unused
 import torch
 from math import log
 from time import perf_counter

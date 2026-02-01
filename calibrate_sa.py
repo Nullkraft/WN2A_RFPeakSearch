@@ -26,7 +26,8 @@ and saves amplitude data for later processing by make_control_dictionary().
 """
 
 import logging
-import logging_setup
+import logging_setup    # Used for its side effects
+_ = logging_setup   # silence Warning: 'logging_setup' imported but unused
 import numpy as np
 from pathlib import Path
 from time import perf_counter

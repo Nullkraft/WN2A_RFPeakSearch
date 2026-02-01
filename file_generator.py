@@ -21,7 +21,8 @@
 # Use these functions in all your print statements to display the filename
 # and the line number of the source file. Requires: import sys
 import logging
-import logging_setup
+import logging_setup    # Used for its side effects
+_ = logging_setup   # silence Warning: 'logging_setup' imported but unused
 import os
 import platform
 import numpy as np

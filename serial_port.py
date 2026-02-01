@@ -20,7 +20,8 @@
 
 # Import logging_setup to configure logging once for the application.
 import logging
-import logging_setup
+import logging_setup    # Used for its side effects
+_ = logging_setup   # silence Warning: 'logging_setup' imported but unused
 
 import errno as error
 import sys

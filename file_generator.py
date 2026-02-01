@@ -20,11 +20,7 @@
 
 # Use these functions in all your print statements to display the filename
 # and the line number of the source file. Requires: import sys
-name = lambda: f"File '{__name__}.py',"
-line = lambda: f"line {str(sys._getframe(1).f_lineno)},"
-
-
-import sys
+import logging
 import os
 import platform
 import numpy as np
@@ -39,6 +35,11 @@ except ImportError:
 import hardware_cfg as hw
 import command_processor as cmd
 
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(filename)s:%(lineno)d %(message)s"
+)
 
 NUM_FREQUENCIES = 3_000_001
 
@@ -70,17 +71,17 @@ class DataGenerator():
 
   def _report_environment(self) -> None:
     python_version = platform.python_version()
-    print(name(), line(), f'Python version: {python_version} ({platform.python_implementation()})')
-    print(name(), line(), f'NumPy version: {np.__version__}')
+    logging.info(f'Python version: {python_version} ({platform.python_implementation()})')
+    logging.info(f'NumPy version: {np.__version__}')
     if torch is None:
-      print(name(), line(), 'Torch version: not installed')
-      print(name(), line(), 'Torch device: unavailable')
+      logging.info('Torch version: not installed')
+      logging.info('Torch device: unavailable')
     else:
       try:
         torch_version = torch.__version__
       except AttributeError:
         torch_version = 'unknown'
-      print(name(), line(), f'Torch version: {torch_version}')
+      logging.info(f'Torch version: {torch_version}')
       if torch.cuda.is_available():
         try:
           device_index = torch.cuda.current_device()
@@ -90,8 +91,8 @@ class DataGenerator():
           torch_device = 'cuda (device details unavailable)'
       else:
         torch_device = 'cpu'
-      print(name(), line(), f'Torch device: {torch_device}')
-    print(name(), line(), f'Available CPU processes: {self.num_cpus}')
+      logging.info(f'Torch device: {torch_device}')
+    logging.info(f'Available CPU processes: {self.num_cpus}')
 
 
   def _report_array_storage(self, extra_arrays=None) -> None:
@@ -103,16 +104,16 @@ class DataGenerator():
     memmap_arrays = [name for name, arr in tracked_arrays.items() if isinstance(arr, np.memmap)]
     if memmap_arrays:
       formatted = ', '.join(memmap_arrays)
-      print(name(), line(), f'Memory-mapped arrays: {formatted}')
+      logging.info(f'Memory-mapped arrays: {formatted}')
     else:
-      print(name(), line(), 'Tracked arrays currently reside in RAM (NumPy ndarray).')
+      logging.info('Tracked arrays currently reside in RAM (NumPy ndarray).')
 
 
   def _log_num_workers(self, num_workers: int, parallel: bool) -> None:
     if parallel:
-      print(name(), line(), f'Configured process pool workers: {num_workers}')
+      logging.info(f'Configured process pool workers: {num_workers}')
     else:
-      print(name(), line(), f'Configured workers: {num_workers} (serial execution)')
+      logging.info(f'Configured workers: {num_workers} (serial execution)')
 
 
   def _LO1_frequency_vectorized(self, RFin: np.ndarray, Fref: float, R: int = 1) -> np.ndarray:
@@ -162,7 +163,7 @@ class DataGenerator():
 
   def _compute_fmn_serial(self):
     """Compute FMN lists sequentially (single CPU)."""
-    print(name(), line(), 'Computing FMN values (single-threaded)...')
+    logging.info('Computing FMN values (single-threaded)...')
     self.LO2_ref1_hi_fmn_list = [hw.MHz_to_fmn(freq, hw.Cfg.ref_clock_1)[0] for freq in self.LO2_ref1_hi_freq_list]
     self.LO2_ref2_hi_fmn_list = [hw.MHz_to_fmn(freq, hw.Cfg.ref_clock_2)[0] for freq in self.LO2_ref2_hi_freq_list]
     self.LO2_ref1_lo_fmn_list = [hw.MHz_to_fmn(freq, hw.Cfg.ref_clock_1)[0] for freq in self.LO2_ref1_lo_freq_list]
@@ -172,7 +173,7 @@ class DataGenerator():
   def _compute_fmn_parallel(self, num_workers: int):
     """Compute FMN lists in parallel (multiple CPUs)."""
     worker_label = 'worker' if num_workers == 1 else 'workers'
-    print(name(), line(), f'Computing FMN values (parallel, {num_workers} {worker_label})...')
+    logging.info(f'Computing FMN values (parallel, {num_workers} {worker_label})...')
 
     # Prepare arguments for each worker
     tasks = [
@@ -206,7 +207,7 @@ class DataGenerator():
     self.LO1_ref2_freq_list = np.round(
         self._LO1_frequency_vectorized(self.RFin_list, hw.Cfg.Fpfd2), decimals=9
     )
-    print(name(), line(), f'LO1 elapsed time = {round(perf_counter()-lo1_start, 3)} seconds')
+    logging.info(f'LO1 elapsed time = {round(perf_counter()-lo1_start, 3)} seconds')
     # Create the list of LO1 N values for setting the frequency of the ADF4356 chip when using reference clock 1
     self.LO1_ref1_N_list = np.divide(self.LO1_ref1_freq_list, hw.Cfg.Fpfd1)
     self.LO1_ref1_N_list = self.LO1_ref1_N_list.astype(int)
@@ -227,7 +228,7 @@ class DataGenerator():
     self.LO2_ref2_lo_freq_list = np.round(
         self._LO2_frequency_vectorized(self.RFin_list, self.LO1_ref2_freq_list, "LO"), decimals=9
     )
-    print(name(), line(), f'LO2 elapsed time = {round(perf_counter()-lo2_start, 3)} seconds')
+    logging.info(f'LO2 elapsed time = {round(perf_counter()-lo2_start, 3)} seconds')
 
     # Create the LO2 control codes - this is the slow part
     print('Starting FMN calculation...')
@@ -247,7 +248,7 @@ class DataGenerator():
         self._log_num_workers(1, parallel=False)
         self._compute_fmn_serial()
 
-    print(name(), line(), f'FMN elapsed time = {round(perf_counter()-fmn_start, 3)} seconds')
+    logging.info(f'FMN elapsed time = {round(perf_counter()-fmn_start, 3)} seconds')
     print()
 
 

@@ -180,10 +180,7 @@ def load_controls(sa_ctl, control_fname: str=None):
     return
   control_file = Path(control_fname)
   if control_file.exists():
-    ctrl_start = perf_counter()
     sa_ctl.all_frequencies = np.load(control_file)
-    delta = round(perf_counter()-ctrl_start, 3)
-    logging.info(f'Control file "{control_file}" loaded in {delta} seconds')
   else:
     logging.warning(f'Missing control file "{control_file}"')
 

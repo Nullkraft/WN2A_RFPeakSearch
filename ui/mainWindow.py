@@ -23,7 +23,6 @@
 import logging
 import logging_setup    # Used for its side effects
 _ = logging_setup   # silence Warning: 'logging_setup' imported but unused
-from time import sleep
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread, QCoreApplication
@@ -32,11 +31,10 @@ import pyqtgraph as pg
 
 from ui.Ui_mainWindow import Ui_MainWindow
 import spectrumAnalyzer as sa
-from command_processor import CommandProcessor
 from spectrumAnalyzer import SA_Control
 import serial_port as sp
-import application_interface as api
-import numpy as np
+from main_window_controller import MainWindowController
+
 
 class MainWindow(QMainWindow, Ui_MainWindow):
   last_N = -1   # for monitoring the amount of data from serial_read()
@@ -48,8 +46,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     pg.setConfigOptions(useOpenGL=True, enableExperimental=True)
     self.setupUi(self)  # Must come before self.graphWidget.plot()
     self.setup_plot()
-    cmd_proc = CommandProcessor()
-    self.sa_ctl = SA_Control(cmd_proc)
+    self.controller = MainWindowController()
+    self.sa_ctl = self.controller.sa_ctl
     #
     # MAX2871 chip will need to be initialized
     self.amplitude = []   # Declare amplitude storage that will allow appending
@@ -65,17 +63,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # Request the list of available serial ports and use it to
     # populate the user 'Serial Port' drop-down selection list.
     ''' ~~~~~~ Setup serial port ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
-    serial_ports = sp.SimpleSerial().get_serial_port_list()
+    serial_ports = self.controller.get_serial_ports()
     self.cbxSerialPortSelection.addItems(serial_ports)
     #
     # Populate the 'User serial speed drop-down selection list'
-    serial_speeds = sp.SimpleSerial().get_baud_rate_list()
+    serial_speeds = self.controller.get_serial_speeds()
     for baud in serial_speeds:
       self.cbxSerialSpeedSelection.addItem(str(baud), baud)
     # Check for, and reopen, the last serial port that was used.
-    sp.SimpleSerial().port_open()
+    serial_port, serial_speed = self.controller.reopen_last_serial_port()
     # GUI dropdowns should display port and speed values from the port that was opened
-    serial_port, serial_speed = sp.SimpleSerial().read_config()
     port_index = self.cbxSerialPortSelection.findText(serial_port)
     if (port_index >= 0):
       self.cbxSerialPortSelection.setCurrentIndex(port_index)
@@ -83,10 +80,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     if (speed_index >= 0):
       self.cbxSerialSpeedSelection.setCurrentIndex(speed_index)
     ''' ~~~~~~ End serial port ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '''
-    # List of all frequencies from 0 to 3000 MHz in 1 kHz steps
-    self.RFin_list = np.arange(0, 3_000_001) / 1000.0
-    # Loading the initial control file in a background thread
-    api.load_controls(self.sa_ctl, 'control.npy')
+    # Load the initial control file
+    self.controller.load_controls('control.npy')
 
   def setup_plot(self):
     ''' Setting up the plot window '''
@@ -119,10 +114,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
       return
     start_freq = round(self.floatStartMHz.value(), 3)
     stop_freq = round(self.floatStopMHz.value(), 3)
-    step_size = self.intStepKHz.value()
-    start, stop, step, num_steps_actual = api.freq_steps(self.sa_ctl, start_freq, stop_freq, step_size, num_steps)
-    if not self.PROGSTART:
-      self.sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
+    self.controller.update_swept_freq_list(start_freq, stop_freq, num_steps)
 
   def set_LO3_sweep(self):
     # Find and set the center frequency used for sweeping LO3.
@@ -162,7 +154,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
   @pyqtSlot()
   def on_btn_make_control_dict_clicked(self):
-    api.make_control_dictionary(self.sa_ctl, self.RFin_list)
+    self.controller.make_control_dictionary()
 
   def progress_report(self, n):
     if n != self.last_N:
@@ -183,12 +175,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #    sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size, sa.ref_clock)
 ##    assert len(sa.swept_frequencies_list) != 0, "sa.swept_frequencies_list was empty"
 ##    self.graphWidget.setXRange(sa.swept_frequencies_list[0], sa.swept_frequencies_list[-1])   # Limit plot to user selected frequency range
-    sweep_complete = api.sweep(self.sa_ctl)
+    sweep_complete, ampl_bytes = self.controller.run_sweep()
     status_txt = f'Sweep complete, fwidth = {self.sa_ctl.lowpass_filter_width}'
     self.label_sweep_status.setText(status_txt)
     QtGui.QGuiApplication.processEvents()
     if self.chk_plot_enabled.isChecked() and sweep_complete:
-      self.plot_ampl_data(sp.SimpleSerial.data_buffer_in)
+      self.plot_ampl_data(ampl_bytes)
 
 
 
@@ -222,24 +214,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
   def on_btnRefreshPortsList_clicked(self):
     for x in range(10):
       self.cbxSerialPortSelection.removeItem(0)
-    ports = sp.SimpleSerial().get_serial_port_list()
+    ports = self.controller.get_serial_ports()
     self.cbxSerialPortSelection.addItems(ports)
 
   @pyqtSlot(int)
   def on_selectReferenceOscillator_currentIndexChanged(self, selected_ref_clock):
-    self.sa_ctl.set_reference_clock(selected_ref_clock)
+    self.controller.set_reference_clock(selected_ref_clock)
 
   def plot_ampl_data(self, amplBytes):
     if amplBytes:
       self.x_axis.clear()
       self.y_axis.clear()
       self.amplitude.clear()
-      volts_list = api._amplitude_bytes_to_volts(self.sa_ctl, amplBytes)
-      self.amplitude = [api._volts_to_dBm(voltage) for voltage in volts_list]
-      argsort_index_nparray = sa.np.argsort(self.sa_ctl.swept_freq_list)
-      for idx in argsort_index_nparray:
-        self.x_axis.append(self.sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order
-        self.y_axis.append(self.amplitude[idx])      # And make the amplitude match the same order
+      self.amplitude, self.x_axis, self.y_axis = self.controller.build_plot_data(amplBytes)
       self.graphWidget.setXRange(self.x_axis[0], self.x_axis[-1])   # Limit plot to user selected frequency range
       color = {"purple": (75, 50, 255), "yellow": (150, 255, 150)}
       self.dataLine.setData(self.x_axis, self.y_axis, pen=color["yellow"])
@@ -249,8 +236,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
   @pyqtSlot()
   def on_btnPeakSearch_clicked(self):
-    window_x_min, window_x_max, _ = self.sa_ctl.get_x_range()
-    x_axis, y_axis = api.get_visible_plot_range(self.x_axis, self.y_axis, window_x_min, window_x_max)
+    x_axis, y_axis = self.controller.get_visible_plot_range(self.x_axis, self.y_axis)
     self._clear_marker_text()
     self._clear_peak_markers()
     self._peak_search(x_axis, y_axis)
@@ -340,21 +326,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
   @pyqtSlot()
   def on_line_edit_cmd_returnPressed(self):
     ''' Create command name for disble LO3? '''
-    cmd_str = self.line_edit_cmd.text()
-    cmd_int = int(cmd_str, 16)
-    tmp_bytes = cmd_int.to_bytes(4, byteorder='little')
-    sp.ser.write(tmp_bytes)   # Leave me alone!  I'm for testing...
+    self.controller.send_raw_command(self.line_edit_cmd.text())
 
   @pyqtSlot(bool)
   def on_chkArduinoLED_toggled(self, checked):
-   self.sa_ctl.toggle_arduino_led(checked)
+   self.controller.toggle_arduino_led(checked)
 
   @pyqtSlot()
   def on_btn_get_arduino_msg_clicked(self):
     """
     Request the Arduino message containing version number and date
     """
-    self.sa_ctl.get_version_message()
+    self.controller.get_version_message()
 
   @pyqtSlot()
   def on_dbl_attenuator_dB_editingFinished(self):
@@ -365,7 +348,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @type double
     """
     dB = float(self.dbl_attenuator_dB.value())    # Read attenuator value from user control
-    self.sa_ctl.set_attenuator(dB)
+    self.controller.set_attenuator(dB)
 
   @pyqtSlot()
   def on_btn_open_serial_port_clicked(self):
@@ -374,8 +357,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     """
     sel_baud = self.cbxSerialSpeedSelection.currentText()
     sel_port = self.cbxSerialPortSelection.currentText()
-    sp.SimpleSerial().port_open(baud_rate=sel_baud, port=sel_port)
-    sleep(2)
+    self.controller.open_serial_port(sel_baud, sel_port)
 
   @pyqtSlot()
   def on_floatStartMHz_editingFinished(self):
@@ -417,7 +399,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     Public slot What happens if I try to run it a second time.
     '''
     if self.dblCenterMHz.value() != MainWindow.last_center_MHz_value:
-      self.sa_ctl.set_center_freq(self.dblCenterMHz.value())
+      self.controller.set_center_freq(self.dblCenterMHz.value())
       MainWindow.last_center_MHz_value = self.dblCenterMHz.value()
     else:
       pass

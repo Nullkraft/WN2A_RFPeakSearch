@@ -25,18 +25,16 @@ import logging_setup    # Used for its side effects
 _ = logging_setup   # silence Warning: 'logging_setup' imported but unused
 
 from PyQt6 import QtCore, QtGui
-from PyQt6.QtCore import pyqtSlot, QThread, QCoreApplication
+from PyQt6.QtCore import pyqtSlot, QCoreApplication
 from PyQt6.QtWidgets import QMainWindow
 import pyqtgraph as pg
 
 from ui.Ui_mainWindow import Ui_MainWindow
 import numpy as np
-import serial_port as sp
 from main_window_controller import MainWindowController
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
-  last_N = -1   # for monitoring the amount of data from serial_read()
   last_center_MHz_value = 0
   PROGSTART = True
 
@@ -155,54 +153,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
   def on_btn_make_control_dict_clicked(self):
     self.controller.make_control_dictionary()
 
-  def progress_report(self, n):
-    if n != self.last_N:
-      self.last_N = n
-#      print(name(), line(), f'Len in_buff = {n}')
-    pass
-
-  def clear_last_N(self):
-    self.last_n = -1
-
   @pyqtSlot()
   def on_btnSweep_clicked(self):
     self.label_sweep_status.setText("Sweep in progress...")
     QtGui.QGuiApplication.processEvents()
-    # # # # # # DO NOT REMOVE - FOR FUTURE USE # # # # # #
-#    sp.ser.read(sp.ser.in_waiting)                                      # Clear out the serial buffer.
-#    self.serial_read_thread()                                           # Start the serial read thread to accept sweep data
-#    sa.sweep(sa.sweep_start, sa.sweep_stop, sa.sweep_step_size, sa.ref_clock)
-##    assert len(sa.swept_frequencies_list) != 0, "sa.swept_frequencies_list was empty"
-##    self.graphWidget.setXRange(sa.swept_frequencies_list[0], sa.swept_frequencies_list[-1])   # Limit plot to user selected frequency range
     sweep_complete, ampl_bytes = self.controller.run_sweep()
     status_txt = f'Sweep complete, fwidth = {self.sa_ctl.lowpass_filter_width}'
     self.label_sweep_status.setText(status_txt)
     QtGui.QGuiApplication.processEvents()
     if self.chk_plot_enabled.isChecked() and sweep_complete:
       self.plot_ampl_data(ampl_bytes)
-
-
-
-  def serial_read_thread(self):
-    ''' Read back data points in a separate thread so we don't block the gui. '''
-    if sp.ser.is_open:
-      self.thread = QThread()         # Create a separate thread for serial reads
-      self.worker = sp.SimpleSerial()     # Function for reading from the serial port
-      self.worker.moveToThread(self.thread)   # Serial reads happen inside its own thread
-      self.thread.started.connect(self.worker.read_serial)  # Connect to signals...
-      self.worker.progress.connect(self.progress_report)
-      self.worker.finished.connect(self.clear_last_N)
-      self.worker.finished.connect(self.thread.quit)
-      self.worker.finished.connect(self.plot_ampl_data)
-      self.worker.finished.connect(self.worker.deleteLater)
-      self.thread.finished.connect(self.thread.deleteLater)
-      self.thread.start()           # After starting the thread...
-#      self.btnSweep.setEnabled(False)     # disable the sweep button until we're done
-      self.thread.finished.connect(lambda: self.btnSweep.setEnabled(True))
-    else:
-      logging.info('')
-      logging.warning('   You have to open the serial port.')
-      logging.warning('   You must select both a Serial port AND speed.')
 
   @pyqtSlot()
   def update_start_stop(self):

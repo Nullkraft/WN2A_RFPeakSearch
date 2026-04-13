@@ -4,10 +4,14 @@
 
 - Active branch: `decoupling`
 - Remote branch: `origin/decoupling`
+- Branch tip: `1afe84c` `Remove stale serial thread path`
 - Preservation tag for the old threaded serial path: `serial_read_thread`
 
 ## Recent Committed Work
 
+- `1afe84c` `Remove stale serial thread path`
+  - Removed the unused `serial_read_thread()` path and related helpers/imports from `ui/mainWindow.py`
+  - Added this status file to capture the current decoupling state before hardware validation
 - `fdf6f29` `Decouple MainWindow from workflow logic`
   - Introduced `main_window_controller.py`
   - Moved startup/workflow orchestration out of `ui/mainWindow.py`
@@ -20,11 +24,10 @@
 - `746cfae` `Fix stale MHz_to_fmn test expectations`
   - Corrected `tests/test_file_generator.py` to match the current `hardware_cfg.MHz_to_fmn()` contract
 
-## Current Uncommitted Change
+## Current Working Tree
 
-- `ui/mainWindow.py`
-  - Removed the dead `serial_read_thread()` path and the imports/helpers that only existed for it
-  - This is intentionally not committed yet because hardware-backed testing has not been done
+- No tracked project files are modified
+- The only untracked path is `.codex`
 
 ## Important Context
 
@@ -34,20 +37,23 @@
   - `application_interface.sweep()`
   - `SA_Control.sweep()`
 - The older threaded serial-read path was preserved before cleanup via the `serial_read_thread` tag because it may contain useful ideas for future RLE packet or progressive plotting work
-- The old threaded path did not appear to be part of the active runtime path anymore, but hardware testing should confirm that before the cleanup is finalized
+- The old threaded path did not appear to be part of the active runtime path anymore, but hardware testing should still confirm that the committed cleanup was safe
 
 ## Tests Checked Recently
 
-- `python -m pytest -q tests/test_peak_search.py`
+- `source bin/activate && python -m pytest -q tests/test_peak_search.py`
   - Passed
-- `python -m pytest -q tests/test_file_generator.py`
+- `source bin/activate && python -m pytest -q tests/test_file_generator.py`
   - Passed after correcting the stale test expectations
+- `python3 -m py_compile ui/mainWindow.py`
+  - Passed during the serial-thread cleanup
 
 ## Recommended Next Step
 
 - Stop here until the hardware is connected and available
 - Test the current `decoupling` branch against real hardware before continuing the decoupling effort
-- Only after hardware verification decide whether to keep or revert the uncommitted `ui/mainWindow.py` serial cleanup
+- Focus first on sweep behavior, serial timing, and end-to-end device control on real hardware
+- Only after hardware verification continue reducing direct `self.sa_ctl` usage inside `MainWindow`
 
 ## Risks To Keep In Mind
 

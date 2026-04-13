@@ -5,9 +5,8 @@ import logging_setup    # Used for its side effects
 _ = logging_setup   # silence Warning: 'logging_setup' imported but unused
 from time import sleep
 
-import spectrumAnalyzer as sa
 from command_processor import CommandProcessor
-from spectrumAnalyzer import SA_Control
+from spectrumAnalyzer import SA_Control, peakSearch
 import serial_port as sp
 import application_interface as api
 import numpy as np
@@ -63,7 +62,7 @@ class MainWindowController:
     y_axis = []
     volts_list = api._amplitude_bytes_to_volts(self.sa_ctl, ampl_bytes)
     amplitude = [api._volts_to_dBm(voltage) for voltage in volts_list]
-    argsort_index_nparray = sa.np.argsort(self.sa_ctl.swept_freq_list)
+    argsort_index_nparray = np.argsort(self.sa_ctl.swept_freq_list)
     for idx in argsort_index_nparray:
       x_axis.append(self.sa_ctl.swept_freq_list[idx])
       y_axis.append(amplitude[idx])
@@ -72,6 +71,20 @@ class MainWindowController:
   def get_visible_plot_range(self, x_axis: list, y_axis: list):
     window_x_min, window_x_max, _ = self.sa_ctl.get_x_range()
     return api.get_visible_plot_range(x_axis, y_axis, window_x_min, window_x_max)
+
+  def prepare_peak_markers(self, x_axis: list, y_axis: list, num_markers: int) -> list:
+    idx = peakSearch(y_axis, num_markers)
+    peaks = []
+    for i in range(min(num_markers, len(idx))):
+      frequency = x_axis[idx[i]]
+      amplitude = y_axis[idx[i]]
+      small_vertical_gap = 0.2
+      marker_y = amplitude + small_vertical_gap
+      frequency_text = str('%.6f' % frequency)
+      amplitude_text = str('%.2f' % amplitude)
+      label = frequency_text + ' MHz\n' + amplitude_text + ' dBm'
+      peaks.append((frequency, amplitude, marker_y, label))
+    return peaks
 
   def set_reference_clock(self, selected_ref_clock: int):
     self.sa_ctl.set_reference_clock(selected_ref_clock)

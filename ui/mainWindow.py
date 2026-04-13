@@ -30,8 +30,7 @@ from PyQt6.QtWidgets import QMainWindow
 import pyqtgraph as pg
 
 from ui.Ui_mainWindow import Ui_MainWindow
-import spectrumAnalyzer as sa
-from spectrumAnalyzer import SA_Control
+import numpy as np
 import serial_port as sp
 from main_window_controller import MainWindowController
 
@@ -242,31 +241,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     self._peak_search(x_axis, y_axis)
 
   def _peak_search(self, x_axis: list, y_axis: list):
-    self.marker = sa.np.array([pg.ArrowItem()])   # Create a growable array of markers
-    self.text = sa.np.array([pg.TextItem()])    # Make a growable array of labels
-    # idx is sorted so that idx[0] points to the highest amplitude in the
-    # amplitudeData array, idx[1] points to the second highest and so on.
-    idx = sa.peakSearch(y_axis, self.numPeakMarkers.value())
-    # Get the number of markers from the user control on the front panel
-    num_markers = self.numPeakMarkers.value()
-    # Create and add Peak Markers to the graph.
-    for i in range(min(num_markers, len(idx))):
-      self.marker = sa.np.append(self.marker, pg.ArrowItem())  # Add a place for a new marker
-      self.text = sa.np.append(self.text, pg.TextItem())     # Add a place for a new label
+    self.marker = np.array([pg.ArrowItem()])   # Create a growable array of markers
+    self.text = np.array([pg.TextItem()])    # Make a growable array of labels
+    peaks = self.controller.prepare_peak_markers(
+      x_axis,
+      y_axis,
+      self.numPeakMarkers.value(),
+    )
+    for i, (frequency, amplitude, marker_y, label) in enumerate(peaks):
+      self.marker = np.append(self.marker, pg.ArrowItem())  # Add a place for a new marker
+      self.text = np.append(self.text, pg.TextItem())     # Add a place for a new label
       self.marker[i] = pg.ArrowItem(angle=-90, tipAngle=40, tailWidth=10, pen={'color': 'w', 'width': 1})
-      frequency = x_axis[idx[i]]
-      amplitude = y_axis[idx[i]]
-      small_vertical_gap = 0.2
-      self.marker[i].setPos(frequency, amplitude+small_vertical_gap)
-      frequency_text = str('%.6f' % x_axis[idx[i]])
-      amplitude_text = str('%.2f' % y_axis[idx[i]])
-      markerLabel = frequency_text + ' MHz\n' + amplitude_text + ' dBm'
-      self.text[i] = pg.TextItem(markerLabel, anchor = (0.5, 1.5), border = 'w', fill = (0, 0, 255, 100))
+      self.marker[i].setPos(frequency, marker_y)
+      self.text[i] = pg.TextItem(label, anchor = (0.5, 1.5), border = 'w', fill = (0, 0, 255, 100))
       self.graphWidget.addItem(self.marker[i])
       self.graphWidget.addItem(self.text[i])
-      frequency_pos = x_axis[idx[i]]
-      amplitude_pos = y_axis[idx[i]]
-      self.text[i].setPos(frequency_pos, amplitude_pos)
+      self.text[i].setPos(frequency, amplitude)
 
   def _clear_peak_markers(self):
     try:
@@ -404,7 +394,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     else:
       pass
 
-  @pyqtSlot(SA_Control, object)
+  @pyqtSlot(object, object)
   def on_graphWidget_sigRangeChanged(self, sa_obj, p1):
     '''
     Update the plot window x-axis min/max values when the plot

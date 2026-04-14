@@ -17,6 +17,7 @@ class MainWindowController:
     self.cmd_proc = CommandProcessor()
     self.sa_ctl = SA_Control(self.cmd_proc)
     self.RFin_list = np.arange(0, 3_000_001) / 1000.0
+    self.plot_freq_list = []
 
   def get_serial_ports(self):
     return sp.SimpleSerial().get_serial_port_list()
@@ -33,15 +34,18 @@ class MainWindowController:
 
   def update_swept_freq_list(self, start_freq: float, stop_freq: float, num_steps: int = 401):
     start, stop, step, _ = api.freq_steps(self.sa_ctl, start_freq, stop_freq, 0, num_steps)
-    self.sa_ctl.swept_freq_list = self._get_swept_freq_list(start, stop, step)
+    self.plot_freq_list = self._get_plot_freq_list(start, stop, step)
+    self.sa_ctl.swept_freq_list = self._get_swept_freq_list(self.plot_freq_list)
 
-  def _get_swept_freq_list(self, start: int, stop: int, step: int) -> list:
-    ref1_sweep_freq_list = []
-    ref2_sweep_freq_list = []
+  def _get_plot_freq_list(self, start: int, stop: int, step: int) -> list:
     freq_steps = [f for f in range(start, stop, step)]
     freq_steps.append(stop)
-    for idx in freq_steps:
-      freq = self.RFin_list[idx]
+    return [self.RFin_list[idx] for idx in freq_steps]
+
+  def _get_swept_freq_list(self, plot_freq_list: list) -> list:
+    ref1_sweep_freq_list = []
+    ref2_sweep_freq_list = []
+    for freq in plot_freq_list:
       ref_code, _, _ = self.sa_ctl.get_control_codes(freq)
       if ref_code == 0x0CFF:
         ref1_sweep_freq_list.append(freq)
@@ -62,10 +66,11 @@ class MainWindowController:
     y_axis = []
     volts_list = api._amplitude_bytes_to_volts(self.sa_ctl, ampl_bytes)
     amplitude = [api._volts_to_dBm(voltage) for voltage in volts_list]
-    argsort_index_nparray = np.argsort(self.sa_ctl.swept_freq_list)
-    for idx in argsort_index_nparray:
-      x_axis.append(self.sa_ctl.swept_freq_list[idx])
-      y_axis.append(amplitude[idx])
+    amplitude_by_freq = dict(zip(self.sa_ctl.swept_freq_list, amplitude))
+    for freq in self.plot_freq_list:
+      if freq in amplitude_by_freq:
+        x_axis.append(freq)
+        y_axis.append(amplitude_by_freq[freq])
     return amplitude, x_axis, y_axis
 
   def get_visible_plot_range(self, x_axis: list, y_axis: list):

@@ -41,8 +41,8 @@ class Cfg():
   max_error = 2**32
   Vref = 2.595 #5.0           # Controller ADC reference voltage
 
-  ref_clock_1 = 66.000
-  ref_clock_2 = 66.666
+  ref_clock_1 = 65.99936
+  ref_clock_2 = 67.10783
   ref_divider: int = 1        # R from the MAX2871 spec sheet
 
   Fpfd1 = ref_clock_1 / ref_divider   # LO1 step size when using ref_clock 1
@@ -99,4 +99,3 @@ def MHz_to_fmn(target_freq_MHz: float, ref_clock: float):
       best_M = M
 #  print(name(), line(), f'F = {best_F} : M = {best_M} : N = {N}')
   return best_F<<20 | best_M<<8 | N, Fvco
-

@@ -40,6 +40,7 @@ class _SuppressSweepTimingFilter(logging.Filter):
     return not (
       msg.startswith('Sweep completed in ')
       or msg.startswith('len(amplBytes) = ')
+      or msg.startswith('Arduino message = ')
     )
 
 

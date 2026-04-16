@@ -36,7 +36,11 @@ from main_window_controller import MainWindowController
 
 class _SuppressSweepTimingFilter(logging.Filter):
   def filter(self, record):
-    return not record.getMessage().startswith('Sweep completed in ')
+    msg = record.getMessage()
+    return not (
+      msg.startswith('Sweep completed in ')
+      or msg.startswith('len(amplBytes) = ')
+    )
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -175,16 +179,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
       logging.getLogger().addFilter(sweep_timing_filter)
     try:
       sweep_complete, ampl_bytes = self.controller.run_sweep()
+      status_txt = f'Sweep complete, fwidth = {self.sa_ctl.lowpass_filter_width}'
+      self.label_sweep_status.setText(status_txt)
+      QtGui.QGuiApplication.processEvents()
+      if self.chk_plot_enabled.isChecked() and sweep_complete:
+        self.plot_ampl_data(ampl_bytes)
+      if self.chk_continuous_sweep.isChecked() and sweep_complete:
+        QtCore.QTimer.singleShot(0, self.on_btnSweep_clicked)
     finally:
       if sweep_timing_filter is not None:
         logging.getLogger().removeFilter(sweep_timing_filter)
-    status_txt = f'Sweep complete, fwidth = {self.sa_ctl.lowpass_filter_width}'
-    self.label_sweep_status.setText(status_txt)
-    QtGui.QGuiApplication.processEvents()
-    if self.chk_plot_enabled.isChecked() and sweep_complete:
-      self.plot_ampl_data(ampl_bytes)
-    if self.chk_continuous_sweep.isChecked() and sweep_complete:
-      QtCore.QTimer.singleShot(0, self.on_btnSweep_clicked)
 
   @pyqtSlot()
   def update_start_stop(self):

@@ -42,3 +42,8 @@ share/
 snake_venv/
 convert_amplitude_files.py
 convert_control_ref_files.py
+.codex
+Calibrated Amplitudes Raw.tar.gz
+amplitude_npy_to_csv.py
+amplitude_smoother.py
+sweep_315_dump.log

@@ -34,6 +34,11 @@ import numpy as np
 from main_window_controller import MainWindowController
 
 
+class _SuppressSweepTimingFilter(logging.Filter):
+  def filter(self, record):
+    return not record.getMessage().startswith('Sweep completed in ')
+
+
 class MainWindow(QMainWindow, Ui_MainWindow):
   last_center_MHz_value = 0
   PROGSTART = True
@@ -164,7 +169,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
   def on_btnSweep_clicked(self):
     self.label_sweep_status.setText("Sweep in progress...")
     QtGui.QGuiApplication.processEvents()
-    sweep_complete, ampl_bytes = self.controller.run_sweep()
+    sweep_timing_filter = None
+    if self.chk_continuous_sweep.isChecked():
+      sweep_timing_filter = _SuppressSweepTimingFilter()
+      logging.getLogger().addFilter(sweep_timing_filter)
+    try:
+      sweep_complete, ampl_bytes = self.controller.run_sweep()
+    finally:
+      if sweep_timing_filter is not None:
+        logging.getLogger().removeFilter(sweep_timing_filter)
     status_txt = f'Sweep complete, fwidth = {self.sa_ctl.lowpass_filter_width}'
     self.label_sweep_status.setText(status_txt)
     QtGui.QGuiApplication.processEvents()

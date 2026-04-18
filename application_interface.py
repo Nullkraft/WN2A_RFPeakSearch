@@ -10,6 +10,8 @@ from pathlib import Path
 import serial_port as sp
 from time import perf_counter
 
+NPY_DATA_DIR = Path('npy_data_files')
+
 def freq_steps(sa_ctl, startMHz, stopMHz, step_size, num_steps):
   '''
   Public method I want this function to get the frequencies and indexes
@@ -106,23 +108,23 @@ def make_control_dictionary(sa_ctl, RFin_list):
   sa_ctl.all_frequencies_dict.clear()
 
   # Check if amplitude files exist
-  ampl_file_1 = Path('amplitude_ref1_HI.npy')
-  ampl_file_2 = Path('amplitude_ref2_HI.npy')
+  ampl_file_1 = NPY_DATA_DIR / 'amplitude_ref1_HI.npy'
+  ampl_file_2 = NPY_DATA_DIR / 'amplitude_ref2_HI.npy'
   if not (ampl_file_1.exists() and ampl_file_2.exists()):
     logging.warning('Missing amplitude calibration files')
     return
 
   # Load amplitude data (numpy arrays)
-  r1_hi_amplitudes = np.load('amplitude_ref1_HI.npy')
-  r1_lo_amplitudes = np.load('amplitude_ref1_LO.npy')
-  r2_hi_amplitudes = np.load('amplitude_ref2_HI.npy')
-  r2_lo_amplitudes = np.load('amplitude_ref2_LO.npy')
+  r1_hi_amplitudes = np.load(NPY_DATA_DIR / 'amplitude_ref1_HI.npy')
+  r1_lo_amplitudes = np.load(NPY_DATA_DIR / 'amplitude_ref1_LO.npy')
+  r2_hi_amplitudes = np.load(NPY_DATA_DIR / 'amplitude_ref2_HI.npy')
+  r2_lo_amplitudes = np.load(NPY_DATA_DIR / 'amplitude_ref2_LO.npy')
 
   # Load control data (numpy arrays)
-  control_ref1_hi = np.load('control_ref1_HI.npy')
-  control_ref1_lo = np.load('control_ref1_LO.npy')
-  control_ref2_hi = np.load('control_ref2_HI.npy')
-  control_ref2_lo = np.load('control_ref2_LO.npy')
+  control_ref1_hi = np.load(NPY_DATA_DIR / 'control_ref1_HI.npy')
+  control_ref1_lo = np.load(NPY_DATA_DIR / 'control_ref1_LO.npy')
+  control_ref2_hi = np.load(NPY_DATA_DIR / 'control_ref2_HI.npy')
+  control_ref2_lo = np.load(NPY_DATA_DIR / 'control_ref2_LO.npy')
 
   def lp_filt(active_list, half_window: int, index: int = 0) -> float:
     ''' A Centered Moving Average is used to smooth out the amplitude data. '''
@@ -164,7 +166,7 @@ def make_control_dictionary(sa_ctl, RFin_list):
   data = np.zeros((n, 3), dtype=np.uint32)
   for freq, (ref_clock, lo1_n, lo2_fmn) in sa_ctl.all_frequencies_dict.items():
     data[int(round(freq * 1000))] = (ref_clock, lo1_n, lo2_fmn)
-  np.save('control.npy', data)
+  np.save(NPY_DATA_DIR / 'control.npy', data)
 
   # Save CSV for human readability
   with open('control.csv', 'w') as fcsv:
@@ -178,7 +180,7 @@ def load_controls(sa_ctl, control_fname: str=None):
   if control_fname is None:
     logging.warning('You must enter a control file name')
     return
-  control_file = Path(control_fname)
+  control_file = NPY_DATA_DIR / control_fname
   if control_file.exists():
     sa_ctl.all_frequencies = np.load(control_file)
   else:

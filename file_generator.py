@@ -39,6 +39,7 @@ import command_processor as cmd
 
 
 NUM_FREQUENCIES = 3_000_001
+NPY_DATA_DIR = 'npy_data_files'
 
 
 def _compute_fmn_list(args):
@@ -254,7 +255,7 @@ class DataGenerator():
     data[:, 0] = self.ref1_control_code
     data[:, 1] = self.LO1_ref1_N_list
     data[:, 2] = self.LO2_ref1_hi_fmn_list
-    np.save('control_ref1_HI.npy', data)
+    np.save(f'{NPY_DATA_DIR}/control_ref1_HI.npy', data)
 
 
   def save_ref2_hi_control_file(self) -> None:
@@ -262,7 +263,7 @@ class DataGenerator():
     data[:, 0] = self.ref2_control_code
     data[:, 1] = self.LO1_ref2_N_list
     data[:, 2] = self.LO2_ref2_hi_fmn_list
-    np.save('control_ref2_HI.npy', data)
+    np.save(f'{NPY_DATA_DIR}/control_ref2_HI.npy', data)
 
 
   def save_ref1_lo_control_file(self) -> None:
@@ -270,7 +271,7 @@ class DataGenerator():
     data[:, 0] = self.ref1_control_code
     data[:, 1] = self.LO1_ref1_N_list
     data[:, 2] = self.LO2_ref1_lo_fmn_list
-    np.save('control_ref1_LO.npy', data)
+    np.save(f'{NPY_DATA_DIR}/control_ref1_LO.npy', data)
 
 
   def save_ref2_lo_control_file(self) -> None:
@@ -278,7 +279,7 @@ class DataGenerator():
     data[:, 0] = self.ref2_control_code
     data[:, 1] = self.LO1_ref2_N_list
     data[:, 2] = self.LO2_ref2_lo_fmn_list
-    np.save('control_ref2_LO.npy', data)
+    np.save(f'{NPY_DATA_DIR}/control_ref2_LO.npy', data)
 
 
 

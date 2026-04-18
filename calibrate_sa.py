@@ -44,6 +44,8 @@ CALIBRATION_RUNS = [
     ('control_ref2_LO.npy', 'amplitude_ref2_LO.npy'),
 ]
 
+NPY_DATA_DIR = Path('npy_data_files')
+
 CAL_START = 0
 CAL_STOP = 3000
 CAL_NUM_POINTS = 3_000_001
@@ -51,7 +53,7 @@ CAL_NUM_POINTS = 3_000_001
 
 def load_control_npy(sa_ctl, control_fname: str) -> bool:
     """Load a calibration control numpy file into sa_ctl.all_frequencies."""
-    control_file = Path(control_fname)
+    control_file = NPY_DATA_DIR / control_fname
     if not control_file.exists():
         logging.info(f'Missing control file "{control_file}"')
         return False
@@ -90,7 +92,7 @@ def run_single_calibration(sa_ctl, control_file: str, amplitude_file: str) -> bo
     # Convert to volts and save as numpy array
     volts = np.array([round(v, 3) for v in api._amplitude_bytes_to_volts(sa_ctl, serial_buf)],
                      dtype=np.float32)
-    np.save(amplitude_file, volts)
+    np.save(NPY_DATA_DIR / amplitude_file, volts)
     logging.info(f'Saved {amplitude_file} ({len(volts):,} points)')
 
     return True

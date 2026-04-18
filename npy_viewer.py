@@ -48,6 +48,7 @@ from pathlib import Path
 NUM_FREQUENCIES = 3_000_001
 FREQ_STEP_KHZ = 0.001  # 1 kHz steps
 MAX_FREQ_MHZ = 3000.0
+NPY_DATA_DIR = Path("npy_data_files")
 
 # Reference clock control code mapping
 REF_CLOCK_MAP = {
@@ -72,14 +73,22 @@ def index_to_freq(index: int) -> float:
     return index * FREQ_STEP_KHZ
 
 
+def resolve_input_file(filepath: str) -> Path:
+    """Resolve bare filenames through npy_data_files/ by default."""
+    path = Path(filepath)
+    if path.exists() or path.parent != Path('.'):
+        return path
+    return NPY_DATA_DIR / path
+
+
 def load_control_file(filepath: str) -> np.ndarray:
     """Load an npy control file and validate its shape."""
-    path = Path(filepath)
+    path = resolve_input_file(filepath)
     if not path.exists():
-        print(f"Error: File not found: {filepath}")
+        print(f"Error: File not found: {path}")
         sys.exit(1)
 
-    data = np.load(filepath)
+    data = np.load(path)
 
     if data.shape[1] != 3:
         print(f"Error: Expected 3 columns, got {data.shape[1]}")
@@ -291,13 +300,13 @@ def main():
         epilog=EXAMPLES
     )
 
-    parser.add_argument("file", help="Input .npy control file")
+    parser.add_argument("file", help="Input .npy control file (bare filenames default to npy_data_files/)")
     parser.add_argument("-f", "--freq", type=float, metavar="MHZ",
                         help="Display data for specific frequency (MHz)")
     parser.add_argument("-r", "--range", type=float, nargs=2, metavar=("START", "END"),
                         help="Display frequency range (MHz)")
     parser.add_argument("-c", "--compare", metavar="FILE2",
-                        help="Compare with another .npy file")
+                        help="Compare with another .npy file (bare filenames default to npy_data_files/)")
     parser.add_argument("-e", "--export", metavar="OUTPUT.CSV",
                         help="Export to CSV file")
     parser.add_argument("-d", "--decimal", action="store_true",

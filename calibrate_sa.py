@@ -44,7 +44,7 @@ CALIBRATION_RUNS = [
     ('control_ref2_LO.npy', 'amplitude_ref2_LO.npy'),
 ]
 
-NPY_DATA_DIR = Path('npy_data_files')
+NPY_DATA_DIR = Path('data_files')
 
 CAL_START = 0
 CAL_STOP = 3000

@@ -10,7 +10,7 @@ from pathlib import Path
 import serial_port as sp
 from time import perf_counter
 
-NPY_DATA_DIR = Path('npy_data_files')
+NPY_DATA_DIR = Path('data_files')
 
 def freq_steps(sa_ctl, startMHz, stopMHz, step_size, num_steps):
   '''
@@ -169,7 +169,7 @@ def make_control_dictionary(sa_ctl, RFin_list):
   np.save(NPY_DATA_DIR / 'control.npy', data)
 
   # Save CSV for human readability
-  with open('control.csv', 'w') as fcsv:
+  with open(NPY_DATA_DIR / 'control.csv', 'w') as fcsv:
     for f in sa_ctl.all_frequencies_dict:
       r, LO1_N, LO2_FMN = sa_ctl.all_frequencies_dict[f]
       fcsv.write(f'{f}:({r},{LO1_N},{LO2_FMN})\n')

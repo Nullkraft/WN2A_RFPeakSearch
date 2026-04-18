@@ -48,7 +48,7 @@ from pathlib import Path
 NUM_FREQUENCIES = 3_000_001
 FREQ_STEP_KHZ = 0.001  # 1 kHz steps
 MAX_FREQ_MHZ = 3000.0
-NPY_DATA_DIR = Path("npy_data_files")
+NPY_DATA_DIR = Path("data_files")
 
 # Reference clock control code mapping
 REF_CLOCK_MAP = {
@@ -74,9 +74,17 @@ def index_to_freq(index: int) -> float:
 
 
 def resolve_input_file(filepath: str) -> Path:
-    """Resolve bare filenames through npy_data_files/ by default."""
+    """Resolve bare filenames through data_files/ by default."""
     path = Path(filepath)
     if path.exists() or path.parent != Path('.'):
+        return path
+    return NPY_DATA_DIR / path
+
+
+def resolve_output_file(filepath: str) -> Path:
+    """Resolve bare export filenames through data_files/ by default."""
+    path = Path(filepath)
+    if path.parent != Path('.'):
         return path
     return NPY_DATA_DIR / path
 
@@ -254,6 +262,7 @@ def compare_files(file1: str, file2: str, start_mhz: float = None, end_mhz: floa
 
 def export_to_csv(data: np.ndarray, output_file: str, start_mhz: float = None, end_mhz: float = None) -> None:
     """Export a slice of data to CSV format."""
+    output_path = resolve_output_file(output_file)
     if start_mhz is None:
         start_mhz = 0.0
     if end_mhz is None:
@@ -262,7 +271,7 @@ def export_to_csv(data: np.ndarray, output_file: str, start_mhz: float = None, e
     start_idx = freq_to_index(start_mhz)
     end_idx = freq_to_index(end_mhz)
 
-    with open(output_file, 'w') as f:
+    with open(output_path, 'w') as f:
         f.write("RFin_MHz,ref_clock,LO1_N,LO2_FMN_hex,LO2_FMN_dec\n")
 
         for i in range(start_idx, end_idx + 1):
@@ -272,7 +281,7 @@ def export_to_csv(data: np.ndarray, output_file: str, start_mhz: float = None, e
             f.write(f"{freq:.3f},{ref_clock},{lo1_n},0x{lo2_fmn:08X},{lo2_fmn}\n")
 
     num_rows = end_idx - start_idx + 1
-    print(f"Exported {num_rows} rows to {output_file}")
+    print(f"Exported {num_rows} rows to {output_path}")
     print(f"Range: {index_to_freq(start_idx):.3f} - {index_to_freq(end_idx):.3f} MHz")
 
 
@@ -300,13 +309,13 @@ def main():
         epilog=EXAMPLES
     )
 
-    parser.add_argument("file", help="Input .npy control file (bare filenames default to npy_data_files/)")
+    parser.add_argument("file", help="Input .npy control file (bare filenames default to data_files/)")
     parser.add_argument("-f", "--freq", type=float, metavar="MHZ",
                         help="Display data for specific frequency (MHz)")
     parser.add_argument("-r", "--range", type=float, nargs=2, metavar=("START", "END"),
                         help="Display frequency range (MHz)")
     parser.add_argument("-c", "--compare", metavar="FILE2",
-                        help="Compare with another .npy file (bare filenames default to npy_data_files/)")
+                        help="Compare with another .npy file (bare filenames default to data_files/)")
     parser.add_argument("-e", "--export", metavar="OUTPUT.CSV",
                         help="Export to CSV file")
     parser.add_argument("-d", "--decimal", action="store_true",

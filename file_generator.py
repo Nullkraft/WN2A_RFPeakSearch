@@ -39,7 +39,7 @@ import command_processor as cmd
 
 
 NUM_FREQUENCIES = 3_000_001
-NPY_DATA_DIR = 'npy_data_files'
+NPY_DATA_DIR = 'data_files'
 
 
 def _compute_fmn_list(args):

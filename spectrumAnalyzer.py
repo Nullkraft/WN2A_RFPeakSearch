@@ -19,6 +19,7 @@
 #
 
 # Import logging_setup to configure logging once for the application.
+from dataclasses import dataclass
 import logging
 import logging_setup    # Used for its side effects
 _ = logging_setup   # silence Warning: 'logging_setup' imported but unused
@@ -59,6 +60,15 @@ listener = keyboard.Listener(on_release=on_release)
 listener.start()
 
 
+@dataclass
+class SweepPoint:
+  rf_freq_mhz: float
+  ref_code: int
+  lo1_n: int
+  lo2_fmn: int
+  amplitude: float = 0
+
+
 class SA_Control:
   lowpass_filter_width = 20       # Sets the +/- amplitude calibration smoothing half_window
   swept_freq_list = list()        # The list of frequencies that the user requested to be swept
@@ -80,6 +90,20 @@ class SA_Control:
     """Lookup control codes for a frequency from the numpy array."""
     idx = int(round(freq_mhz * 1000))
     return tuple(self.all_frequencies[idx])
+
+  def build_sweep_points(self, plot_freq_list: list) -> list:
+    ref1_points = []
+    ref2_points = []
+    for freq in plot_freq_list:
+      ref_code, lo1_n, lo2_fmn = self.get_control_codes(freq)
+      point = SweepPoint(freq, int(ref_code), int(lo1_n), int(lo2_fmn))
+      if ref_code == self.cmd_proc.ref_clock1_enable:
+        ref1_points.append(point)
+      elif ref_code == self.cmd_proc.ref_clock2_enable:
+        ref2_points.append(point)
+      else:
+        ref1_points.append(point)
+    return ref1_points + ref2_points
 
   def adc_Vref(self):
     return Cfg.Vref
@@ -339,8 +363,6 @@ def is_peak(amplitude_list, idx):
 
 if __name__ == '__main__':
   print()
-
-
 
 
 

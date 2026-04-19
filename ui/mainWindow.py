@@ -130,15 +130,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     stop_freq = round(self.floatStopMHz.value(), 3)
     self.controller.update_swept_freq_list(start_freq, stop_freq, num_steps)
 
-  def set_LO3_sweep(self):
-    # Find and set the center frequency used for sweeping LO3.
-    start = self.floatStartMHz.value()
-    stop = self.floatStopMHz.value()
-    self.graphWidget.setXRange(start, stop)   # When starting set x-range from 3 to 3000 MHz
-    window_x_range = round(stop-start, 3)
-    window_center = int(window_x_range/2 * 1000) / 1000 + start
-    self.dblCenterMHz.setValue(window_center)
-
   def get_swept_freq_list(self, start: int, stop: int, step: int) -> list:
     ''' A control dictionary has freq: (ref_clock_code, LO1_N, LO2_FMN) as
     key and values in a tuple. When making the list of sweep frequencies it
@@ -302,7 +293,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
   @pyqtSlot()
   def on_line_edit_cmd_returnPressed(self):
-    ''' Create command name for disble LO3? '''
     self.controller.send_raw_command(self.line_edit_cmd.text())
 
   @pyqtSlot(bool)

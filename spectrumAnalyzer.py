@@ -72,7 +72,7 @@ class SweepPoint:
 class SA_Control:
   lowpass_filter_width = 20       # Sets the +/- amplitude calibration smoothing half_window
   swept_freq_list = list()        # The list of frequencies that the user requested to be swept
-  all_frequencies_dict = dict()   # ref_clock, LO1, LO2, and LO3 from 0 to 3000 MHz in 1 kHz steps
+  all_frequencies_dict = dict()   # ref_clock, LO1, LO2 from 0 to 3000 MHz in 1 kHz steps
   all_frequencies = None          # NumPy array for runtime lookups
   window_x_min = 0.0
   window_x_max = 3000.0
@@ -195,57 +195,6 @@ class SA_Control:
         self.selected_device = SPI_Device.LO2   # Update currently selected device to LO2
       self.cmd_proc.set_LO2(control_code)      # Set to freq=control_code
       self.last_LO2_code = control_code
-
-  def set_LO3(self, control_code: int, last_control_code: int=0):
-    """
-    Public set_LO3 sends the hardware control_code to set LO3's frequency
-
-    @param control_code: FMN sets the frequency of the MAX2871 (LO3)
-    @type int
-    @param last_control_code prevents sending FMN if it's the same as last time (defaults to 0)
-    @type int (optional)
-    """
-    if control_code != last_control_code:
-      control_code = int(control_code)
-      if self.selected_device is not SPI_Device.LO3:
-        self.cmd_proc.sel_LO3()
-        self.selected_device = SPI_Device.LO3   # Update currently selected device to LO3
-      self.cmd_proc.set_LO3(control_code)      # Set to freq=control_code
-#      self.last_LO3_code = control_code
-
-  def create_LO3_sweep_list(self, x_min, x_max, x_range) -> list:
-    LO3_fmn_codes = []
-    step_sizes = [.001, .002, .003, .005]
-    """ Convert x_range MHz to an index used for setting the step size based on bandwidth """
-    step_index = int(x_range)
-    if step_index > 3:
-      step_index = 3      # step_index must be 0 to 3
-    """ Set frequency step size based on x_range bandwidth """
-    step_size = step_sizes[step_index]
-    freq_steps = [round(freq,3) for freq in np.arange(x_min, x_max, step_size)]
-    ''' Now find a resonable LO2 freq near the middle of the LO3 sweep '''
-    mid_freq = freq_steps[len(freq_steps)//2]
-    ref_code, _, _ = self.get_control_codes(mid_freq)    # Which reference clock is active
-    if ref_code == 3327:
-      ref_clock = Cfg.ref_clock_1
-    else:
-      ref_clock = Cfg.ref_clock_2
-    ''' Convert freq steps in x into LO3 control codes '''
-    for RFin in freq_steps:
-      ref_code, LO1_N_code, LO2_fmn_code = self.get_control_codes(RFin)    # Get hardware control codes
-      if ref_code == 3327:
-          ref_clock = Cfg.ref_clock_1
-      else:
-          ref_clock = Cfg.ref_clock_2
-      LO1 = LO1_N_code * (ref_clock / Cfg.ref_divider)
-      IF1 = LO1 - RFin
-      LO2_real = round(fmn_to_MHz(LO2_fmn_code), 6)
-      IF2 = round(LO2_real, 3) - IF1
-      LO3 = IF2 - Cfg.IF3
-      fmn, _ = MHz_to_fmn(LO3, ref_clock)
-      LO3_fmn_codes.append(fmn)
-    logging.info(f'{len(LO3_fmn_codes) = }')
-    return LO2_fmn_code, LO3_fmn_codes
 
   def sweep_315(self):
     bytes_rxd = bytearray()

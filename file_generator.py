@@ -152,13 +152,6 @@ class DataGenerator():
         return IF1_corrected - hw.Cfg.IF2
 
 
-  def _LO3_frequency(self, LO2_freq: float, ref_clock: str, injection: str) -> float:
-    # TODO: Implement when hardware is available for testing
-    IF1 = 3600
-    LO3_freq = (LO2_freq - IF1) - 45.000
-    return LO3_freq
-
-
   def _compute_fmn_serial(self):
     """Compute FMN lists sequentially (single CPU)."""
     logging.info('Computing FMN values (single-threaded)...')

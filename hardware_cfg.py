@@ -99,3 +99,24 @@ def MHz_to_fmn(target_freq_MHz: float, ref_clock: float):
       best_M = M
 #  print(name(), line(), f'F = {best_F} : M = {best_M} : N = {N}')
   return best_F<<20 | best_M<<8 | N, Fvco
+
+
+def fmn_to_MHz(fmn_word, Fpfd=66.0, show_fmn: bool=False):
+  """
+  Utility for verifying that an FMN word matches the expected frequency.
+
+  @param fmn_word is a 32 bit word that contains the F, M, and N values
+  @type <class 'int'>
+  @param Fpfd is half the frequency of the reference clock
+  @return Frequency in MHz
+  @rtype float
+  """
+  F = fmn_word >> 20
+  M = (fmn_word & 0xFFFFF) >> 8
+  if M == 0:
+    M = 1
+  N = fmn_word & 0xFF
+  if show_fmn:
+    logging.info(f'\t M:F:N = {(M, F, N)}')
+  freq_MHz = Fpfd * (N + F/M)
+  return freq_MHz

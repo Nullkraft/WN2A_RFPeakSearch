@@ -28,7 +28,7 @@ import time
 import numpy as np
 
 from command_processor import CmdProcInterface
-from hardware_cfg import Cfg, SPI_Device, MHz_to_fmn
+from hardware_cfg import Cfg, SPI_Device, MHz_to_fmn, fmn_to_MHz
 import serial_port as sp
 #import dictionary_slice as ds
 
@@ -337,32 +337,8 @@ def is_peak(amplitude_list, idx):
   else:
     return (amplitude_list[idx-1] + plus_delta) < amplitude_list[idx] > (amplitude_list[idx+1] + plus_delta)
 
-
-def fmn_to_MHz(fmn_word, Fpfd=66.0, show_fmn: bool=False):
-  """
-  Function: fmn_to_freq is a utility for verifying that your fmn value
-            correctly matches the frequency that you think it does.
-
-  @param fmn_word is a 32 bit word that contains the F, M, and N values
-  @type <class 'int'>
-  @param Fpfd is half the frequency of the reference clock (defaults to ref_clock_LO)
-  @return Frequency in MHz
-  @rtype float
-  """
-  F = fmn_word >> 20
-  M = (fmn_word & 0xFFFFF) >> 8
-  if M == 0:
-    M = 1
-  N = fmn_word & 0xFF
-  if show_fmn:
-    logging.info(f'\t M:F:N = {(M, F, N)}')
-  freq_MHz = Fpfd * (N + F/M)
-  return freq_MHz
-
-
 if __name__ == '__main__':
   print()
-
 
 
 

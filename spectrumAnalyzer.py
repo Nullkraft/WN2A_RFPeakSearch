@@ -84,6 +84,7 @@ class SA_Control:
     self.last_ref_code = 0      # Decide if a new ref_code is to be sent
     self.last_LO1_code = 0      # Decide if a new LO1_code is to be sent
     self.last_LO2_code = 0      # Decide if a new LO2_code is to be sent
+    self.sweep_points = []
     self.cmd_proc = cmd_proc
 
   def get_control_codes(self, freq_mhz):
@@ -103,7 +104,22 @@ class SA_Control:
         ref2_points.append(point)
       else:
         ref1_points.append(point)
-    return ref1_points + ref2_points
+    self.sweep_points = ref1_points + ref2_points
+    return self.sweep_points
+
+  def _get_active_sweep_entries(self) -> list:
+    if self.sweep_points and len(self.sweep_points) == len(self.swept_freq_list):
+      for step, freq in zip(self.sweep_points, self.swept_freq_list):
+        if int(round(step.rf_freq_mhz * 1000)) != int(round(freq * 1000)):
+          return self.swept_freq_list
+      return self.sweep_points
+    return self.swept_freq_list
+
+  def _unpack_sweep_entry(self, entry):
+    if isinstance(entry, SweepPoint):
+      return entry.rf_freq_mhz, entry.ref_code, entry.lo1_n, entry.lo2_fmn
+    ref_code, lo1_n, lo2_fmn = self.get_control_codes(entry)
+    return entry, ref_code, lo1_n, lo2_fmn
 
   def adc_Vref(self):
     return Cfg.Vref
@@ -264,11 +280,11 @@ class SA_Control:
     bytes_rxd = bytearray()
     self.set_LO2(self.cmd_proc.LO2_mux_dig_lock)
     time.sleep(.001)
-    for freq in self.swept_freq_list:
+    for entry in self._get_active_sweep_entries():
       if not SWEEP:                       # The user pressed the ESC key so time to bail out
         break
       """ Set hardware to next frequency """
-      ref_code, LO1_N_code, LO2_fmn_code = self.get_control_codes(freq)    # Get hardware control codes
+      _, ref_code, LO1_N_code, LO2_fmn_code = self._unpack_sweep_entry(entry)
       self.set_reference_clock(ref_code, self.last_ref_code);
       self.set_LO1(LO1_N_code, self.last_LO1_code)
       self.set_LO2(LO2_fmn_code, self.last_LO2_code)
@@ -363,8 +379,6 @@ def is_peak(amplitude_list, idx):
 
 if __name__ == '__main__':
   print()
-
-
 
 
 

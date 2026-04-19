@@ -360,20 +360,8 @@ def fmn_to_MHz(fmn_word, Fpfd=66.0, show_fmn: bool=False):
   return freq_MHz
 
 
-def MHz_to_N(RFout_MHz, ref_clock, R: int=1) -> int:
-  """ Returns the integer portion of N which is used to program
-      the integer step register of the ADF4356 chip.
-  """
-  if ref_clock == None:
-    logging.warning('ref_clock can not be None when calling MHz_to_N()')
-  N = int(RFout_MHz * (2/ref_clock))
-  return (N)
-
-
-
 if __name__ == '__main__':
   print()
-
 
 
 

@@ -247,35 +247,6 @@ class SA_Control:
     logging.info(f'{len(LO3_fmn_codes) = }')
     return LO2_fmn_code, LO3_fmn_codes
 
-  def sweep_45(self, x_min, x_max, x_range):
-    bytes_rxd = bytearray()
-    LO2_fmn_code, LO3_fmn_codes = self.create_LO3_sweep_list(x_min, x_max, x_range)
-    self.set_LO2(self.cmd_proc.LO2_mux_tristate)
-    """ Set hardware to next frequency """
-    RFin_center_freq = round((x_min + x_max) / 2)
-    ref_code, LO1_N_code, LO2_fmn_code = self.get_control_codes(RFin_center_freq)    # Get hardware control codes
-    self.set_reference_clock(ref_code, self.last_ref_code);
-    self.set_LO1(LO1_N_code, self.last_LO1_code)
-    self.set_LO2(LO2_fmn_code, self.last_LO2_code)
-    time.sleep(.001)
-    sp.ser.read(sp.ser.in_waiting)  # Clear out the serial buffer.
-    delay_count = 0     # Prevents 100% CPU when reading the serial input
-    logging.info(f'{LO3_fmn_codes = }')
-    for fmn in LO3_fmn_codes:
-      self.set_LO3(fmn)
-      """ Read the amplitude data from the serial input """
-      while(True):
-        delay_count += 1
-        if sp.ser.in_waiting >= 2:
-          bytes_rxd += sp.ser.read(sp.ser.in_waiting)
-          break
-        if delay_count > 25:
-          time.sleep(1e-6)
-          delay_count = 0
-      sp.SimpleSerial.data_buffer_in += bytes_rxd    # Amplitude data collected and stored
-      bytes_rxd.clear()
-    self.set_LO3(self.cmd_proc.LO3_mux_tristate)
-
   def sweep_315(self):
     bytes_rxd = bytearray()
     self.set_LO2(self.cmd_proc.LO2_mux_dig_lock)
@@ -309,16 +280,10 @@ class SA_Control:
   def sweep(self, window_x_min, window_x_max):
     """ Function sweep() : Search the RF input for any or all RF signals
     """
-    window_x_range = round(window_x_max - window_x_min, 9)
     global SWEEP
     SWEEP = True                            # ESC key makes SWEEP=False and cancels the sweep
     sp.ser.read(sp.ser.in_waiting)          # Clear the serial port buffer
-    """ ********************************************************************* """
-    if window_x_range < 4:  # Plot is less than 4 MHz wide ...
-      self.sweep_45(window_x_min, window_x_max, window_x_range)
-    else:
-      self.sweep_315()
-    """ ********************************************************************* """
+    self.sweep_315()
     self.cmd_proc.end_sweep()   # Send handshake signal to controller
     return SWEEP
 

@@ -28,14 +28,14 @@ import serial_port as sp
 import time
 
 
-''' Arduino and programmable Device commands '''
+"""Controller protocol command words and compatibility helpers."""
 class CmdProcInterface():
   _instance = None
   
   def __new__(cls):
     if cls._instance is None:
       cls._instance = super(CmdProcInterface, cls).__new__(cls)
-      # Arduino and Device Commands
+      # Controller protocol command words.
       cls._instance.attenuator_sel    = 0x00FF   # Attenuates the RFinput from 0 to 31.75dB
 
       cls._instance.LO1_device_sel    = 0x01FF   # Select device before sending a General Command
@@ -70,12 +70,12 @@ class CmdProcInterface():
       cls._instance.LO3_mux_dig_lock  = 0x43FF   # Enable digital lock detect on the mux pin
       cls._instance.LO3_divider_mode  = 0x4BFF   # Set the RFOut Output Divider Mode to 1, 2, 4, 8, 16, 32, 64, or 128
 
-      # Reference clock Device Commands
+      # Reference clock command words.
       cls._instance.all_ref_disable   = 0x04FF
       cls._instance.ref_clock1_enable = 0x0CFF   # Enables 66.000 MHz reference and disables 66.666 MHz reference
       cls._instance.ref_clock2_enable = 0x14FF   # Enables 66.666 MHz reference and disables 66.000 MHz reference
 
-      # Arduino status
+      # Controller status and query command words.
       cls._instance.Arduino_LED_off   = 0x07FF
       cls._instance.Arduino_LED_on    = 0x0FFF   # LED blink test - The 'Hello World' of embedded dev
       cls._instance.version_message   = 0x17FF   # Query Arduino type and Software version
@@ -89,21 +89,20 @@ class CmdProcInterface():
 
 
 class CommandProcessor(CmdProcInterface):
-  # Attenuator Command & Control
+  """Serialize protocol words for the controller without changing byte layout.
+
+  The public API still exposes legacy chip-shaped names such as `sel_LO1()`
+  and `set_LO2()`. Phase 3 keeps those names for compatibility with the rest
+  of the codebase while treating this module as a protocol/serialization
+  layer rather than a device-model layer.
+  """
+
   def set_attenuator(self, decibels: float = 31.75) -> None:
     """
-    Function Attenuate the RFin signal from 0 to 31.75 dB. From the
-    spec-sheet: To get the binary value for programming the register
-    multiply the target dB attenuation by 4.
-    Ex. 12.5 dB * 4 = 50 binary
-    The 16 bit left shift moves the result to the 2 high bytes so
-    the controller can decode it as Data.
+    Send the attenuator payload expected by the controller protocol.
 
-    @param decibels DESCRIPTION (defaults to 31.75)
-    @type float (optional)
-    @return No return type
-    @rtype None
-
+    The attenuator setting is encoded as quarter-dB steps in the upper
+    16 bits, ORed with the `attenuator_sel` command word.
     """
     level = int(decibels * 4) << 16
     self._send_command(level | self.attenuator_sel)
@@ -111,39 +110,32 @@ class CommandProcessor(CmdProcInterface):
 
   def set_max2871_freq(self, fmn: int) -> None:
     """
-    Function Set LO2 or LO3 to a new frequency.
-
-    @param fmn is the F, M, and N values used to set the frequency.
-    @type int
-
+    Legacy direct-programming helper for sending a raw FMN payload.
     """
     self._send_command(fmn)
 
 
   def disable_LO2_RFout(self) -> None:
-    """Function LO2 Command and Control."""
+    """Legacy helper that sends the LO2 RF-disable command word."""
     self._send_command(self.LO2_RF_off)
 
 
   def disable_LO3_RFout(self) -> None:
-    """LO3 Command & Control."""
+    """Legacy helper that sends the LO3 RF-disable command word."""
     self._send_command(self.LO3_RF_off)
 
   
   def sel_LO1(self) -> None:
-    """Send command to select the LO1 chip for programming."""
+    """Legacy helper that sends the LO1 device-select command word."""
     self._send_command(self.LO1_device_sel)
 
 
   def set_LO1(self, LO1_command: int, int_N: int = 54) -> None:
     """
-    Function Set the LO1 chip to a new frequency.
+    Legacy helper that sends an LO1 command word plus its integer-N payload.
 
-    @param LO1_command (Choose one from the list of "Arduino and Device Commands" above)
-    @type int_32
-    @param int_N LO1, LO2, or LO3 control code (defaults to None)
-    @type int (optional)
-
+    `LO1_command` stays public for compatibility. The upper 16 bits carry the
+    integer-N value and the low bits carry the controller command word.
     """
     if int_N is not None:
       if (53 <= int_N <= 102):
@@ -156,32 +148,28 @@ class CommandProcessor(CmdProcInterface):
 
 
   def sel_LO2(self) -> None:
-    """Send command to select the LO2 chip for programming."""
+    """Legacy helper that sends the LO2 device-select command word."""
     self._send_command(self.LO2_device_sel)
 
 
   def set_LO2(self, LO2_command: int) -> None:
-    """Send the command to set the LO2 chip to a new frequency."""
+    """Legacy helper that sends an LO2 protocol payload unchanged."""
     self._send_command(LO2_command)
 
 
   def sel_LO3(self) -> None:
-    """Send command to select the LO2 chip for programming."""
+    """Legacy helper that sends the LO3 device-select command word."""
     self._send_command(self.LO3_device_sel)
 
 
   def set_LO3(self, LO3_command) -> None:
-    """Send the command to set the LO3 chip to a new frequency."""
+    """Legacy helper that sends an LO3 protocol payload unchanged."""
     self._send_command(LO3_command)
 
 
   def LO_device_register(self, device_command: int) -> None:
     """
-    Function LO_device_register.
-
-    @param device_command FMN data (LO2/LO3) or N data (LO1) for direct device control
-    @type TYPE
-
+    Legacy direct-programming helper for raw LO register payloads.
     """
     self._send_command(device_command)
 
@@ -199,7 +187,7 @@ class CommandProcessor(CmdProcInterface):
 
 
   def show_message(self) -> str:
-    """ Get the last message string that was sent from the controller. """
+    """Read and log the most recent controller message, if present."""
     sp.ser.read(sp.ser.in_waiting)  # Clear serial buffer of any junk
     time.sleep(0.01)
     msg = sp.ser.read(64)           # Collect the report(s)
@@ -208,7 +196,7 @@ class CommandProcessor(CmdProcInterface):
 
 
   def get_version_message(self):
-    """ Get the firmaware version string from the controller. """
+    """Request and log the controller firmware version string."""
     self._send_command(self.version_message)  # Request software report from controller
     self.show_message()
 
@@ -232,7 +220,7 @@ class CommandProcessor(CmdProcInterface):
 
 
   def enable_ref_clock(self, ref_clock_command) -> None:
-    """Turn on the selected reference clock. The controller automatically turns off the other."""
+    """Send the protocol command word for the selected reference source."""
     if ref_clock_command == 1:
       self._send_command(self.ref_clock1_enable)
     else:
@@ -241,12 +229,12 @@ class CommandProcessor(CmdProcInterface):
 
 
   def end_sweep(self) -> None:
-    """Serial data stream stop command when done sweeping LO2 or LO3."""
+    """Send the protocol word that terminates a sweep data stream."""
     self._send_command(self.sweep_end)
 
 
   def _send_command(self, cmd) -> None:
-    """Send the selected command to the controller."""
+    """Serialize one protocol word to the controller transport."""
     command = int(cmd)
     try:
       if sp.ser.is_open:
@@ -261,7 +249,6 @@ class CommandProcessor(CmdProcInterface):
 #      msg += sp.ser.read(sp.ser.in_waiting)  # Clear serial buffer of any junk
 #      time.sleep(0.01)
 #    print(name(), line(), f"msg = {msg}")
-
 
 
 

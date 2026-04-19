@@ -48,3 +48,4 @@ amplitude_npy_to_csv.py
 amplitude_smoother.py
 sweep_315_dump.log
 npy_data_files/
+data_files/

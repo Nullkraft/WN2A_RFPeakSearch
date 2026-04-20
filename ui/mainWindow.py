@@ -300,7 +300,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
   @pyqtSlot()
   def on_line_edit_cmd_returnPressed(self):
-    self.controller.send_raw_command(self.line_edit_cmd.text())
+    pass
 
   @pyqtSlot(bool)
   def on_chkArduinoLED_toggled(self, checked):

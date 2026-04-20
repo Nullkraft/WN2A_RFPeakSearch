@@ -163,11 +163,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
   @pyqtSlot()
   def on_btnSweep_clicked(self):
-    delay_next_plot = 0  # Temporary fix until plotting is moved to a separate thread
+    delay_next_sweep = 0
     self.label_sweep_status.setText("Sweep in progress...")
-#    QtGui.QGuiApplication.processEvents()
+    QtGui.QGuiApplication.processEvents()
+    if not self.sa_ctl.swept_freq_list:
+      start_freq = round(self.floatStartMHz.value(), 3)
+      stop_freq = round(self.floatStopMHz.value(), 3)
+      self.controller.update_swept_freq_list(start_freq, stop_freq, int(self.numFrequencySteps.value()))
     sweep_timing_filter = None
     if self.chk_continuous_sweep.isChecked():
+      delay_next_sweep = 200
       sweep_timing_filter = _SuppressSweepTimingFilter()
       logging.getLogger().addFilter(sweep_timing_filter)
     try:
@@ -176,12 +181,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
       self.label_sweep_status.setText(status_txt)
       QtGui.QGuiApplication.processEvents()
       if self.chk_plot_enabled.isChecked() and sweep_complete:
-        delay_next_plot = 200
         self.plot_ampl_data(ampl_bytes)
       # FUTURE: Make continuous sweep the default and use a checkbox for single sweep
       if self.chk_continuous_sweep.isChecked() and sweep_complete:
-        # Recursive call to keep repeating on_btnSweep_clicked repeats the plots
-        QtCore.QTimer.singleShot(delay_next_plot, self.on_btnSweep_clicked)
+        QtCore.QTimer.singleShot(delay_next_sweep, self.on_btnSweep_clicked)
     finally:
       if sweep_timing_filter is not None:
         logging.getLogger().removeFilter(sweep_timing_filter)

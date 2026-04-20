@@ -160,9 +160,9 @@ class SA_Control:
     self.selected_device = SPI_Device.ATTENUATOR   # Update currently selected device to Attenuator
 
 
-  def set_LO1(self, control_code: int, last_control_code: int=0):
+  def program_lo1(self, control_code: int, last_control_code: int=0):
     """
-    Public set_LO1 sends the hardware control_code to set LO1's frequency
+    Public program_lo1 sends the hardware control_code to set LO1's frequency
 
     @param control_code: N (reg[0] from the spec-sheet) sets the frequency of the ADF4356 (LO1)
     @type int
@@ -174,13 +174,13 @@ class SA_Control:
       if self.selected_device is not SPI_Device.LO1:
 #        self.cmd_proc.sel_LO1()
         self.selected_device = SPI_Device.LO1
-      self.cmd_proc.set_LO1(self.cmd_proc.LO1_neg4dBm, control_code) # Set to -4 dBm & freq=control_code
+      self.cmd_proc.program_lo1(self.cmd_proc.LO1_neg4dBm, control_code) # Set to -4 dBm & freq=control_code
       time.sleep(0.002)                       # Wait 1 ms for LO1 to lock
       self.last_LO1_code = control_code
 
-  def set_LO2(self, control_code: int, last_control_code: int=0):
+  def program_lo2(self, control_code: int, last_control_code: int=0):
     """
-    Public set_LO2 sends the hardware control_code to set LO2's frequency
+    Public program_lo2 sends the hardware control_code to set LO2's frequency
 
     @param control_code: FMN sets the frequency of the MAX2871 (LO2)
     @type int
@@ -190,22 +190,22 @@ class SA_Control:
     if control_code != last_control_code:
       control_code = int(control_code)
       if self.selected_device is not SPI_Device.LO2:
-        self.cmd_proc.sel_LO2()
+        self.cmd_proc.select_lo2()
         self.selected_device = SPI_Device.LO2   # Update currently selected device to LO2
-      self.cmd_proc.set_LO2(control_code)      # Set to freq=control_code
+      self.cmd_proc.program_lo2(control_code)      # Set to freq=control_code
       self.last_LO2_code = control_code
 
   def sweep_315(self):
     bytes_rxd = bytearray()
-    self.set_LO2(self.cmd_proc.LO2_mux_dig_lock)
+    self.program_lo2(self.cmd_proc.LO2_mux_dig_lock)
     time.sleep(.001)
     for point in self._iter_active_sweep_points():
       if not SWEEP:                       # The user pressed the ESC key so time to bail out
         break
       """ Set hardware to next frequency """
       self.set_reference_clock(point.ref_code, self.last_ref_code);
-      self.set_LO1(point.lo1_n, self.last_LO1_code)
-      self.set_LO2(point.lo2_fmn, self.last_LO2_code)
+      self.program_lo1(point.lo1_n, self.last_LO1_code)
+      self.program_lo2(point.lo2_fmn, self.last_LO2_code)
       delay_count = 0     # Prevents 100% CPU when reading the serial input
       """ Read the amplitude data from the serial input """
       while(True):
@@ -221,7 +221,7 @@ class SA_Control:
       bytes_rxd.clear()
 #            if freq % 5 == 0:
 #                print(f'Progress {freq = }')
-    self.set_LO2(self.cmd_proc.LO2_mux_tristate)
+    self.program_lo2(self.cmd_proc.LO2_mux_tristate)
 
 
   def sweep(self, window_x_min, window_x_max):
@@ -291,5 +291,4 @@ def is_peak(amplitude_list, idx):
 
 if __name__ == '__main__':
   print()
-
 

@@ -91,10 +91,8 @@ class CmdProcInterface():
 class CommandProcessor(CmdProcInterface):
   """Serialize protocol words for the controller without changing byte layout.
 
-  The public API still exposes legacy chip-shaped names such as `sel_LO1()`
-  and `set_LO2()`. Phase 3 keeps those names for compatibility with the rest
-  of the codebase while treating this module as a protocol/serialization
-  layer rather than a device-model layer.
+  Public LO helpers are protocol-oriented: `program_lo1()`, `select_lo2()`,
+  and `program_lo2()`.
   """
 
   def set_attenuator(self, decibels: float = 31.75) -> None:
@@ -108,13 +106,6 @@ class CommandProcessor(CmdProcInterface):
     self._send_command(level | self.attenuator_sel)
 
 
-  def set_max2871_freq(self, fmn: int) -> None:
-    """
-    Legacy direct-programming helper for sending a raw FMN payload.
-    """
-    self._send_command(fmn)
-
-
   def disable_LO2_RFout(self) -> None:
     """Legacy helper that sends the LO2 RF-disable command word."""
     self._send_command(self.LO2_RF_off)
@@ -125,16 +116,11 @@ class CommandProcessor(CmdProcInterface):
     self._send_command(self.LO3_RF_off)
 
   
-  def sel_LO1(self) -> None:
-    """Legacy helper that sends the LO1 device-select command word."""
-    self._send_command(self.LO1_device_sel)
-
-
-  def set_LO1(self, LO1_command: int, int_N: int = 54) -> None:
+  def program_lo1(self, lo1_command: int, int_N: int = 54) -> None:
     """
-    Legacy helper that sends an LO1 command word plus its integer-N payload.
+    Send an LO1 command word plus its integer-N payload.
 
-    `LO1_command` stays public for compatibility. The upper 16 bits carry the
+    `lo1_command` carries the command word. The upper 16 bits carry the
     integer-N value and the low bits carry the controller command word.
     """
     if int_N is not None:
@@ -144,34 +130,17 @@ class CommandProcessor(CmdProcInterface):
         logging.error(f'N ({int_N}) exceeds the limits of the ADF4356 (LO1)')
     else:
       N = 0
-    self._send_command(LO1_command | N)
+    self._send_command(lo1_command | N)
 
 
-  def sel_LO2(self) -> None:
-    """Legacy helper that sends the LO2 device-select command word."""
+  def select_lo2(self) -> None:
+    """Send the LO2 device-select command word."""
     self._send_command(self.LO2_device_sel)
 
 
-  def set_LO2(self, LO2_command: int) -> None:
-    """Legacy helper that sends an LO2 protocol payload unchanged."""
-    self._send_command(LO2_command)
-
-
-  def sel_LO3(self) -> None:
-    """Legacy helper that sends the LO3 device-select command word."""
-    self._send_command(self.LO3_device_sel)
-
-
-  def set_LO3(self, LO3_command) -> None:
-    """Legacy helper that sends an LO3 protocol payload unchanged."""
-    self._send_command(LO3_command)
-
-
-  def LO_device_register(self, device_command: int) -> None:
-    """
-    Legacy direct-programming helper for raw LO register payloads.
-    """
-    self._send_command(device_command)
+  def program_lo2(self, lo2_command: int) -> None:
+    """Send an LO2 protocol payload unchanged."""
+    self._send_command(lo2_command)
 
 
   def LED_on(self) -> None:
@@ -249,7 +218,6 @@ class CommandProcessor(CmdProcInterface):
 #      msg += sp.ser.read(sp.ser.in_waiting)  # Clear serial buffer of any junk
 #      time.sleep(0.01)
 #    print(name(), line(), f"msg = {msg}")
-
 
 
 

@@ -106,15 +106,6 @@ class CommandProcessor(CmdProcInterface):
     self._send_command(level | self.attenuator_sel)
 
 
-  def disable_LO2_RFout(self) -> None:
-    """Legacy helper that sends the LO2 RF-disable command word."""
-    self._send_command(self.LO2_RF_off)
-
-
-  def disable_LO3_RFout(self) -> None:
-    """Legacy helper that sends the LO3 RF-disable command word."""
-    self._send_command(self.LO3_RF_off)
-
   
   def program_lo1(self, lo1_command: int, int_N: int = 54) -> None:
     """
@@ -218,7 +209,6 @@ class CommandProcessor(CmdProcInterface):
 #      msg += sp.ser.read(sp.ser.in_waiting)  # Clear serial buffer of any junk
 #      time.sleep(0.01)
 #    print(name(), line(), f"msg = {msg}")
-
 
 
 

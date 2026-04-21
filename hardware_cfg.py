@@ -43,8 +43,8 @@ class Cfg():
     max_error = 2**32
     Vref = 2.595 #5.0                   # Controller ADC reference voltage
 
-    ref_clock_1 = 66.000
-    ref_clock_2 = 67.108864
+    ref_clock_1 = 65.99936
+    ref_clock_2 = 67.10783
     ref_divider: int = 1                # R from the MAX2871 spec sheet
 
     Fpfd1 = ref_clock_1 / ref_divider   # LO1 step size when using ref_clock 1

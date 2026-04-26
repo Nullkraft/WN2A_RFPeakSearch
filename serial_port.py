@@ -42,7 +42,19 @@ from PyQt6.QtCore import QObject, pyqtSignal
     2. YouTube Tutorial - Dependency INVERSION vs dependency INJECTION
        https://www.youtube.com/watch?v=2ejbLVkCndI
 """
-ser = serial.Serial()
+class ClosedSerialPort:
+    BAUDRATES = serial.Serial.BAUDRATES
+    is_open = False
+    in_waiting = 0
+
+    def read(self, num_bytes: int=1):
+        return bytes()
+
+    def write(self, data_buf):
+        print(name(), line(), 'Open the serial port before sending serial data.')
+
+
+ser = ClosedSerialPort()
 
 class SimpleSerial(QObject):
     finished = pyqtSignal(bytearray)
@@ -105,6 +117,7 @@ class SimpleSerial(QObject):
         # Get the list of all serial ports on this system.
         active_ports_list = self.get_serial_port_list()
         if self.port in active_ports_list:
+            ser_port = None
             try:
                 """ TODO: Move the serial object creation to the __init__ function above
                     using the method of Dependency Injection found here:
@@ -122,8 +135,9 @@ class SimpleSerial(QObject):
             else:
                 print(name(), line(), f'INFO::{ser_port.port} opened at {ser_port.baudrate} baud.')
             finally:
-                ser = ser_port
-                self._write_config(current_speed=self.baud, current_port=self.port)
+                if ser_port is not None:
+                    ser = ser_port
+                    self._write_config(current_speed=self.baud, current_port=self.port)
         else:
             print(name(), line(), 'No serial ports found')
 
@@ -183,7 +197,6 @@ if __name__ == '__main__':
     print("")
     print(SimpleSerial().get_baud_rate_list())
     print(SimpleSerial().get_serial_port_list())
-
 
 
 

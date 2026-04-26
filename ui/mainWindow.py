@@ -235,7 +235,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sa_ctl.swept_freq_list.clear()
         sa_ctl.swept_freq_list = self.get_swept_freq_list(start, stop, step)  # Way faster than np.arange()
         self.numFrequencySteps.setValue(len(sa_ctl.swept_freq_list))    # Display the number of steps to the user
-        self.set_LO3_sweep()
+#        self.set_LO3_sweep()
 
     def set_LO3_sweep(self):
         # Find and set the center frequency used for sweeping LO3.

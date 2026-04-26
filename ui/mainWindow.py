@@ -32,7 +32,7 @@ import threading
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread, QCoreApplication
-from PyQt6.QtWidgets import QMainWindow
+from PyQt6.QtWidgets import QMainWindow, QMessageBox
 import pyqtgraph as pg
 from pathlib import Path
 
@@ -129,6 +129,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_btnSweep_clicked(self):
+        if not sp.ser.is_open:
+            self.label_sweep_status.setText("Open serial port before sweeping")
+            QMessageBox.warning(self, "Serial port not open", "Open a serial port before starting a sweep.")
+            return
         start = perf_counter()
         self.label_sweep_status.setText("Sweep in progress...")
         QtGui.QGuiApplication.processEvents()

@@ -271,14 +271,10 @@ class SA_Control():
         bytes_rxd = bytearray()
         self.set_LO2(cmd_proc.LO2_mux_dig_lock)
         time.sleep(.001)
-        last_freq = 0
         for freq in self.swept_freq_list:
             if not SWEEP:                       # The user pressed the ESC key so time to bail out
                 break
             """ Set hardware to next frequency """
-            if freq - last_freq > 10.0:
-              last_freq = freq
-              print(name(), line(), f"Calibrating {freq} MHz")
             ref_code, LO1_N_code, LO2_fmn_code = self.all_frequencies_dict[freq]    # Get hardware control codes
             self.set_reference_clock(ref_code, self.last_ref_code);
             self.set_LO1(LO1_N_code, self.last_LO1_code)
@@ -303,16 +299,17 @@ class SA_Control():
     def sweep(self, window_x_min, window_x_max):
         """ Function sweep() : Search the RF input for any or all RF signals
         """
-        window_x_range = round(window_x_max - window_x_min, 9)
+#        window_x_range = round(window_x_max - window_x_min, 9)
         global SWEEP
         SWEEP = True                            # ESC key makes SWEEP=False and cancels the sweep
         sp.ser.read(sp.ser.in_waiting)          # Clear the serial port buffer
         """ ********************************************************************* """
-        if window_x_range < 4:  # Plot is less than 4 MHz wide ...
-            self.sweep_45(window_x_min, window_x_max, window_x_range)
-        else:
-            self.sweep_315()
+#        if window_x_range < 4:  # Plot is less than 4 MHz wide ...
+#            self.sweep_45(window_x_min, window_x_max, window_x_range)
+#        else:
+#            self.sweep_315()
         """ ********************************************************************* """
+        self.sweep_315()
         cmd_proc.end_sweep()   # Send handshake signal to controller
         return SWEEP
 

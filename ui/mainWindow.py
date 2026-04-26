@@ -459,6 +459,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.amplitude.clear()
             volts_list = self._amplitude_bytes_to_volts(amplBytes)
             self.amplitude = [self._volts_to_dBm(voltage) for voltage in volts_list]
+            with open("amplitude.csv", "w") as f:
+              f.write(str(self.amplitude))
             argsort_index_nparray = sa.np.argsort(sa_ctl.swept_freq_list)
             for idx in argsort_index_nparray:
                 self.x_axis.append(sa_ctl.swept_freq_list[idx])  # Sort the frequency data in ascending order

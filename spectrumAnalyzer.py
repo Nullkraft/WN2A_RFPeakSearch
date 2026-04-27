@@ -299,16 +299,9 @@ class SA_Control():
     def sweep(self, window_x_min, window_x_max):
         """ Function sweep() : Search the RF input for any or all RF signals
         """
-#        window_x_range = round(window_x_max - window_x_min, 9)
         global SWEEP
         SWEEP = True                            # ESC key makes SWEEP=False and cancels the sweep
-        sp.ser.read(sp.ser.in_waiting)          # Clear the serial port buffer
-        """ ********************************************************************* """
-#        if window_x_range < 4:  # Plot is less than 4 MHz wide ...
-#            self.sweep_45(window_x_min, window_x_max, window_x_range)
-#        else:
-#            self.sweep_315()
-        """ ********************************************************************* """
+        sp.ser.reset_input_buffer()             # Idiomatic method for clearing the serial buffer
         self.sweep_315()
         cmd_proc.end_sweep()   # Send handshake signal to controller
         return SWEEP

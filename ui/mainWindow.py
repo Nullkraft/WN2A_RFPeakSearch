@@ -32,7 +32,7 @@ import threading
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QThread, QCoreApplication
-from PyQt6.QtWidgets import QMainWindow, QMessageBox
+from PyQt6.QtWidgets import QMainWindow, QMessageBox, QCheckBox
 import pyqtgraph as pg
 from pathlib import Path
 
@@ -52,6 +52,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super().__init__()
         pg.setConfigOptions(useOpenGL=True, enableExperimental=True)
         self.setupUi(self)  # Must come before self.graphWidget.plot()
+        self.chk_continuous_sweep = QCheckBox("Continuous Sweep", self.groupBox_6)
+        self.chk_continuous_sweep.setChecked(False)
+        self.chk_continuous_sweep.setObjectName("chk_continuous_sweep")
+        self.verticalLayout_3.insertWidget(
+          self.verticalLayout_3.indexOf(self.label_sweep_status),
+          self.chk_continuous_sweep,
+        )
+
         self.setup_plot()
         #
         # MAX2871 chip will need to be initialized
@@ -139,14 +147,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sp.SimpleSerial.data_buffer_in.clear()     # Clear the serial data buffer before sweeping
         window_x_min, window_x_max = sa.get_plot_window_xrange()
         sweep_complete = sa.SA_Control().sweep(window_x_min, window_x_max)
-        print(name(), line(), f'Sweep completed in {round(perf_counter()-start, 6)} seconds')
+        if not self.chk_continuous_sweep.isChecked():
+            print(name(), line(), f'Sweep completed in {round(perf_counter()-start, 6)} seconds')
         if not sweep_complete:
-           print(name(), line(), 'Sweep stopped by user')
+            print(name(), line(), 'Sweep stopped by user')
         status_txt = f'Sweep complete, fwidth = {sa_ctl.lowpass_filter_width}'
         self.label_sweep_status.setText(status_txt)
         if self.chk_plot_enable.isChecked() and sweep_complete:
             self.plot_ampl_data(sp.SimpleSerial.data_buffer_in)
-        QtGui.QGuiApplication.processEvents()
+        if self.chk_continuous_sweep.isChecked() and sweep_complete:
+            QtCore.QTimer.singleShot(0, self.on_btnSweep_clicked)
+#        QtGui.QGuiApplication.processEvents()
 
 
     @pyqtSlot()

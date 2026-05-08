@@ -26,7 +26,7 @@ _ = logging_setup   # silence Warning: 'logging_setup' imported but unused
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot, QCoreApplication
-from PyQt6.QtWidgets import QCheckBox, QMainWindow
+from PyQt6.QtWidgets import QMainWindow
 import pyqtgraph as pg
 
 from ui.Ui_mainWindow import Ui_MainWindow
@@ -52,13 +52,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     super().__init__()
     pg.setConfigOptions(useOpenGL=True, enableExperimental=True)
     self.setupUi(self)  # Must come before self.graphWidget.plot()
-    self.chk_continuous_sweep = QCheckBox("Continuous Sweep", self.groupBox_6)
-    self.chk_continuous_sweep.setChecked(False)
-    self.chk_continuous_sweep.setObjectName("chk_continuous_sweep")
-    self.verticalLayout_3.insertWidget(
-      self.verticalLayout_3.indexOf(self.label_sweep_status),
-      self.chk_continuous_sweep,
-    )
     self.setup_plot()
     self.controller = MainWindowController()
     self.sa_ctl = self.controller.sa_ctl
@@ -175,7 +168,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     self.label_sweep_status.setText("Sweep in progress...")
     QtGui.QGuiApplication.processEvents()
     sweep_timing_filter = None
-    if self.chk_continuous_sweep.isChecked():
+    if self.chkContinuousSweep.isChecked():
       sweep_timing_filter = _SuppressSweepTimingFilter()
       logging.getLogger().addFilter(sweep_timing_filter)
     try:
@@ -185,7 +178,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
       QtGui.QGuiApplication.processEvents()
       if self.chk_plot_enabled.isChecked() and sweep_complete:
         self.plot_ampl_data(ampl_bytes)
-      if self.chk_continuous_sweep.isChecked() and sweep_complete:
+      if self.chkContinuousSweep.isChecked() and sweep_complete:
         QtCore.QTimer.singleShot(0, self.on_btnSweep_clicked)
     finally:
       if sweep_timing_filter is not None:
@@ -401,6 +394,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #  @pyqtSlot(int)
 #  def on_numFrequencySteps_valueChanged(self, p0):
 #    print(name(), line(), f'Data points changed to {p0}')
+  
+  @pyqtSlot()
+  def on_chkContinuousSweep_clicked(self):
+    pass
 
 
 if __name__ == '__main__':

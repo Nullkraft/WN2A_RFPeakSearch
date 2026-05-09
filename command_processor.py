@@ -36,7 +36,7 @@ class CmdProcInterface():
     if cls._instance is None:
       cls._instance = super(CmdProcInterface, cls).__new__(cls)
       # Arduino and Device Commands
-      cls._instance.attenuator_sel    = 0x00FF   # Attenuates the RFinput from 0 to 31.75dB
+      cls._instance.attenuator_sel    = 0x08FF   # Attenuates the RFinput from 0 to 31.75dB
 
       cls._instance.LO1_device_sel    = 0x01FF   # Select device before sending a General Command
       cls._instance.LO1_RF_off        = 0x09FF   # Specific commands
@@ -261,9 +261,3 @@ class CommandProcessor(CmdProcInterface):
 #      msg += sp.ser.read(sp.ser.in_waiting)  # Clear serial buffer of any junk
 #      time.sleep(0.01)
 #    print(name(), line(), f"msg = {msg}")
-
-
-
-
-
-

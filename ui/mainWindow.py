@@ -176,7 +176,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
       status_txt = f'Sweep complete, fwidth = {self.sa_ctl.lowpass_filter_width}'
       self.label_sweep_status.setText(status_txt)
       QtGui.QGuiApplication.processEvents()
-      if self.chk_plot_enabled.isChecked() and sweep_complete:
+      if self.chk_plot_enable.isChecked() and sweep_complete:
         self.plot_ampl_data(ampl_bytes)
       if self.chkContinuousSweep.isChecked() and sweep_complete:
         QtCore.QTimer.singleShot(0, self.on_btnSweep_clicked)
@@ -394,7 +394,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #  @pyqtSlot(int)
 #  def on_numFrequencySteps_valueChanged(self, p0):
 #    print(name(), line(), f'Data points changed to {p0}')
-  
+
   @pyqtSlot()
   def on_chkContinuousSweep_clicked(self):
     pass
